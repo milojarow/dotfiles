@@ -13,9 +13,8 @@ temp_file=$(mktemp)
 for file in "$@"; do
     # Check if file exists
     if [ -f "$file" ]; then
-        # Print file path and content to the temporary file
-        echo "$file" >> "$temp_file"
-        echo >> "$temp_file"
+        # Print full file path and content to the temporary file
+        realpath "$file" >> "$temp_file"
         cat "$file" >> "$temp_file"
         echo >> "$temp_file"
     else
