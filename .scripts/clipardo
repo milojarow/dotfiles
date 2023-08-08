@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Check if at least one argument is provided
+if [ "$#" -eq 0 ]; then
+    echo "No arguments provided. Please provide file paths as arguments."
+    exit 1
+fi
+
+# Create a temporary file to store the content
+temp_file=$(mktemp)
+
+# Loop over all arguments
+for file in "$@"; do
+    # Check if file exists
+    if [ -f "$file" ]; then
+        # Print file path and content to the temporary file
+        echo "$file" >> "$temp_file"
+        echo >> "$temp_file"
+        cat "$file" >> "$temp_file"
+        echo >> "$temp_file"
+    else
+        echo "File $file does not exist."
+    fi
+done
+
+# Copy the content of the temporary file to the clipboard
+xclip -selection clipboard "$temp_file"
+
+# Remove the temporary file
+rm "$temp_file"
