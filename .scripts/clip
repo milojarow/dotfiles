@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Check if a file path is provided
+if [ "$#" -ne 1 ]; then
+    echo "Usage: clip /path/to/file"
+    exit 1
+fi
+
+# Copy the content of the file to the clipboard
+xclip -selection clipboard < "$1"
