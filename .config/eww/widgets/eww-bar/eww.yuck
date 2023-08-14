@@ -19,6 +19,9 @@
             :value wifisignal
             :onchange "")
     (box :class "wifi" wifi)
+    (box :class "battery" :orientation "h"
+      (label :text "🔋")
+      (label :text battery)) ; Use the battery variable directly
     (box :class "keyboard_layout" "💻 ${keyboard_layout.layout}")
     (time)))
 
@@ -77,6 +80,9 @@
 
 (defpoll wifisignal :interval "1s"
   "/home/milo/.config/eww/widgets/eww-bar/scripts/getwifisignal")
+
+(defpoll battery :interval "10s"
+  "acpi -b | awk -F', ' '{print $2}'")
 
 (defpoll keyboard_layout :interval "1s"
   "/home/milo/.config/eww/widgets/eww-bar/scripts/keyboard_layout.sh")
