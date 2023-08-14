@@ -1,29 +1,70 @@
 #!/bin/bash
 
+# Function to display help message
+display_help() {
+  echo "Usage: clipardo [OPTION] FILE..."
+  echo "Copy the content of specified files to the clipboard."
+  echo
+  echo "Options:"
+  echo "  -r        Recursively include files from subdirectories."
+  echo "  --help    Display this help message and exit."
+  echo
+  echo "Arguments:"
+  echo "  FILE      One or more file paths to be copied to the clipboard."
+  echo "            Use '*' to include all files in the current directory."
+  echo
+  echo "Example:"
+  echo "  clipardo -r *    # Copies all files in the current directory and subdirectories."
+}
+
+# Check for the --help option
+if [ "$1" == "--help" ]; then
+  display_help
+  exit 0
+fi
+
+recursive=0
+
+# Check for the recursive option
+if [ "$1" == "-r" ]; then
+  recursive=1
+  shift
+fi
+
 # Check if at least one argument is provided
 if [ "$#" -eq 0 ]; then
     echo "No arguments provided. Please provide file paths as arguments."
+    echo "Use 'clipardo --help' for more information."
     exit 1
 fi
 
 # Create a temporary file to store the content
 temp_file=$(mktemp)
 
-# Loop over all arguments
-for file in "$@"; do
+# Function to process files
+process_files() {
+  for file in "$@"; do
     # Check if file exists
     if [ -f "$file" ]; then
         # Print full file path and content to the temporary file
         realpath "$file" >> "$temp_file"
         cat "$file" >> "$temp_file"
         echo >> "$temp_file"
+    elif [ -d "$file" ] && [ $recursive -eq 1 ]; then
+        # If the file is a directory and recursive option is set, process the directory
+        process_files "$file"/*
     else
         echo "File $file does not exist."
     fi
-done
+  done
+}
+
+# Call the function with the arguments
+process_files "$@"
 
 # Copy the content of the temporary file to the clipboard
 xclip -selection clipboard "$temp_file"
 
 # Remove the temporary file
 rm "$temp_file"
+
