@@ -7,7 +7,6 @@
 
 # Exports
 export EDITOR=$VISUAL
-export HISTCONTROL=ignoreboth
 export TERM=xterm-256color
 export VISUAL=vim
 export LESS=-FRX
@@ -71,5 +70,14 @@ ssh-add -l > /dev/null || ssh-add
 sudo save_networks.sh
 
 # Share command history between terminals
+update_history() {
+    history -a
+    history -c
+    history -r
+}
 shopt -s histappend
-PROMPT_COMMAND="history -a;$PROMPT_COMMAND"
+export HISTCONTROL=ignoreboth:erasedups
+export HISTSIZE=10000
+export HISTFILESIZE=10000
+export HISTFILE=~/.bash_history
+PROMPT_COMMAND="update_history; $PROMPT_COMMAND"
