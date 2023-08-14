@@ -1,0 +1,19 @@
+format = """
+[⇉](fg:#606770)[ ](bg:#606770)$username\
+[](bg:#1F649D fg:#606770)\
+$directory\
+[](fg:#1F649D) \
+"""
+
+[username]
+show_always = true
+style_user = "fg:#CCCC00 bg:#606770" # Darker yellow foreground
+style_root = "fg:bold white bg:#606770"
+format = '[$user ]($style)'
+disabled = false
+
+[directory]
+style = "fg:black bg:#1F649D"
+format = "[ $path ]($style)"
+truncation_length = 0
+truncation_symbol = ""
