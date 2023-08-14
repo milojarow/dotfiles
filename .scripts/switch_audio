@@ -33,42 +33,68 @@ if [ "$1" == "--help" ]; then
 fi
 
 case $1 in
-  laptop)
+      laptop)
     disconnect_all
     echo "Switching to laptop profile..."
-    echo 'pcm.laptop_virtual {
-      type plug
-      slave.pcm "dmix:1,0" # Adjust this to match your laptop hardware device
+    echo 'pcm.!default {
+        type plug
+        slave.pcm "dmixer"
     }
 
-    pcm.!default {
-      type plug
-      slave.pcm "laptop_virtual"
+    pcm.dmixer  {
+        type dmix
+        ipc_key 1024
+        slave {
+                pcm "hw:1,0"
+                period_time 0
+                period_size 1024
+                buffer_size 4096
+                rate 44100
+        }
+        bindings {
+                0 0
+                1 1
+        }
+    }
+
+    ctl.dmixer {
+        type hw
+        card 0
     }' > ~/.asoundrc
     sudo alsactl nrestore
     ;;
-  truck)
+      truck)
     disconnect_all
     bluetoothctl connect "00:22:A0:9E:30:0A"
-    PROFILE="pcm.!default {
+    PROFILE="pcm.truck_virtual {
       type plug
       slave.pcm {
         type bluealsa
         device \"00:22:A0:9E:30:0A\"
         profile \"a2dp\"
       }
+    }
+
+    pcm.!default {
+      type plug
+      slave.pcm \"truck_virtual\"
     }"
     ;;
-  rk1000)
+      rk1000)
     disconnect_all
     bluetoothctl connect "41:42:F5:D8:16:DB"
-    PROFILE="pcm.!default {
+    PROFILE="pcm.rk1000_virtual {
       type plug
       slave.pcm {
         type bluealsa
         device \"41:42:F5:D8:16:DB\"
         profile \"a2dp\"
       }
+    }
+
+    pcm.!default {
+      type plug
+      slave.pcm \"rk1000_virtual\"
     }"
     ;;
   *)
