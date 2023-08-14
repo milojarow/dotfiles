@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# Function to display help message
+display_help() {
+  echo "Usage: switch_audio [laptop|truck|rk1000]"
+  echo "Switch the audio profile between different devices."
+  echo
+  echo "Options:"
+  echo "  laptop    - Switch to laptop profile."
+  echo "  truck     - Switch to truck profile (Bluetooth device: 00:22:A0:9E:30:0A)."
+  echo "  rk1000    - Switch to rk1000 profile (Bluetooth device: 41:42:F5:D8:16:DB)."
+  echo "  --help    - Display this help message and exit."
+  echo
+  echo "Dependencies:"
+  echo "  bluetoothctl - Tool for controlling Bluetooth devices."
+  echo "  alsactl      - Tool for managing sound settings."
+  echo
+  echo "Example:"
+  echo "  switch_audio laptop    # Switches to laptop audio profile"
+}
+
+# Function to disconnect from all connected Bluetooth devices
+disconnect_all() {
+  for dev in $(bluetoothctl info | grep 'Device' | awk '{print $2}'); do
+    bluetoothctl disconnect $dev
+  done
+}
+
+# Check for the --help option
+if [ "$1" == "--help" ]; then
+  display_help
+  exit 0
+fi
+
+case $1 in
+  laptop)
+    disconnect_all
+    echo "Switching to laptop profile..."
+    echo 'pcm.laptop_virtual {
+      type plug
+      slave.pcm "dmix:1,0" # Adjust this to match your laptop hardware device
+    }
+
+    pcm.!default {
+      type plug
+      slave.pcm "laptop_virtual"
+    }' > ~/.asoundrc
+    sudo alsactl nrestore
+    ;;
+  truck)
+    disconnect_all
+    bluetoothctl connect "00:22:A0:9E:30:0A"
+    PROFILE="pcm.!default {
+      type plug
+      slave.pcm {
+        type bluealsa
+        device \"00:22:A0:9E:30:0A\"
+        profile \"a2dp\"
+      }
+    }"
+    ;;
+  rk1000)
+    disconnect_all
+    bluetoothctl connect "41:42:F5:D8:16:DB"
+    PROFILE="pcm.!default {
+      type plug
+      slave.pcm {
+        type bluealsa
+        device \"41:42:F5:D8:16:DB\"
+        profile \"a2dp\"
+      }
+    }"
+    ;;
+  *)
+    echo "Invalid option"
+    exit 1
+    ;;
+esac
+
+# Update the .asoundrc file with the selected profile (if applicable)
+if [ -n "$PROFILE" ]; then
+  echo "$PROFILE" > ~/.asoundrc
+fi
+
+echo "Switched to $1 profile"
+sudo alsactl nrestore
