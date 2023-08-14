@@ -53,6 +53,9 @@ process_files() {
     elif [ -d "$file" ] && [ $recursive -eq 1 ]; then
         # If the file is a directory and recursive option is set, process the directory
         process_files "$file"/*
+    elif [ -d "$file" ] && [ $recursive -eq 0 ]; then
+        # If the file is a directory and recursive option is not set, ignore it
+        continue
     else
         echo "File $file does not exist."
     fi
@@ -67,4 +70,3 @@ xclip -selection clipboard "$temp_file"
 
 # Remove the temporary file
 rm "$temp_file"
-
