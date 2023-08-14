@@ -11,6 +11,7 @@ Plug 'vimwiki/vimwiki'
 Plug 'tpope/vim-surround'
 Plug 'ron-rs/ron.vim'
 Plug 'elkowar/yuck.vim'
+Plug 'Yggdroot/indentLine'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
