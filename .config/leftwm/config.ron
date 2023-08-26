@@ -9,6 +9,9 @@
 
 #![enable(implicit_some)]
 (
+    rules: [
+        (name: "Leafpad", manage: false),
+    ],
     modkey: "Mod4",
     mousekey: "Mod4",
     workspaces: [],
