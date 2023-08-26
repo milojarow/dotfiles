@@ -62,10 +62,11 @@ case $1 in
         card 0
     }' > ~/.asoundrc
     sudo alsactl nrestore
+    sudo alsactl restore
     ;;
       truck)
-    disconnect_all
-    bluetoothctl connect "00:22:A0:9E:30:0A"
+    #disconnect_all
+    #bluetoothctl connect "00:22:A0:9E:30:0A"
     PROFILE="pcm.truck_virtual {
       type plug
       slave.pcm {
@@ -79,6 +80,7 @@ case $1 in
       type plug
       slave.pcm \"truck_virtual\"
     }"
+    sudo alsactl restore
     ;;
       rk1000)
     disconnect_all
