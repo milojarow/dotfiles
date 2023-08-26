@@ -9,39 +9,37 @@
     (metric :label "🔊"
             :value volume
             :onchange "amixer -D pulse sset Master {}%")
-    (metric :label "🧪"
-            :value '${EWW_RAM.used_mem_perc}'
-            :onchange "")
-    (metric :label "💾"
-            :value {round((1 - (EWW_DISK["/"].free / EWW_DISK["/"].total)) * 100, 0)}
-            :onchange "")
+    (box :class "ram" :orientation "h"
+      (label :text "🧪")
+      (label :text {round('${EWW_RAM.used_mem_perc}', 0)}))
+    (box :class "disk" :orientation "h"
+      (label :text "💾")
+      (label :text {round((1 - (EWW_DISK["/"].free / EWW_DISK["/"].total)) * 100, 0)}))
     (metric :label "📶"
             :value wifisignal
             :onchange "")
     (box :class "wifi" wifi)
     (box :class "battery" :orientation "h"
       (label :text "🔋")
-      (label :text battery)) ; Use the battery variable directly
+      (label :text battery))
     (box :class "keyboard_layout" "💻 ${keyboard_layout.layout}")
     (time)))
 
-; eww is natively able to parse the JSON output of `leftwm-state`
-; since eww also has the ability of `for` loops there is no need for a `liquid` template anymore
 (defwidget workspaces []
-    (box :class "workspaces"
-         :orientation "h"
-         :space-evenly true
-         :halign "start"
-         :spacing 10
-      (box
-        (for tag in '${wmstate.workspaces[0].tags}'
-          (button
-            :class {tag.mine ? "ws-button-mine" :
-                    tag.visible ? "ws-button-visible" :
-                    tag.urgent ? "ws-button-urgent" :
-                    tag.busy ? "ws-button-busy" : "ws-button"}
-            :onclick "leftwm-command \"SendWorkspaceToTag 0 ${tag.index}\""
-            {!tag.mine && !tag.busy && !tag.visible && !tag.urgent ?  "·" : "${tag.name}"})))))
+  (box :class "workspaces"
+       :orientation "h"
+       :space-evenly true
+       :halign "start"
+       :spacing 10
+    (box
+      (for tag in '${wmstate.workspaces[0].tags}'
+        (button
+          :class {tag.mine ? "ws-button-mine" :
+                  tag.visible ? "ws-button-visible" :
+                  tag.urgent ? "ws-button-urgent" :
+                  tag.busy ? "ws-button-busy" : "ws-button"}
+          :onclick "leftwm-command \"SendWorkspaceToTag 0 ${tag.index}\""
+          {!tag.mine && !tag.busy && !tag.visible && !tag.urgent ?  "·" : "${tag.name}"})))))
 
 (defwidget music []
   (box :class "music"
@@ -49,7 +47,6 @@
        :space-evenly false
        :halign "center"
     {music != "" ? "🎵${music}" : ""}))
-
 
 (defwidget metric [label value onchange]
   (box :orientation "h"
@@ -64,7 +61,6 @@
 
 (defwidget time []
   (box :class "time" {time}))
-
 
 (deflisten music :initial ""
   "playerctl --follow metadata --format '{{ artist }} - {{ title }}' || true")
