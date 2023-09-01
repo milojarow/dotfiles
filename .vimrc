@@ -40,6 +40,8 @@ set showmatch
 set history=1000
 set autoindent
 set showcmd
+set lazyredraw
+set ttyfast
 """"""""""""""""""""""""""""""""
 
 """"""""""""""""""""""""""""""""
