@@ -10,11 +10,15 @@
             :value volume
             :onchange "amixer -D pulse sset Master {}%")
     (box :class "ram" :orientation "h"
-      (label :text "🧪")
-      (label :text {round('${EWW_RAM.used_mem_perc}', 0)}))
+      (label :text "▰") 
+      (label :text "RAM")
+      (label :text {round('${EWW_RAM.used_mem_perc}', 0)})
+      (label :text "▰"))  
     (box :class "disk" :orientation "h"
-      (label :text "💾")
-      (label :text {round((1 - (EWW_DISK["/"].free / EWW_DISK["/"].total)) * 100, 0)}))
+      (label :text "▰") 
+      (label :text "disk")
+      (label :text {round((1 - (EWW_DISK["/"].free / EWW_DISK["/"].total)) * 100, 0)})
+      (label :text "▰")) 
     (metric :label "📶"
             :value wifisignal
             :onchange "")
