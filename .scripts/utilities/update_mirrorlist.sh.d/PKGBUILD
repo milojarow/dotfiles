@@ -1,0 +1,23 @@
+pkgname=mirrorlist-auto-update
+pkgver=1.0
+pkgrel=1
+pkgdesc="Automated mirrorlist update mechanism for Arch Linux"
+arch=('any')
+url="https://github.com/milojarow/dotfiles"
+license=('MIT')
+depends=('networkd-dispatcher')
+install=mirrorlist-auto-update.install
+source=("update_mirrorlist.sh"
+        "update-mirrorlist.service"
+        "50-update-mirrorlist"
+        "mirrorlist-auto-update.install")
+sha256sums=('SKIP'
+            'SKIP'
+            'SKIP')
+
+package() {
+    install -Dm755 "$srcdir/update_mirrorlist.sh" "$pkgdir/usr/local/bin/update_mirrorlist.sh"
+    install -Dm644 "$srcdir/update-mirrorlist.service" "$pkgdir/etc/systemd/system/update-mirrorlist.service"
+    install -Dm755 "$srcdir/50-update-mirrorlist" "$pkgdir/etc/networkd-dispatcher/routable.d/50-update-mirrorlist"
+}
+
