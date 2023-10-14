@@ -1,5 +1,26 @@
 #!/bin/bash
 
+# Help message function
+show_help() {
+  echo "Usage: update_mirrorlist.sh [-h|--help]"
+  echo ""
+  echo "Automatically updates the Arch Linux mirrorlist."
+  echo ""
+  echo "Options:"
+  echo "  -h, --help    Show this help message and exit."
+  echo ""
+  echo "Files needed for this script to work:"
+  echo "  /var/lib/last_mirror_update    Stores the time of the last mirror update."
+  echo "  /etc/systemd/system/update-mirrorlist.service    Systemd service file."
+  echo "  /etc/networkd-dispatcher/routable.d/50-update-mirrorlist    Network dispatcher file."
+}
+
+# Check for help flag
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+  show_help
+  exit 0
+fi
+
 # File to keep track of the last update time
 LAST_UPDATE_FILE="/var/lib/last_mirror_update"
 
