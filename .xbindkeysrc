@@ -73,6 +73,9 @@
 "setxkbmap us"
   Mod4 + shift + u
 
+# Lets you insert ascii caracters like in windows
+"bash /home/milo/.scripts/ascii_script.sh"
+  Mod1 + keycode 65  # This is Alt+Space
 
 ##################################
 # End of xbindkeys configuration #
