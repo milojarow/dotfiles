@@ -1,0 +1,5 @@
+; sources the eww file by the current leftwm theme
+(include "/home/milo/.config/leftwm/themes/current/eww/eww.yuck")
+
+; sources the persistent widgets across themes
+
