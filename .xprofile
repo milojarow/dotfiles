@@ -28,7 +28,7 @@ eww daemon &
 dunst &
 
 # start polybar
-polybar &
+# polybar &
 
 #################################################
 # wallpaper section
