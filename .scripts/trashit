@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Directory where deleted items will be moved to
+TRASH_DIR="$HOME/.trash.d"
+
+# Display help
+function display_help() {
+    echo "Usage: trashit [OPTION]... [FILE]..."
+    echo "Move FILE(s) to a designated trash directory at $TRASH_DIR or manage the trash."
+    echo
+    echo "Options:"
+    echo "  --help       display this help and exit"
+    echo "  --empty      empty the trash directory"
+    echo "  --restore    restore a file from the trash"
+    echo
+    echo "Examples:"
+    echo "  trashit file1.txt          Move 'file1.txt' to the trash directory."
+    echo "  trashit dir1 dir2          Move 'dir1' and 'dir2' to the trash directory."
+    echo "  trashit --empty            Empty the trash directory."
+    echo "  trashit --restore file1    Restore 'file1' from the trash to its original location."
+    echo
+    echo "Without any OPTION, 'trashit' moves the specified FILE(s) to the trash directory."
+}
+
+# Ensure trash directory exists
+if [ ! -d "$TRASH_DIR" ]; then
+    mkdir -p "$TRASH_DIR"
+fi
+
+# Handle options
+case "$1" in
+    --help)
+        display_help
+        exit 0
+        ;;
+    --empty)
+        rm -rf "$TRASH_DIR"/*
+        echo "Trash has been emptied."
+        exit 0
+        ;;
+    --restore)
+        shift # Remove '--restore' from the arguments
+        for metafile in "$@"; do
+            # Extract metadata
+            metadata=$(cat "$metafile.meta")
+            original_path=$(echo "$metadata" | grep "Original path:" | cut -d':' -f2- | xargs)
+            if mv -f "$metafile" "$original_path"; then
+                echo "$metafile restored to $original_path."
+                rm -f "$metafile.meta" # Remove metadata file
+            else
+                echo "Failed to restore $metafile."
+            fi
+        done
+        exit 0
+        ;;
+esac
+
+# Move files or directories to the trash directory
+for target in "$@"; do
+    if [ -e "$target" ]; then
+        base=$(basename "$target")
+        dest="$TRASH_DIR/$base"
+        counter=1
+        while [ -e "$dest" ] || [ -e "$dest.meta" ]; do
+            dest="$TRASH_DIR/${base}_($counter)"
+            counter=$((counter + 1))
+        done
+        mv -f "$target" "$dest"
+        # Create metadata file
+        echo "Original path: $PWD/$target" > "$dest.meta"
+        echo "Deletion date: $(date)" >> "$dest.meta"
+        echo "$target is in the trash now."
+    else
+        echo "$target does not exist."
+    fi
+done
