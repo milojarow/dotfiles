@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# Function to display help message
+# Extension to language mapping for Markdown syntax highlighting
+declare -A lang_map=(["sh"]="bash")
+
 display_help() {
   echo "Usage: clipardo [OPTION] FILE..."
-  echo "Copy the content of specified files to the clipboard."
+  echo "Copy the content of specified files to the clipboard in a Markdown code block format."
   echo
   echo "Options:"
   echo "  -r        Recursively include files from subdirectories."
@@ -13,8 +15,11 @@ display_help() {
   echo "  FILE      One or more file paths to be copied to the clipboard."
   echo "            Use '*' to include all files in the current directory."
   echo
+  echo "The script creates a temporary file to accumulate the content of files before copying it to the clipboard."
+  echo "This temporary file is removed after its content is copied, leaving no residue on your system."
+  echo
   echo "Example:"
-  echo "  clipardo -r *    # Copies all files in the current directory and subdirectories."
+  echo "  clipardo -r *    # Copies all files in the current directory and subdirectories into the clipboard with Markdown code block syntax highlighting."
 }
 
 # Check for the --help option
@@ -44,12 +49,19 @@ temp_file=$(mktemp)
 # Function to process files
 process_files() {
   for file in "$@"; do
-    # Check if file exists
     if [ -f "$file" ]; then
-        # Print full file path and content to the temporary file
-        realpath "$file" >> "$temp_file"
+        extension="${file##*.}"
+        # Check if extension has a mapping, default to extension if not
+        language="${lang_map[$extension]:-$extension}"
+
+        # Handle files without an extension (or if extension mapping results in the same 'extension')
+        [[ "$extension" == "$file" ]] || [[ -z "$language" ]] && language=""
+        
+        echo "/$(realpath --relative-to="$PWD" "$file")" >> "$temp_file"
+        echo '```'"$language" >> "$temp_file"
         cat "$file" >> "$temp_file"
-        echo >> "$temp_file"
+        # Do not add a newline here to avoid the extra blank line before the closing backticks
+        echo '```' >> "$temp_file"
     elif [ -d "$file" ] && [ $recursive -eq 1 ]; then
         # If the file is a directory and recursive option is set, process the directory
         process_files "$file"/*
@@ -70,3 +82,4 @@ xclip -selection clipboard "$temp_file"
 
 # Remove the temporary file
 rm "$temp_file"
+
