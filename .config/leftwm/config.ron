@@ -10,7 +10,7 @@
 #![enable(implicit_some)]
 (
     rules: [
-        (name: "Leafpad", manage: false),
+        (name: "geany", manage: false),
     ],
     modkey: "Mod4",
     mousekey: "Mod4",
@@ -57,8 +57,8 @@
     sloppy_mouse_follows_focus: true,
     auto_derive_workspaces: true,
     keybind: [
-        (command: Execute, value: "leafpad", modifier: ["modkey"], key: "r"),
-        (command: Execute, value: "dmenu_run", modifier: ["modkey"], key: "p"),
+        (command: Execute, value: "geany", modifier: ["modkey"], key: "r"),
+        (command: Execute, value: "~/.scripts/dmenu_launch.sh", modifier: ["modkey"], key: "p"),
         (command: Execute, value: "alacritty", modifier: ["modkey", "Shift"], key: "Return"),
         (command: CloseWindow, value: "", modifier: ["modkey", "Shift"], key: "q"),
         (command: SoftReload, value: "", modifier: ["modkey", "Shift"], key: "r"),
