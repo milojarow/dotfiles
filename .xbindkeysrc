@@ -42,13 +42,13 @@
 "xbindkeys_show" 
   control+shift + q
 
-# set directly keycode (here control + f with my keyboard)
-#"xterm"
-#  c:41 + m:0x4
+# # set directly keycode (here control + f with my keyboard)
+# "xterm"
+#   c:41 + m:0x4
 
 # specify a mouse button
-"xterm"
-  control + b:2
+# "xterm"
+#   control + b:2
 
 #"xterm -geom 50x20+20+20"
 #   Shift+Mod2+alt + s
@@ -72,10 +72,6 @@
 # Switch to standard US layout
 "setxkbmap us"
   Mod4 + shift + u
-
-# Lets you insert ascii caracters like in windows
-"bash /home/milo/.scripts/ascii_script.sh"
-  Mod1 + keycode 65  # This is Alt+Space
 
 ##################################
 # End of xbindkeys configuration #
