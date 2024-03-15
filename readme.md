@@ -20,7 +20,7 @@ Welcome to my dotfiles repository! Here, you'll find a collection of configurati
 
 To fully utilize these dotfiles, the following packages are necessary:
 
-- dbus
+- `[dbus](dbus)
 - `[xbindkeys](xbindkeys)`
 - `picom`
 - `openssh`
