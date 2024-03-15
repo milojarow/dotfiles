@@ -1,0 +1,51 @@
+# Set PATH so it includes user's private bin directories
+export PATH="$HOME/.scripts:$PATH"
+
+# init xbindkeys
+xbindkeys &
+
+# Start the compositor (picom)
+picom &
+
+# Start ssh-agent
+if [ ! -S ~/.ssh/ssh_auth_sock ]; then
+  eval $(ssh-agent -s)
+  mkdir -p ~/.ssh
+  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+fi
+export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
+ssh-add -l >/dev/null || ssh-add
+
+# Apply custom keybindings
+xbindkeys &
+
+# start the eww daemon
+eww daemon &
+
+# start dunst
+dunst &
+
+# start polybar
+polybar &
+
+#################################################
+# wallpaper section
+# -- this works with `feh` and `leftwm-theme` packages
+# --- this needs the ~/.scripts/change-theme script which creates the file ~/.config/leftwm/current_theme
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+# Sets random wallpaper in every login
+
+RICE=$(cat ~/.config/leftwm/current_theme)
+THEME_DIR="$HOME/.config/leftwm/themes/$RICE"
+# Buscar directorios de fondos de pantalla con diferentes capitalizaciones
+WALLPAPERS_DIR=$(find "$THEME_DIR" -type d \( -iname "wallpapers" -o -iname "Wallpapers" -o -iname "Extra_Backgrounds" \) | head -n 1)
+# Comprobar si se encontró un directorio y usar `feh` para establecer un fondo aleatorio
+if [ ! -z "$WALLPAPERS_DIR" ]; then
+feh --bg-scale --randomize "$WALLPAPERS_DIR"/*.{jpg,png} "$THEME_DIR"/*.{jpg,png} &
+else
+echo "Directorio de fondos de pantalla no encontrado en $THEME_DIR"
+fi
+
+# end of wallpaper section ^^^^^^^^^^^^^^^^^^^^^^
+#################################################
