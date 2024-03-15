@@ -33,20 +33,19 @@ polybar &
 #################################################
 # wallpaper section
 # -- this works with `feh` and `leftwm-theme` packages
-# --- this needs the ~/.scripts/change-theme script which creates the file ~/.config/leftwm/current_theme
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 # Sets random wallpaper in every login
 
-RICE=$(cat ~/.config/leftwm/current_theme)
-THEME_DIR="$HOME/.config/leftwm/themes/$RICE"
-# Buscar directorios de fondos de pantalla con diferentes capitalizaciones
+# Use the symlink to access the current theme directly
+THEME_DIR="$HOME/.config/leftwm/themes/current"
+# Find directories of wallpapers with different capitalizations
 WALLPAPERS_DIR=$(find "$THEME_DIR" -type d \( -iname "wallpapers" -o -iname "Wallpapers" -o -iname "Extra_Backgrounds" \) | head -n 1)
-# Comprobar si se encontró un directorio y usar `feh` para establecer un fondo aleatorio
+# Check if a directory was found and use `feh` to set a random background
 if [ ! -z "$WALLPAPERS_DIR" ]; then
-feh --bg-scale --randomize "$WALLPAPERS_DIR"/*.{jpg,png} "$THEME_DIR"/*.{jpg,png} &
+    feh --bg-scale --randomize "$WALLPAPERS_DIR"/*.{jpg,png} &
 else
-echo "Directorio de fondos de pantalla no encontrado en $THEME_DIR"
+    echo "Wallpaper directory not found in $THEME_DIR"
 fi
 
 # end of wallpaper section ^^^^^^^^^^^^^^^^^^^^^^
