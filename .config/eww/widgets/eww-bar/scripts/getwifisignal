@@ -1,2 +1,0 @@
-#!/bin/bash
-nmcli -t -f in-use,signal dev wifi | egrep '^\*' | cut -d\: -f2

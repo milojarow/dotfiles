@@ -1,2 +1,0 @@
-#!/bin/bash
-amixer get Master | grep -oP "\[\K[0-9]+(?=%\])" | head -n 1

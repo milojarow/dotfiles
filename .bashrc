@@ -27,9 +27,6 @@ alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 # Neovide
 alias neo='~/.scripts/neo.sh'
 
-# Function to sent every rm item to ~/.trash.d
-source ~/.scripts/rm_override.sh
-
 # Screenshot using shotgun and hacksaw
 # script in ~/.scripts already added to $PATH
 alias shot='shot.sh'
@@ -60,17 +57,6 @@ export _ZO_RESOLVE_SYMLINKS=1
 #*********************
 eval "$(starship init bash)"
 #*********************
-
-# ssh script to start session
-if [ ! -S ~/.ssh/ssh_auth_sock ]; then
-  eval `ssh-agent`
-  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
-fi
-export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
-ssh-add -l > /dev/null || ssh-add
-
-# script to save known networks
-sudo save_networks.sh
 
 # Share command history between terminals
 update_history() {
