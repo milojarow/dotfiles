@@ -70,3 +70,4 @@ export HISTSIZE=10000
 export HISTFILESIZE=10000
 export HISTFILE=~/.bash_history
 PROMPT_COMMAND="update_history; $PROMPT_COMMAND"
+export PATH="$HOME/.cargo/bin:$PATH"
