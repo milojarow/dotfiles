@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Initialize an empty array to track updated projects
+updated_projects=()
+
+# Function to check for updates and build the project if necessary
+update_project() {
+    local project_name="$1"
+    local project_dir="$2"
+    local build_commands=("${@:3}") # Remaining arguments are build commands
+    echo "Checking for updates in $project_name..."
+    cd "$project_dir" || exit
+
+    # Fetch latest changes without applying them
+    git fetch origin
+
+    # Check if local is behind the remote
+    if git status -uno | grep -q 'Your branch is behind'; then
+        echo "Updates found for $project_name. Updating..."
+        git pull
+        for cmd in "${build_commands[@]}"; do
+            echo "Executing: $cmd"
+            eval "$cmd" || { echo "Command failed: $cmd"; exit 1; }
+        done
+        updated_projects+=("$project_name")
+    else
+        echo "No updates for $project_name."
+    fi
+}
+
+# Directory where projects are located
+projects_dir="$HOME/projects"
+
+# Update eww
+update_project "eww" "$projects_dir/eww" \
+    "cargo build --release --no-default-features --features x11"
+
+# Update leftwm-theme
+update_project "leftwm-theme" "$projects_dir/leftwm-theme" \
+    "cargo build --release" \
+    "sudo ln -sf \"$(pwd)/target/release/leftwm-theme\" /usr/bin/leftwm-theme"
+
+# Final message based on updates
+if [ ${#updated_projects[@]} -eq 0 ]; then
+    echo "No updates were needed for eww or leftwm-theme."
+else
+    echo "The following projects were updated: ${updated_projects[*]}."
+fi
+
