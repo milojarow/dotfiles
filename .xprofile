@@ -32,20 +32,33 @@ dunst &
 
 #################################################
 # wallpaper section
-# -- this works with `feh` and `leftwm-theme` packages
+# -- Adjusted for dynamic selection within found directories
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
-# Sets random wallpaper in every login
+# Base theme directory which always exists
+BASE_DIR="/home/milo/.config/leftwm/themes/current"
 
-# Use the symlink to access the current theme directly
-THEME_DIR="$HOME/.config/leftwm/themes/current"
-# Find directories of wallpapers with different capitalizations
-WALLPAPERS_DIR=$(find "$THEME_DIR" -type d \( -iname "wallpapers" -o -iname "Wallpapers" -o -iname "Extra_Backgrounds" \) | head -n 1)
-# Check if a directory was found and use `feh` to set a random background
-if [ ! -z "$WALLPAPERS_DIR" ]; then
-    feh --bg-scale --randomize "$WALLPAPERS_DIR"/*.{jpg,png} &
+# Array of potential wallpaper directories within the base theme directory
+declare -a POTENTIAL_DIRS=("wallpapers" "Wallpapers" "Extra_Backgrounds" "Backgrounds" "backgrounds")
+
+# Initialize an array to hold directories that actually exist
+declare -a EXISTING_DIRS=("$BASE_DIR") # Include BASE_DIR as a fallback
+
+# Check each potential directory and add it to the list if it exists
+for dir in "${POTENTIAL_DIRS[@]}"; do
+    if [ -d "$BASE_DIR/$dir" ]; then
+        EXISTING_DIRS+=("$BASE_DIR/$dir")
+    fi
+done
+
+# Randomly select one of the existing directories
+SELECTED_DIR=${EXISTING_DIRS[$RANDOM % ${#EXISTING_DIRS[@]}]}
+
+# Finally, randomly select a wallpaper from the selected directory
+if [ "$(ls "$SELECTED_DIR"/*.jpg "$SELECTED_DIR"/*.png 2> /dev/null)" ]; then
+    feh --bg-scale --randomize "$SELECTED_DIR"/*.{jpg,png} &
 else
-    echo "Wallpaper directory not found in $THEME_DIR"
+    echo "No wallpapers found in $SELECTED_DIR"
 fi
 
 # end of wallpaper section ^^^^^^^^^^^^^^^^^^^^^^
