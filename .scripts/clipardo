@@ -1,0 +1,110 @@
+#!/bin/bash
+# clipardo: Copy file(s) to clipboard in a markdown code block format.
+# For text files:
+#   - First line: full file path.
+#   - Second line: a markdown code fence with a language specifier (if the file has an extension).
+#   - Then the file's contents.
+#   - Then an extra blank line followed by the closing triple backticks.
+#
+# For non-text (media) files:
+#   - Only the full file path is output.
+#
+# Usage:
+#   clipardo FILE...
+#   clipardo -h|--help  : Show this help message.
+#
+# Examples:
+#   clipardo ~/.bashrc
+#   clipardo ~/.config/waybar/*
+
+show_help() {
+    cat << EOF
+Usage: clipardo FILE...
+Copies file contents to the clipboard in markdown format.
+
+For text files:
+  - The first line is the full file path.
+  - The second line is a markdown code fence with a language specifier (determined by the file's extension, if available).
+  - Then the file's contents.
+  - Then an extra blank line followed by the closing triple backticks.
+
+For non-text (media) files:
+  - Only the full path is copied.
+
+Options:
+  -h, --help      Display this help message and exit.
+
+Examples:
+  clipardo ~/.bashrc
+  clipardo ~/.config/waybar/*
+EOF
+}
+
+# Check for help flag.
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    show_help
+    exit 0
+fi
+
+# Ensure at least one argument is provided.
+if [ $# -eq 0 ]; then
+    echo "No file specified. Use -h for help."
+    exit 1
+fi
+
+# Initialize variable to accumulate output.
+output=""
+
+# Process each file provided as an argument.
+for file in "$@"; do
+    # Verify file exists.
+    if [ ! -e "$file" ]; then
+        echo "File not found: $file" >&2
+        continue
+    fi
+
+    # Get the absolute path of the file.
+    fullpath=$(realpath "$file")
+    
+    # Determine the MIME type.
+    mime=$(file --mime-type -b "$file")
+    
+    if [[ $mime == text/* ]]; then
+        # Infer language from file extension if available.
+        filename=$(basename "$file")
+        if [[ "$filename" == *.* && "$filename" != .* ]]; then
+            extension="${filename##*.}"
+            lang="$extension"
+        else
+            lang=""
+        fi
+
+        # Read file contents.
+        content=$(cat "$file")
+        
+        # Create markdown code block.
+        if [ -n "$lang" ]; then
+            block=$(printf '```%s\n%s\n\n```\n' "$lang" "$content")
+        else
+            block=$(printf '```\n%s\n\n```\n' "$content")
+        fi
+        
+        file_output=$(printf '%s\n%s' "$fullpath" "$block")
+    else
+        # For non-text files, only output the full path.
+        file_output="$fullpath"
+    fi
+
+    # If there is previous output, separate with two newlines.
+    if [ -z "$output" ]; then
+        output="$file_output"
+    else
+        output="$output\n\n$file_output"
+    fi
+done
+
+# Copy the final output to the clipboard using wl-copy.
+echo -e "$output" | wl-copy
+
+echo "Content copied to clipboard."
+
