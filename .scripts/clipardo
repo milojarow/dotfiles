@@ -1,76 +1,91 @@
 #!/bin/bash
-# clipardo: Copy file(s) to clipboard in a markdown code block format.
-# For text files:
-#   - First line: full file path.
-#   - Second line: a markdown code fence with a language specifier (if the file has an extension).
-#   - Then the file's contents.
-#   - Then an extra blank line followed by the closing triple backticks.
+# clipardo: Copia el contenido de archivos al portapapeles en formato markdown.
 #
-# For non-text (media) files:
-#   - Only the full file path is output.
+# Para archivos de texto:
+#   - Primera línea: la ruta absoluta del archivo.
+#   - Segunda línea: una "code fence" en markdown con un especificador de lenguaje (derivado de la extensión, si existe).
+#   - Luego: el contenido del archivo.
+#   - Finalmente: una línea en blanco extra y los cierres de la "code fence".
 #
-# Usage:
-#   clipardo FILE...
-#   clipardo -h|--help  : Show this help message.
+# Para archivos no-texto (solo en modo no recursivo):
+#   - Se copia únicamente la ruta absoluta.
 #
-# Examples:
+# Uso:
+#   clipardo [OPCIÓN]... [ARCHIVO o DIRECTORIO]...
+#
+# Opciones:
+#   -h, --help         Muestra este mensaje de ayuda y sale.
+#   -r, --recursive    Procesa recursivamente todos los archivos de texto dentro de los directorios indicados.
+#                      Si no se especifica ningún argumento adicional, usa el directorio actual.
+#
+# Ejemplos:
 #   clipardo ~/.bashrc
-#   clipardo ~/.config/waybar/*
+#   clipardo file1 /path/to/file2 ../file3
+#   clipardo -r /etc/sway/
+#   clipardo --recursive /etc/sway/ /another/dir file.txt
 
 show_help() {
     cat << EOF
-Usage: clipardo FILE...
-Copies file contents to the clipboard in markdown format.
+Uso: clipardo [OPCIÓN]... [ARCHIVO o DIRECTORIO]...
+Copia el contenido de archivos al portapapeles en formato markdown.
 
-For text files:
-  - The first line is the full file path.
-  - The second line is a markdown code fence with a language specifier (determined by the file's extension, if available).
-  - Then the file's contents.
-  - Then an extra blank line followed by the closing triple backticks.
+Modos:
+1. No recursivo:
+   - Procesa los archivos (o paths) indicados.
+   - Para archivos de texto:
+       * Primera línea: ruta absoluta.
+       * Segunda línea: code fence en markdown con lenguaje (si se detecta por la extensión).
+       * Luego el contenido y, al final, una línea en blanco y cierre de code fence.
+   - Para archivos no-texto, solo se copia la ruta.
 
-For non-text (media) files:
-  - Only the full path is copied.
+2. Recursivo (-r, --recursive):
+   - Si se pasan argumentos, cada argumento puede ser:
+       * Un directorio: se buscarán recursivamente todos los archivos de texto en él.
+       * Un archivo: se procesa directamente.
+   - Si no se pasan argumentos después de la opción recursiva, se usa el directorio actual.
 
-Options:
-  -h, --help      Display this help message and exit.
+Opciones:
+  -h, --help         Muestra este mensaje de ayuda y sale.
+  -r, --recursive    Procesa recursivamente los archivos.
 
-Examples:
+Ejemplos:
   clipardo ~/.bashrc
-  clipardo ~/.config/waybar/*
+  clipardo file1 /path/to/file2 ../file3
+  clipardo -r /etc/sway/
+  clipardo --recursive /etc/sway/ /another/dir file.txt
 EOF
 }
 
-# Check for help flag.
+# Comprueba si se pidió ayuda.
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     show_help
     exit 0
 fi
 
-# Ensure at least one argument is provided.
-if [ $# -eq 0 ]; then
-    echo "No file specified. Use -h for help."
-    exit 1
+recursive=0
+
+# Comprueba si se ha especificado el modo recursivo.
+if [[ "$1" == "-r" || "$1" == "--recursive" ]]; then
+    recursive=1
+    shift  # Quita la opción recursiva de los argumentos.
 fi
 
-# Initialize variable to accumulate output.
 output=""
 
-# Process each file provided as an argument.
-for file in "$@"; do
-    # Verify file exists.
+process_file() {
+    local file="$1"
+    # Verifica que el archivo exista.
     if [ ! -e "$file" ]; then
-        echo "File not found: $file" >&2
-        continue
+        echo "Archivo no encontrado: $file" >&2
+        return
     fi
 
-    # Get the absolute path of the file.
     fullpath=$(realpath "$file")
-    
-    # Determine the MIME type.
     mime=$(file --mime-type -b "$file")
-    
+
+    # En modo recursivo solo procesamos archivos de texto.
+    # En modo no recursivo, procesamos archivos de texto y no-texto.
     if [[ $mime == text/* ]]; then
-        # Infer language from file extension if available.
         filename=$(basename "$file")
         if [[ "$filename" == *.* && "$filename" != .* ]]; then
             extension="${filename##*.}"
@@ -79,32 +94,63 @@ for file in "$@"; do
             lang=""
         fi
 
-        # Read file contents.
         content=$(cat "$file")
-        
-        # Create markdown code block.
         if [ -n "$lang" ]; then
             block=$(printf '```%s\n%s\n\n```\n' "$lang" "$content")
         else
             block=$(printf '```\n%s\n\n```\n' "$content")
         fi
-        
         file_output=$(printf '%s\n%s' "$fullpath" "$block")
     else
-        # For non-text files, only output the full path.
-        file_output="$fullpath"
+        if [ $recursive -eq 0 ]; then
+            file_output="$fullpath"
+        else
+            # En modo recursivo ignoramos archivos no-texto.
+            return
+        fi
     fi
 
-    # If there is previous output, separate with two newlines.
+    # Separa cada salida con dos saltos de línea.
     if [ -z "$output" ]; then
         output="$file_output"
     else
         output="$output\n\n$file_output"
     fi
-done
+}
 
-# Copy the final output to the clipboard using wl-copy.
+if [ $recursive -eq 1 ]; then
+    # Si se especificaron argumentos, úsalos como puntos de partida.
+    if [ "$#" -eq 0 ]; then
+        start_points=(.)
+    else
+        start_points=("$@")
+    fi
+
+    for point in "${start_points[@]}"; do
+        if [ -d "$point" ]; then
+            while IFS= read -r -d $'\0' file; do
+                process_file "$file"
+            done < <(find "$point" -type f -print0)
+        elif [ -f "$point" ]; then
+            process_file "$point"
+        else
+            echo "Ruta no válida: $point" >&2
+        fi
+    done
+else
+    # Modo no recursivo: procesa los argumentos directamente.
+    if [ "$#" -eq 0 ]; then
+        echo "No se especificó ningún archivo o directorio. Usa -h para ayuda."
+        exit 1
+    fi
+
+    for file in "$@"; do
+        process_file "$file"
+    done
+fi
+
+# Copia la salida final al portapapeles usando wl-copy.
 echo -e "$output" | wl-copy
 
-echo "Content copied to clipboard."
+echo "Contenido copiado al portapapeles."
 
