@@ -60,7 +60,6 @@ Ejemplos:
 EOF
 }
 
-# Comprueba si se pidió ayuda.
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     show_help
     exit 0
@@ -68,17 +67,15 @@ fi
 
 recursive=0
 
-# Comprueba si se ha especificado el modo recursivo.
 if [[ "$1" == "-r" || "$1" == "--recursive" ]]; then
     recursive=1
-    shift  # Quita la opción recursiva de los argumentos.
+    shift
 fi
 
 output=""
 
 process_file() {
     local file="$1"
-    # Verifica que el archivo exista.
     if [ ! -e "$file" ]; then
         echo "Archivo no encontrado: $file" >&2
         return
@@ -87,8 +84,6 @@ process_file() {
     fullpath=$(realpath "$file")
     mime=$(file --mime-type -b "$file")
 
-    # Si el archivo es de tipo media (imagen, video o audio), en modo no recursivo se copia solo la ruta;
-    # en modo recursivo se ignora.
     if [[ $mime == image/* || $mime == video/* || $mime == audio/* ]]; then
         if [ $recursive -eq 0 ]; then
             file_output="$fullpath"
@@ -96,11 +91,9 @@ process_file() {
             return
         fi
     else
-        # Trata el archivo como de texto.
         filename=$(basename "$file")
         if [[ "$filename" == *.* && "$filename" != .* ]]; then
             extension="${filename##*.}"
-            # Mapeo de extensión a lenguaje.
             case "$extension" in
                 sh) lang="bash" ;;
                 bash) lang="bash" ;;
@@ -115,7 +108,7 @@ process_file() {
                 html) lang="html" ;;
                 css) lang="css" ;;
                 rs) lang="rust" ;;
-                *) lang="" ;;  # Si no se reconoce, se omite el lenguaje.
+                *) lang="" ;;
             esac
         else
             lang=""
@@ -130,16 +123,14 @@ process_file() {
         file_output=$(printf '%s\n%s' "$fullpath" "$block")
     fi
 
-    # Acumula la salida separando cada archivo con dos saltos de línea.
     if [ -z "$output" ]; then
         output="$file_output"
     else
-        output="$output\n\n$file_output"
+        output="${output}"$'\n\n'"$file_output"
     fi
 }
 
 if [ $recursive -eq 1 ]; then
-    # Si se especificaron argumentos, se usan como puntos de partida; sino, se utiliza el directorio actual.
     if [ "$#" -eq 0 ]; then
         start_points=(.)
     else
@@ -158,7 +149,6 @@ if [ $recursive -eq 1 ]; then
         fi
     done
 else
-    # Modo no recursivo: procesa los argumentos directamente.
     if [ "$#" -eq 0 ]; then
         echo "No se especificó ningún archivo o directorio. Usa -h para ayuda."
         exit 1
@@ -169,8 +159,7 @@ else
     done
 fi
 
-# Copia la salida final al portapapeles usando wl-copy.
-printf '%b' "$output" | wl-copy
+printf '%s' "$output" | wl-copy
 
 echo "Contenido copiado al portapapeles."
 
