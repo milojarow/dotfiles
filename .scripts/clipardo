@@ -18,16 +18,16 @@
 #
 # Opciones:
 #   -h, --help         Muestra este mensaje de ayuda y sale.
-#   -r, --recursive    Procesa recursivamente todos los archivos de texto dentro de los
+#   -r, --recursive    Procesa recursivamente todos los archivos no-media dentro de los
 #                      directorios indicados. Si no se especifica ningún argumento adicional,
 #                      usa el directorio actual.
 #
 # Ejemplos:
 #   clipardo ~/.bashrc
 #   clipardo file1 /path/to/file2 ../file3
-#   clipardo -r /etc/sway/
-#   clipardo --recursive /etc/sway/ /another/dir file.txt
-
+#   clipardo -r .config/waybar/
+#   clipardo .config/waybar/*
+ 
 show_help() {
     cat << EOF
 Uso: clipardo [OPCIÓN]... [ARCHIVO o DIRECTORIO]...
@@ -41,10 +41,10 @@ Modos:
        * Segunda línea: code fence en markdown con lenguaje (detectado y mapeado a partir de la extensión).
        * Luego el contenido y, al final, una línea en blanco y cierre de code fence.
    - Para archivos no-texto, solo se copia la ruta.
-
+   
 2. Recursivo (-r, --recursive):
    - Si se pasan argumentos, cada argumento puede ser:
-       * Un directorio: se buscarán recursivamente todos los archivos de texto en él.
+       * Un directorio: se buscarán recursivamente todos los archivos no-media en él.
        * Un archivo: se procesa directamente.
    - Si no se pasan argumentos después de la opción recursiva, se usa el directorio actual.
 
@@ -55,8 +55,8 @@ Opciones:
 Ejemplos:
   clipardo ~/.bashrc
   clipardo file1 /path/to/file2 ../file3
-  clipardo -r /etc/sway/
-  clipardo --recursive /etc/sway/ /another/dir file.txt
+  clipardo -r .config/waybar/
+  clipardo .config/waybar/*
 EOF
 }
 
@@ -87,9 +87,16 @@ process_file() {
     fullpath=$(realpath "$file")
     mime=$(file --mime-type -b "$file")
 
-    # En modo recursivo solo procesamos archivos de texto.
-    # En modo no recursivo, procesamos archivos de texto y no-texto.
-    if [[ $mime == text/* ]]; then
+    # Si el archivo es de tipo media (imagen, video o audio), en modo no recursivo se copia solo la ruta;
+    # en modo recursivo se ignora.
+    if [[ $mime == image/* || $mime == video/* || $mime == audio/* ]]; then
+        if [ $recursive -eq 0 ]; then
+            file_output="$fullpath"
+        else
+            return
+        fi
+    else
+        # Trata el archivo como de texto.
         filename=$(basename "$file")
         if [[ "$filename" == *.* && "$filename" != .* ]]; then
             extension="${filename##*.}"
@@ -108,7 +115,7 @@ process_file() {
                 html) lang="html" ;;
                 css) lang="css" ;;
                 rs) lang="rust" ;;
-                *) lang="$extension" ;;
+                *) lang="" ;;  # Si no se reconoce, se omite el lenguaje.
             esac
         else
             lang=""
@@ -116,22 +123,14 @@ process_file() {
 
         content=$(cat "$file")
         if [ -n "$lang" ]; then
-            # Agregamos un espacio después de los triple backticks.
             block=$(printf '``` %s\n%s\n\n```\n' "$lang" "$content")
         else
             block=$(printf '```\n%s\n\n```\n' "$content")
         fi
         file_output=$(printf '%s\n%s' "$fullpath" "$block")
-    else
-        if [ $recursive -eq 0 ]; then
-            file_output="$fullpath"
-        else
-            # En modo recursivo ignoramos archivos no-texto.
-            return
-        fi
     fi
 
-    # Separa cada salida con dos saltos de línea.
+    # Acumula la salida separando cada archivo con dos saltos de línea.
     if [ -z "$output" ]; then
         output="$file_output"
     else
@@ -140,7 +139,7 @@ process_file() {
 }
 
 if [ $recursive -eq 1 ]; then
-    # Si se especificaron argumentos, úsalos como puntos de partida.
+    # Si se especificaron argumentos, se usan como puntos de partida; sino, se utiliza el directorio actual.
     if [ "$#" -eq 0 ]; then
         start_points=(.)
     else
