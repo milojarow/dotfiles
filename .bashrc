@@ -1,6 +1,18 @@
 #
 # ~/.bashrc
 #
+#
+# cargar ~/.aliases y ~/.env 
+# Cargar aliases comunes
+if [ -f ~/.aliases ]; then
+    . ~/.aliases
+fi
+
+# Cargar variables de entorno comunes
+if [ -f ~/.env ]; then
+    . ~/.env
+fi
+
 
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
