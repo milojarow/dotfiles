@@ -3,11 +3,13 @@
 #
 # Para archivos de texto:
 #   - Primera línea: la ruta absoluta del archivo.
-#   - Segunda línea: una "code fence" en markdown con un especificador de lenguaje (derivado de la extensión, si existe).
+#   - Segunda línea: una "code fence" en markdown con un especificador de lenguaje
+#     (derivado de la extensión, pero convertido al lenguaje correspondiente, por ejemplo,
+#      "sh" se convierte en "bash" y "py" en "python").
 #   - Luego: el contenido del archivo.
-#   - Finalmente: una línea en blanco extra y los cierres de la "code fence".
+#   - Finalmente: una línea en blanco extra y el cierre de la "code fence".
 #
-# Para archivos no-texto (solo en modo no recursivo):
+# Para archivos no-texto (en modo no recursivo):
 #   - Se copia únicamente la ruta absoluta.
 #
 # Uso:
@@ -15,8 +17,9 @@
 #
 # Opciones:
 #   -h, --help         Muestra este mensaje de ayuda y sale.
-#   -r, --recursive    Procesa recursivamente todos los archivos de texto dentro de los directorios indicados.
-#                      Si no se especifica ningún argumento adicional, usa el directorio actual.
+#   -r, --recursive    Procesa recursivamente todos los archivos de texto dentro de los
+#                      directorios indicados. Si no se especifica ningún argumento adicional,
+#                      usa el directorio actual.
 #
 # Ejemplos:
 #   clipardo ~/.bashrc
@@ -34,7 +37,7 @@ Modos:
    - Procesa los archivos (o paths) indicados.
    - Para archivos de texto:
        * Primera línea: ruta absoluta.
-       * Segunda línea: code fence en markdown con lenguaje (si se detecta por la extensión).
+       * Segunda línea: code fence en markdown con lenguaje (detectado y mapeado a partir de la extensión).
        * Luego el contenido y, al final, una línea en blanco y cierre de code fence.
    - Para archivos no-texto, solo se copia la ruta.
 
@@ -89,14 +92,31 @@ process_file() {
         filename=$(basename "$file")
         if [[ "$filename" == *.* && "$filename" != .* ]]; then
             extension="${filename##*.}"
-            lang="$extension"
+            # Mapeo de extensión a lenguaje.
+            case "$extension" in
+                sh) lang="bash" ;;
+                bash) lang="bash" ;;
+                py) lang="python" ;;
+                js) lang="javascript" ;;
+                rb) lang="ruby" ;;
+                pl) lang="perl" ;;
+                php) lang="php" ;;
+                c) lang="c" ;;
+                cpp|cc|cxx) lang="cpp" ;;
+                java) lang="java" ;;
+                html) lang="html" ;;
+                css) lang="css" ;;
+                rs) lang="rust" ;;
+                *) lang="$extension" ;;
+            esac
         else
             lang=""
         fi
 
         content=$(cat "$file")
         if [ -n "$lang" ]; then
-            block=$(printf '```%s\n%s\n\n```\n' "$lang" "$content")
+            # Agregamos un espacio después de los triple backticks.
+            block=$(printf '``` %s\n%s\n\n```\n' "$lang" "$content")
         else
             block=$(printf '```\n%s\n\n```\n' "$content")
         fi
