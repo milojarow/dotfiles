@@ -16,3 +16,14 @@ fi
 # custom settings by milo
 # vi mode
 bindkey -v
+
+# Cargar aliases comunes
+if [ -f ~/.aliases ]; then
+    source ~/.aliases
+fi
+
+# Cargar variables de entorno comunes
+if [ -f ~/.env ]; then
+    source ~/.env
+fi
+
