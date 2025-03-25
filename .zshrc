@@ -12,3 +12,7 @@ fi
 if [[ -e /usr/share/zsh/manjaro-zsh-prompt ]]; then
   source /usr/share/zsh/manjaro-zsh-prompt
 fi
+
+# custom settings by milo
+# vi mode
+bindkey -v
