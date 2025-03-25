@@ -5,7 +5,8 @@
 #   - Primera línea: la ruta absoluta del archivo.
 #   - Segunda línea: una "code fence" en markdown con un especificador de lenguaje
 #     (derivado de la extensión, pero convertido al lenguaje correspondiente, por ejemplo,
-#      "sh" se convierte en "bash" y "py" en "python").
+#      "sh" se convierte en "bash" y "py" en "python"). Se agrega un espacio después de los
+#      triple backticks.
 #   - Luego: el contenido del archivo.
 #   - Finalmente: una línea en blanco extra y el cierre de la "code fence".
 #
@@ -170,7 +171,7 @@ else
 fi
 
 # Copia la salida final al portapapeles usando wl-copy.
-echo -e "$output" | wl-copy
+printf '%b' "$output" | wl-copy
 
 echo "Contenido copiado al portapapeles."
 
