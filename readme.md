@@ -150,3 +150,42 @@ yay -S nerd-fonts-jetbrains-mono ttf-sourcecodepro-nerd-font-git ttf-nerd-fonts-
 
 ## Notes
 Ensure these fonts are installed to maintain proper rendering in terminals, IDEs, and system interfaces.
+
+
+## Icons
+
+The following icon themes are installed:
+
+### Primary Icon Themes
+- Papirus (various variants)
+  - Papirus
+  - Papirus-Dark
+  - Papirus-Light
+  - Papirus-Maia
+  - Papirus-Adapta-Maia
+  - Papirus-Adapta-Nokto-Maia
+  - Papirus-Dark-Maia
+  - Papirus-Light-Maia
+
+### Additional Icon Sets
+- Adwaita
+- AdwaitaLegacy
+- Manjaro
+- Breeze Cursor Themes
+  - xcursor-breeze
+  - xcursor-breeze-snow
+
+### Installation Commands
+
+#### Pacman (Official Repositories)
+```bash
+sudo pacman -S papirus-icon-theme breeze-icons adwaita-icon-theme xcursor-breeze
+```
+
+#### Yay (AUR Packages)
+```bash
+yay -S papirus-icon-theme-git papirus-folders-git
+```
+
+## Notes
+These icon themes provide comprehensive visual elements for applications, desktop environments, and system interfaces. Papirus is recommended for a modern, consistent look across applications.
