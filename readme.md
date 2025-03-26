@@ -112,3 +112,41 @@ yay -S cliphist wl-clip-persist nwg-wrapper pacseek topgrade pamac-manager noise
 
 ## Notes
 Ensure all dependencies are installed to maintain full functionality of the Sway environment, custom scripts, and system integrations.
+
+# Sway Desktop Environment Configuration
+## Fonts
+
+The following fonts are essential for system and script functionality:
+
+### Monospace and Programming Fonts
+- JetBrains Mono Nerd Font (multiple variants)
+- JetBrains Mono NL Nerd Font
+- Source Code Pro
+- Fira Code
+
+### System Fonts
+- Roboto (various weights)
+- Roboto Condensed
+- Cantarell
+- Noto Color Emoji
+
+### Additional Fonts
+- WenQuanYi Micro Hei (Chinese font)
+- FreeSans
+- FreeMono
+- FreeSerif
+
+### Installation Commands
+
+#### Pacman (Official Repositories)
+```bash
+sudo pacman -S ttf-jetbrains-mono-nerd ttf-sourcecodepro-nerd ttf-fira-code noto-fonts noto-fonts-emoji ttf-roboto ttf-roboto-mono cantarell-fonts wqy-microhei
+```
+
+#### Yay (AUR Packages)
+```bash
+yay -S nerd-fonts-jetbrains-mono ttf-sourcecodepro-nerd-font-git ttf-nerd-fonts-symbols ttf-free
+```
+
+## Notes
+Ensure these fonts are installed to maintain proper rendering in terminals, IDEs, and system interfaces.
