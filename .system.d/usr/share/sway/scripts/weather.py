@@ -45,45 +45,41 @@ try:
             temperature = current_value[0].upper()
             if temperature not in ("C", "F"):
                 msg = "temperature unit is neither (C)elsius, nor (F)ahrenheit"
-                raise RuntimeError(
-                    msg,
-                    temperature,
-                )
-
+                raise RuntimeError(msg, temperature)
         elif current_argument in ("-d", "--distance"):
             distance = current_value.lower()
             if distance not in ("km", "miles"):
                 msg = "distance unit is neither km, nor miles", distance
                 raise RuntimeError(msg)
-
         else:
             city = urllib.parse.quote(current_value)
-
 except getopt.error as err:
     print(str(err))
     sys.exit(1)
 
 if temperature == "F":
     temperature_unit = "fahrenheit"
-
-if temperature == "C":
+elif temperature == "C":
     temperature_unit = "celsius"
 
 if distance == "miles":
     wind_speed_unit = "mph"
-
-if distance == "km":
+elif distance == "km":
     wind_speed_unit = "kmh"
 
 try:
-    headers = {"Accept-Language": f"{lng.replace("_", "-")},{lng.split("_")[0]};q=0.5"}
-    weather = requests.get(f"https://manjaro-sway.download/weather/{city}?temperature_unit={temperature_unit}&wind_speed_unit={wind_speed_unit}", timeout=10, headers=headers).json()
-except (
-    requests.exceptions.HTTPError,
-    requests.exceptions.ConnectionError,
-    requests.exceptions.Timeout,
-) as err:
-    print(str(err))
-    sys.exit(1)
+    headers = {"Accept-Language": f"{lng.replace('_', '-')},{lng.split('_')[0]};q=0.5"}
+    weather = requests.get(
+        f"https://manjaro-sway.download/weather/{city}?temperature_unit={temperature_unit}&wind_speed_unit={wind_speed_unit}",
+        timeout=10,
+        headers=headers
+    ).json()
+except (requests.exceptions.HTTPError,
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout) as err:
+    # En caso de error, imprime un JSON válido y termina con código 0.
+    print(json.dumps({"error": "No data", "temperature": "N/A"}))
+    sys.exit(0)
 
 print(json.dumps(weather))
+
