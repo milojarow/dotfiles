@@ -2,7 +2,7 @@
 # clipardo: Copia el contenido de archivos al portapapeles en formato markdown.
 #
 # Para archivos de texto:
-#   - Primera línea: la ruta absoluta del archivo.
+#   - Primera línea: la ruta (simulada si es symlink) del archivo.
 #   - Segunda línea: una "code fence" en markdown con un especificador de lenguaje
 #     (derivado de la extensión, pero convertido al lenguaje correspondiente, por ejemplo,
 #      "sh" se convierte en "bash" y "py" en "python"). Se agrega un espacio después de los
@@ -11,7 +11,7 @@
 #   - Finalmente: una línea en blanco extra y el cierre de la "code fence".
 #
 # Para archivos no-texto (en modo no recursivo):
-#   - Se copia únicamente la ruta absoluta.
+#   - Se copia únicamente la ruta.
 #
 # Uso:
 #   clipardo [OPCIÓN]... [ARCHIVO o DIRECTORIO]...
@@ -37,7 +37,7 @@ Modos:
 1. No recursivo:
    - Procesa los archivos (o paths) indicados.
    - Para archivos de texto:
-       * Primera línea: ruta absoluta.
+       * Primera línea: ruta (simulada si es symlink) del archivo.
        * Segunda línea: code fence en markdown con lenguaje (detectado y mapeado a partir de la extensión).
        * Luego el contenido y, al final, una línea en blanco y cierre de code fence.
    - Para archivos no-texto, solo se copia la ruta.
@@ -81,7 +81,13 @@ process_file() {
         return
     fi
 
-    fullpath=$(realpath "$file")
+    # Si el archivo es un symlink, usamos la ruta simulada (tal como se ve), sino la ruta real.
+    if [ -L "$file" ]; then
+        fullpath="$file"
+    else
+        fullpath=$(realpath "$file")
+    fi
+
     mime=$(file --mime-type -b "$file")
 
     if [[ $mime == image/* || $mime == video/* || $mime == audio/* ]]; then
