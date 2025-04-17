@@ -32,3 +32,6 @@ include /etc/sway/config.d/*
 
 # user config
 include $HOME/.config/sway/config.d/*.conf
+
+# config added by milo
+exec waybar
