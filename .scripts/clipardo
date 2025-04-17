@@ -1,81 +1,155 @@
-#!/bin/bash
-# clipardo: Copia el contenido de archivos al portapapeles en formato markdown.
+#!/usr/bin/env bash
+# clipardo: Copy file contents to the Wayland clipboard in Markdown format,
+# respecting .gitignore patterns if enabled.
 #
-# Para archivos de texto:
-#   - Primera línea: la ruta (simulada, sin resolver symlinks) del archivo.
-#   - Segunda línea: una "code fence" en markdown con un especificador de lenguaje
-#     (derivado de la extensión, pero convertido al lenguaje correspondiente, por ejemplo,
-#      "sh" se convierte en "bash" y "py" en "python"). Se agrega un espacio después de los
-#      triple backticks.
-#   - Luego: el contenido del archivo.
-#   - Finalmente: una línea en blanco extra y el cierre de la "code fence".
-#
-# Para archivos no-texto (en modo no recursivo):
-#   - Se copia únicamente la ruta.
-#
-# Uso:
-#   clipardo [OPCIÓN]... [ARCHIVO o DIRECTORIO]...
-#
-# Opciones:
-#   -h, --help         Muestra este mensaje de ayuda y sale.
-#   -r, --recursive    Procesa recursivamente todos los archivos no-media dentro de los
-#                      directorios indicados. Si no se especifica ningún argumento adicional,
-#                      usa el directorio actual.
-#
-# Ejemplos:
-#   clipardo ~/.bashrc
-#   clipardo file1 /path/to/file2 ../file3
-#   clipardo -r .config/waybar/
-#   clipardo .config/waybar/*
- 
+# Dependencies: bash, coreutils (cat, basename), file, git, wl-clipboard (wl-copy)
+# Intended for Wayland environments.
+
+set -euo pipefail
+
+# Configuration\CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/clipardo"
+STATE_FILE="$CONFIG_DIR/state"   # contains "on" or "off"
+
+# Ensure config directory exists
+mkdir -p "$CONFIG_DIR"
+
+# Read persistent toggle state (default: on)
+if [[ -f "$STATE_FILE" ]]; then
+    toggle_state=$(<"$STATE_FILE")
+else
+    toggle_state="on"
+fi
+
 show_help() {
     cat << EOF
-Uso: clipardo [OPCIÓN]... [ARCHIVO o DIRECTORIO]...
-Copia el contenido de archivos al portapapeles en formato markdown.
+Usage: clipardo [OPTIONS] [FILE or DIRECTORY]...
+Copy file contents to the clipboard in Markdown format.
 
-Modos:
-1. No recursivo:
-   - Procesa los archivos (o paths) indicados.
-   - Para archivos de texto:
-       * Primera línea: ruta (simulada, sin resolver symlinks) del archivo.
-       * Segunda línea: code fence en markdown con lenguaje (detectado y mapeado a partir de la extensión).
-       * Luego el contenido y, al final, una línea en blanco y cierre de code fence.
-   - Para archivos no-texto, solo se copia la ruta.
-   
-2. Recursivo (-r, --recursive):
-   - Si se pasan argumentos, cada argumento puede ser:
-       * Un directorio: se buscarán recursivamente todos los archivos no-media en él.
-       * Un archivo: se procesa directamente.
-   - Si no se pasan argumentos después de la opción recursiva, se usa el directorio actual.
+This script is intended for Wayland environments and depends on:
+  - bash
+  - file (for mime detection)
+  - git (for .gitignore parsing)
+  - wl-clipboard (provides wl-copy)
 
-Opciones:
-  -h, --help         Muestra este mensaje de ayuda y sale.
-  -r, --recursive    Procesa recursivamente los archivos.
+Options:
+  -h, --help          Show this help message and exit.
+  -r, --recursive     Process directories recursively.
+  -i, --ignore        Override .gitignore for this run (include all files).
+  -v, --verbose       Show progress [current/total].
+  --toggle on|off     Enable or disable .gitignore support persistently.
 
-Ejemplos:
-  clipardo ~/.bashrc
-  clipardo file1 /path/to/file2 ../file3
-  clipardo -r .config/waybar/
-  clipardo .config/waybar/*
+If run without options and without arguments, this help is shown.
+
 EOF
 }
 
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
-    show_help
-    exit 0
+# Handle persistent toggle
+if [[ "${1:-}" == "--toggle" ]]; then
+    case "${2:-}" in
+        on)
+            echo "on" > "$STATE_FILE"
+            echo "✅ .gitignore support ENABLED persistently."
+            exit 0
+            ;;
+        off)
+            echo "off" > "$STATE_FILE"
+            echo "⚠️ .gitignore support DISABLED persistently."
+            exit 0
+            ;;
+        *)
+            echo "Usage: clipardo --toggle [on|off]"
+            exit 1
+            ;;
+    esac
 fi
 
+# Parse flags
 recursive=0
-if [[ "$1" == "-r" || "$1" == "--recursive" ]]; then
-    recursive=1
-    shift
+ignore_flag=0
+verbose=0
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help; exit 0
+            ;;
+        -r|--recursive)
+            recursive=1; shift
+            ;;
+        -i|--ignore)
+            ignore_flag=1; shift
+            ;;
+        -v|--verbose)
+            verbose=1; shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Show help if no args and not recursive
+if [[ $recursive -eq 0 && $# -eq 0 ]]; then
+    show_help; exit 0
 fi
 
-output=""
+# Determine effective .gitignore state for this run
+if [[ $ignore_flag -eq 1 ]]; then
+    effective_state="off"
+else
+    effective_state="$toggle_state"
+fi
 
-# Función para obtener una ruta absoluta sin resolver symlinks.
-# Si la ruta ya es absoluta (comienza con /) se usa tal cual,
-# de lo contrario se antepone $PWD.
+# Prepare inputs
+if [[ $recursive -eq 1 ]]; then
+    if [[ $# -eq 0 ]]; then
+        inputs=(.)
+    else
+        inputs=("$@")
+    fi
+else
+    inputs=("$@")
+fi
+
+# Gather list of candidate files
+declare -a file_list
+for point in "${inputs[@]}"; do
+    if [[ -d "$point" ]]; then
+        while IFS= read -r -d $'\0' f; do
+            file_list+=("$f")
+        done < <(find -P "$point" -type f -print0)
+    else
+        file_list+=("$point")
+    fi
+done
+
+# Filter according to .gitignore state
+declare -a final_list
+for f in "${file_list[@]}"; do
+    if [[ "$effective_state" == "on" && -f "$PWD/.gitignore" ]]; then
+        # Skip the .gitignore file itself
+        if [[ "$(basename "$f")" == ".gitignore" ]]; then
+            continue
+        fi
+        # Skip ignored files
+        if git -C "$PWD" check-ignore -q -- "$f"; then
+            continue
+        fi
+    fi
+    final_list+=("$f")
+done
+
+# Warn if too many files
+total=${#final_list[@]}
+threshold=999
+if [[ $total -gt $threshold ]]; then
+    read -r -p "You are about to copy more than $total files, do you want to continue? [y/N] " ans
+    if [[ ! "$ans" =~ ^[Yy]$ ]]; then
+        echo "Aborted."
+        exit 1
+    fi
+fi
+
+# Utility: get absolute path without resolving symlinks
 get_abs_path() {
     local path="$1"
     if [[ "$path" = /* ]]; then
@@ -85,94 +159,73 @@ get_abs_path() {
     fi
 }
 
+# Process a single file into the output buffer
+output=""
 process_file() {
     local file="$1"
-    if [ ! -e "$file" ]; then
-        echo "Archivo no encontrado: $file" >&2
+    if [[ ! -e "$file" ]]; then
+        echo "Warning: File not found: $file" >&2
         return
     fi
 
-    # Usamos la ruta tal como se pasó (sin resolver symlinks) para preservar la ruta simulada.
+    local fullpath mime
     fullpath=$(get_abs_path "$file")
-
     mime=$(file --mime-type -b "$file")
 
     if [[ $mime == image/* || $mime == video/* || $mime == audio/* ]]; then
-        if [ $recursive -eq 0 ]; then
-            file_output="$fullpath"
-        else
-            return
-        fi
+        file_output="$fullpath"
     else
+        local filename extension lang content block
         filename=$(basename "$file")
         if [[ "$filename" == *.* && "$filename" != .* ]]; then
             extension="${filename##*.}"
             case "$extension" in
-                sh) lang="bash" ;;
-                bash) lang="bash" ;;
-                py) lang="python" ;;
-                js) lang="javascript" ;;
-                rb) lang="ruby" ;;
-                pl) lang="perl" ;;
-                php) lang="php" ;;
-                c) lang="c" ;;
-                cpp|cc|cxx) lang="cpp" ;;
-                java) lang="java" ;;
-                html) lang="html" ;;
-                css) lang="css" ;;
-                rs) lang="rust" ;;
+                sh|bash) lang="bash" ;;  py) lang="python" ;; js) lang="javascript" ;;
+                rb) lang="ruby" ;; pl) lang="perl" ;; php) lang="php" ;;
+                c) lang="c" ;; cpp|cc|cxx) lang="cpp" ;; java) lang="java" ;;
+                html) lang="html" ;; css) lang="css" ;; rs) lang="rust" ;;
                 *) lang="" ;;
             esac
         else
             lang=""
         fi
 
-        content=$(cat "$file")
-        if [ -n "$lang" ]; then
-            block=$(printf '``` %s\n%s\n\n```\n' "$lang" "$content")
+        content=$(<"$file")
+        if [[ -n "$lang" ]]; then
+            block=$(printf '``` %s
+%s
+
+```
+' "$lang" "$content")
         else
-            block=$(printf '```\n%s\n\n```\n' "$content")
+            block=$(printf '```
+%s
+
+```
+' "$content")
         fi
-        file_output=$(printf '%s\n%s' "$fullpath" "$block")
+        file_output=$(printf '%s
+%s' "$fullpath" "$block")
     fi
 
-    if [ -z "$output" ]; then
+    if [[ -z "$output" ]]; then
         output="$file_output"
     else
-        output="${output}"$'\n\n'"$file_output"
+        output+=$'\n\n'$file_output
     fi
 }
 
-if [ $recursive -eq 1 ]; then
-    if [ "$#" -eq 0 ]; then
-        start_points=(.)
-    else
-        start_points=("$@")
+# Process all files with optional verbose output
+for idx in "${!final_list[@]}"; do
+    file="${final_list[idx]}"
+    num=$((idx+1))
+    if [[ $verbose -eq 1 ]]; then
+        echo "[$num/$total] Processing $file"
     fi
-
-    for point in "${start_points[@]}"; do
-        if [ -d "$point" ]; then
-            # Usamos find con -P para NO seguir symlinks.
-            while IFS= read -r -d $'\0' file; do
-                process_file "$file"
-            done < <(find -P "$point" -type f -print0)
-        elif [ -f "$point" ]; then
-            process_file "$point"
-        else
-            echo "Ruta no válida: $point" >&2
-        fi
+    process_file "$file"
     done
-else
-    if [ "$#" -eq 0 ]; then
-        echo "No se especificó ningún archivo o directorio. Usa -h para ayuda."
-        exit 1
-    fi
 
-    for file in "$@"; do
-        process_file "$file"
-    done
-fi
-
+# Send to Wayland clipboard
 printf '%s' "$output" | wl-copy
-echo "Contenido copiado al portapapeles."
+echo "✅ Content copied to clipboard."
 
