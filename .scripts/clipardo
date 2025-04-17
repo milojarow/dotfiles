@@ -11,7 +11,8 @@ set -euo pipefail
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/clipardo"
 STATE_FILE="$CONFIG_DIR/state"   # contains "on" or "off"
 
-# Ensure config directory exists\mkdir -p "$CONFIG_DIR"
+# Ensure config directory exists
+mkdir -p "$CONFIG_DIR"
 
 # Read persistent toggle state (default: on)
 if [[ -f "$STATE_FILE" ]]; then
@@ -130,15 +131,19 @@ else
     inside_git_repo=0
 fi
 
-# Filter according to .gitignore state
+# Filter according to .gitignore state and skip Git internals
 declare -a final_list
 for f in "${file_list[@]}"; do
+    # Skip the .git directory entirely
+    if [[ "$f" == "$direct_root/.git"* || "$f" == ./.git* ]]; then
+        continue
+    fi
     if [[ "$effective_state" == "on" && $inside_git_repo -eq 1 && -f "$direct_root/.gitignore" ]]; then
         # Skip the .gitignore file itself
         if [[ "$(basename "$f")" == ".gitignore" ]]; then
             continue
         fi
-        # Skip ignored files
+        # Skip ignored files/directories
         if git -C "$direct_root" check-ignore -q -- "$f"; then
             continue
         fi
