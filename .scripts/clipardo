@@ -7,7 +7,8 @@
 
 set -euo pipefail
 
-# Configuration\CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/clipardo"
+# Configuration
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/clipardo"
 STATE_FILE="$CONFIG_DIR/state"   # contains "on" or "off"
 
 # Ensure config directory exists
@@ -180,11 +181,19 @@ process_file() {
         if [[ "$filename" == *.* && "$filename" != .* ]]; then
             extension="${filename##*.}"
             case "$extension" in
-                sh|bash) lang="bash" ;;  py) lang="python" ;; js) lang="javascript" ;;
-                rb) lang="ruby" ;; pl) lang="perl" ;; php) lang="php" ;;
-                c) lang="c" ;; cpp|cc|cxx) lang="cpp" ;; java) lang="java" ;;
-                html) lang="html" ;; css) lang="css" ;; rs) lang="rust" ;;
-                *) lang="" ;;
+                sh|bash) lang="bash" ;;
+                py)      lang="python" ;;
+                js)      lang="javascript" ;;
+                rb)      lang="ruby" ;;
+                pl)      lang="perl" ;;
+                php)     lang="php" ;;
+                c)       lang="c" ;;
+                cpp|cc|cxx) lang="cpp" ;;
+                java)    lang="java" ;;
+                html)    lang="html" ;;
+                css)     lang="css" ;;
+                rs)      lang="rust" ;;
+                *)       lang="" ;;
             esac
         else
             lang=""
@@ -211,7 +220,7 @@ process_file() {
     if [[ -z "$output" ]]; then
         output="$file_output"
     else
-        output+=$'\n\n'$file_output
+        output+=$'\n\n'"$file_output"
     fi
 }
 
@@ -223,7 +232,7 @@ for idx in "${!final_list[@]}"; do
         echo "[$num/$total] Processing $file"
     fi
     process_file "$file"
-    done
+done
 
 # Send to Wayland clipboard
 printf '%s' "$output" | wl-copy
