@@ -1,155 +1,226 @@
 #!/usr/bin/env bash
-# clipardo: Copy file contents to the Wayland clipboard in Markdown format,
-# respecting .gitignore patterns if enabled, skipping hidden by default.
 #
-# Dependencies: bash, coreutils (cat, basename), file, git, wl-clipboard (wl-copy)
-# Intended for Wayland environments.
+# clipardo – copy file(s) into clipboard wrapped in fenced code blocks
+# Author: Rolando Ahuja Martínez
+# License: MIT
+#
 
 set -euo pipefail
+shopt -s nullglob
 
-# Configuration
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/clipardo"
-STATE_FILE="$CONFIG_DIR/state"
-
-mkdir -p "$CONFIG_DIR"
-
-if [[ -f "$STATE_FILE" ]]; then
-    toggle_state=$(<"$STATE_FILE")
-else
-    toggle_state="on"
-fi
+MAX_FILES=100
 
 show_help() {
-    cat << EOF
-Usage: clipardo [OPTIONS] [FILE or DIRECTORY]...
-Copy file contents to the clipboard in Markdown format.
-
-Dependencies:
-  bash
-  file
-  git
-  wl-clipboard
+  cat <<EOF
+Usage: clipardo [OPTIONS] [FILE|DIR...]
+Copy file(s) into the clipboard inside Markdown code fences.
 
 Options:
-  -h, --help          Show this help message and exit.
-  -r, --recursive     Process directories recursively.
-  -i, --ignore        Override .gitignore for this run.
-  -v, --verbose       Show progress [current/total].
-  -a, --all           Include hidden files/dirs.
-  --toggle on|off     Enable/disable .gitignore persistently.
+  -h, --help        Show this help message and exit
+  -r, --recursive   Recurse into directories
+  -a, --all         Include hidden files
 EOF
 }
 
-# Toggle handling
-if [[ "${1:-}" == "--toggle" ]]; then
-    case "${2:-}" in
-        on) echo on > "$STATE_FILE"; echo "✅ .gitignore ENABLED."; exit 0 ;;  
-        off) echo off > "$STATE_FILE"; echo "⚠️ .gitignore DISABLED."; exit 0 ;;  
-        *) echo "Usage: clipardo --toggle [on|off]"; exit 1 ;;  
-    esac
+# Parse flags
+RECURSIVE=false
+INCLUDE_HIDDEN=false
+while getopts ":hra-:" opt; do
+  case "$opt" in
+    h) show_help; exit 0 ;;
+    r) RECURSIVE=true ;;
+    a) INCLUDE_HIDDEN=true ;;
+    -)
+      case "${OPTARG}" in
+        help) show_help; exit 0 ;;
+        recursive) RECURSIVE=true ;;
+        all) INCLUDE_HIDDEN=true ;;
+        *) echo "Unknown option --${OPTARG}" >&2; exit 1 ;;
+      esac ;;
+    \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
+  esac
+done
+shift $((OPTIND-1))
+
+# Inputs
+inputs=("$@")
+if [ ${#inputs[@]} -eq 0 ] && [ "$RECURSIVE" = true ]; then
+  inputs=(".")
+elif [ ${#inputs[@]} -eq 0 ]; then
+  echo "Error: No files specified." >&2
+  show_help
+  exit 1
 fi
 
-# Flags
-recursive=0; ignore_flag=0; verbose=0; all_flag=0
-set_flag(){
-    case "$1" in
-        r) recursive=1 ;; i) ignore_flag=1 ;; v) verbose=1 ;; a) all_flag=1 ;; h) show_help; exit 0 ;;
-        *) echo "Unknown -$1"; show_help; exit 1 ;;
-    esac
-}
-
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -?*) opts="${1#-}"; for ((i=0;i<${#opts};i++)); do set_flag "${opts:i:1}"; done; shift ;;  
-        --recursive) recursive=1; shift ;;  
-        --ignore) ignore_flag=1; shift ;;  
-        --verbose) verbose=1; shift ;;  
-        --all) all_flag=1; shift ;;  
-        --help) show_help; exit 0 ;;  
-        --toggle) break ;;  
-        *) break ;;  
-    esac
-done
-
-if [[ $recursive -eq 0 && $# -eq 0 ]]; then show_help; exit 0; fi
-
-effective_state=$([[ $ignore_flag -eq 1 ]] && echo off || echo "$toggle_state")
-inputs=( )
-if [[ $recursive -eq 1 ]]; then inputs=( "${@:-.}" ); else inputs=( "$@" ); fi
-
-file_list=()
-for p in "${inputs[@]}"; do
-    if [[ -d "$p" ]]; then
-        while IFS= read -r -d $'\0' f; do file_list+=("$f"); done < <(find -P "$p" -type f -print0)
-    else file_list+=("$p"); fi
-done
-
-# Git repo check
-direct_root="$PWD"
-if git -C "$direct_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then inside_git=1; else inside_git=0; fi
-
-# Filter
-final_list=()
-for f in "${file_list[@]}"; do
-    [[ "$f" == "$direct_root/.git"* ]] && continue
-    rel="${f#$direct_root/}"
-    if [[ $all_flag -eq 0 && ( "$rel" == .* || "$rel" == */.* ) ]]; then continue; fi
-    if [[ "$effective_state" == "on" && $inside_git -eq 1 && -f "$direct_root/.gitignore" ]]; then
-        [[ "$(basename "$f")" == ".gitignore" ]] && continue
-        rel2="${rel#./}"
-        git -C "$direct_root" check-ignore -q -- "$rel2" && continue
-    fi
-    final_list+=("$f")
-done
-
-total=${#final_list[@]}
-if (( total > 999 )); then
-    read -rp "You are about to copy $total files, proceed? [y/N] " ans
-    [[ ! "$ans" =~ ^[Yy]$ ]] && echo "Aborted." && exit 1
-fi
-
-# Initialize output buffer
-output=""
-
-# Helpers
-get_abs(){ [[ "$1" = /* ]] && echo "$1" || echo "$PWD/$1"; }
-
-process_file(){
-    local file="$1"
-    [[ ! -e "$file" ]] && echo "Warn: $file not found" >&2 && return
-    local full mime name ext lang content block
-    full=$(get_abs "$file"); mime=$(file --mime-type -b "$file")
-    if [[ $mime == image/* || $mime == video/* || $mime == audio/* ]]; then
-        block="$full"
-    else
-        name=$(basename "$file"); ext="${name##*.}"; lang=""
-        case "$ext" in sh|bash) lang=bash;; py) lang=python;; js) lang=javascript;; rs) lang=rust;; cpp|cc|cxx) lang=cpp;; html) lang=html;; css) lang=css;; php) lang=php;; rb) lang=ruby;; pl) lang=perl;; java) lang=java;; esac
-        content=$(<"$file")
-        if [[ -n "$lang" ]]; then
-            block="\`\`\` $lang
-$content
-
-\`\`\`"
-        else
-            block="\`\`\`
-$content
-
-\`\`\`"
+# 1) Recopilar archivos con ls/ls -R y flags -a/-r
+FILES=()
+for path in "${inputs[@]}"; do
+  if [ -d "$path" ]; then
+    if [ "$RECURSIVE" = true ]; then
+      ls_opts=(-1pR)
+      $INCLUDE_HIDDEN && ls_opts+=(-a)
+      cwd="$path"
+      while IFS= read -r line; do
+        [[ "$line" =~ :$ ]] && { cwd="${line%:}"; continue; }
+        [ -z "$line" ] && continue
+        [[ "$line" == */ ]] && continue
+        base="$line"
+        if [ "$INCLUDE_HIDDEN" = false ] && [[ "$base" == .* ]]; then
+          continue
         fi
-        block="$full
-$block"
+        FILES+=("$cwd/$line")
+      done < <(ls "${ls_opts[@]}" "$path")
+    else
+      continue
     fi
-    [[ -z "$output" ]] && output="$block" || output+=$'\n\n'$block
-}
 
-# Loop through files
-for idx in "${!final_list[@]}"; do
-    ((num=idx+1))
-    [[ $verbose -eq 1 ]] && echo "[$num/$total] Processing ${final_list[idx]}"
-    process_file "${final_list[idx]}"
+  elif [ -f "$path" ]; then
+    FILES+=("$path")
+  else
+    echo "Warning: '$path' not found or skipped." >&2
+  fi
 done
 
-# Copy to clipboard
-printf '%s' "$output" | wl-copy
-echo "✅ Content copied"
+# 2) En modo NO recursivo + -a, añadir dot‑files de primer nivel
+if [ "$INCLUDE_HIDDEN" = true ] && [ "$RECURSIVE" = false ]; then
+  declare -A dirs=()
+  for path in "${inputs[@]}"; do
+    d=$(dirname "$path")
+    dirs["$d"]=1
+  done
+  for d in "${!dirs[@]}"; do
+    for f in "$d"/.[!.]*; do
+      [ -f "$f" ] || continue
+      FILES+=("$f")
+    done
+  done
+fi
+
+# ─── Git support: ignorar patrones de .gitignore ───────────────────────────────
+
+inside_git=false
+if git rev-parse --is-inside-work-tree &>/dev/null; then
+  inside_git=true
+  repo_root=$(git rev-parse --show-toplevel)
+  # paths ignorados por Git (relativos al repo root)
+  mapfile -t GIT_IGNORED < <(git -C "$repo_root" ls-files --others --ignored --exclude-standard)
+elif [ -f .gitignore ]; then
+  # sin repo, pero existe .gitignore en PWD
+  mapfile -t GITIGNORE_PATTERNS < <(grep -Ev '^\s*#|^\s*$' .gitignore)
+fi
+
+FILTERED=()
+for f in "${FILES[@]}"; do
+  skip=false
+
+  if [ "$inside_git" = true ]; then
+    # ruta relativa al repo
+    rel="${f#"$repo_root"/}"
+    for pat in "${GIT_IGNORED[@]}"; do
+      if [[ "$rel" == "$pat" || "$rel" == "$pat/"* ]]; then
+        skip=true; break
+      fi
+    done
+
+  elif [ -n "${GITIGNORE_PATTERNS+x}" ]; then
+    # ruta relativa al cwd
+    rel="${f#"$PWD"/}"
+    for pat in "${GITIGNORE_PATTERNS[@]}"; do
+      case "$rel" in
+        $pat|$pat/*) skip=true; break ;;
+      esac
+    done
+  fi
+
+  $skip || FILTERED+=("$f")
+done
+
+FILES=("${FILTERED[@]}")
+unset FILTERED
+
+# ─── Filtrar sólo archivos de texto ────────────────────────────────────────────
+
+TEXTFILES=()
+for f in "${FILES[@]}"; do
+  if [ -s "$f" ] && command -v file &>/dev/null; then
+    mime=$(file --mime-type -b "$f")
+    if printf '%s' "$mime" | grep -Eq '^(text/|application/(json|xml|x-shellscript))'; then
+      TEXTFILES+=("$f")
+    fi
+  elif [ -s "$f" ]; then
+    # fallback por extensión
+    case "${f##*.}" in
+      png|jpg|jpeg|gif|bmp|mp4|mp3|wav|ogg|flac|mov|avi|mkv|pdf|svg) ;;
+      *) TEXTFILES+=("$f") ;;
+    esac
+  fi
+done
+FILES=("${TEXTFILES[@]}")
+
+# Abort si no hay nada
+total=${#FILES[@]}
+if [ "$total" -eq 0 ]; then
+  echo "No files to copy." >&2
+  exit 1
+fi
+
+# Failsafe
+if [ "$total" -gt "$MAX_FILES" ]; then
+  read -rp "You are about to copy $total files, continue? [y/N] " ans
+  case "$ans" in [Yy]) ;; *) echo "Aborted."; exit 1 ;; esac
+fi
+
+# Elegir comando de clipboard
+if command -v wl-copy &>/dev/null; then
+  COPY_CMD="wl-copy"
+elif command -v xclip &>/dev/null; then
+  COPY_CMD="xclip -selection clipboard"
+elif command -v xsel &>/dev/null; then
+  COPY_CMD="xsel --clipboard --input"
+else
+  echo "Error: install wl-clipboard, xclip or xsel." >&2
+  exit 1
+fi
+
+# ─── Formatear y copiar con progreso ────────────────────────────────────────────
+
+tmpfile=$(mktemp)
+trap 'rm -f "$tmpfile"' EXIT
+
+for idx in "${!FILES[@]}"; do
+  file="${FILES[idx]}"
+  num=$((idx+1))
+  printf "Copied [%d/%d]\r" "$num" "$total"
+
+  # detectar lenguaje por extensión
+  ext="${file##*.}"
+  case "$ext" in
+    sh|bash)        lang=bash ;;
+    py)             lang=python ;;
+    js)             lang=javascript ;;
+    html|htm)       lang=html ;;
+    css)            lang=css ;;
+    json)           lang=json ;;
+    md)             lang=markdown ;;
+    c)              lang=c ;;
+    cpp|cc|cxx|hpp) lang=cpp ;;
+    go)             lang=go ;;
+    rs)             lang=rust ;;
+    java)           lang=java ;;
+    xml)            lang=xml ;;
+    toml)           lang=toml ;;
+    yml|yaml)       lang=yaml ;;
+    *)              lang="" ;;
+  esac
+
+  {
+    printf "%s\n" "$file"
+    printf '``` %s\n' "$lang"
+    cat "$file"
+    printf '\n```\n'
+  } >>"$tmpfile"
+done
+
+echo
+cat "$tmpfile" | eval "$COPY_CMD"
 
