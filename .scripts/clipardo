@@ -42,7 +42,7 @@ while getopts ":hra-:" opt; do
 done
 shift $((OPTIND-1))
 
-# Input paths
+# Inputs
 inputs=("$@")
 if [ ${#inputs[@]} -eq 0 ] && [ "$RECURSIVE" = true ]; then
   inputs=(".")
@@ -52,7 +52,7 @@ elif [ ${#inputs[@]} -eq 0 ]; then
   exit 1
 fi
 
-# 1) Build list via ls / ls -R + flags
+# 1) Build initial list via ls / ls -R + flags
 FILES=()
 for path in "${inputs[@]}"; do
   if [ -d "$path" ]; then
@@ -71,6 +71,7 @@ for path in "${inputs[@]}"; do
         FILES+=("$cwd/$line")
       done < <(ls "${ls_opts[@]}" "$path")
     else
+      # Non-recursive: skip directories
       continue
     fi
 
@@ -81,7 +82,7 @@ for path in "${inputs[@]}"; do
   fi
 done
 
-# 2) In non‑recursive + -a, add top‑level dotfiles
+# 2) In non-recursive + -a, add top-level dotfiles
 if [ "$INCLUDE_HIDDEN" = true ] && [ "$RECURSIVE" = false ]; then
   declare -A dirs=()
   for path in "${inputs[@]}"; do dirs["$(dirname "$path")"]=1; done
@@ -92,67 +93,31 @@ if [ "$INCLUDE_HIDDEN" = true ] && [ "$RECURSIVE" = false ]; then
   done
 fi
 
-# ─── Git support: ignore only .gitignore patterns, not all untracked ──────────
-inside_git=false
-if git rev-parse --is-inside-work-tree &>/dev/null; then
-  inside_git=true
-  repo_root=$(git rev-parse --show-toplevel)
-  # ← solo ignored, sin --others
-  mapfile -t GIT_IGNORED < <(
-    git -C "$repo_root" ls-files --ignored --exclude-standard
-  )
-elif [ -f .gitignore ]; then
-  mapfile -t GITIGNORE_PATTERNS < <(
-    grep -Ev '^\s*#|^\s*$' .gitignore
-  )
-fi
-
+# 3) Filter only text-like files (incl. empty)
 FILTERED=()
 for f in "${FILES[@]}"; do
-  skip=false
-
-  if [ "$inside_git" = true ]; then
-    rel="${f#"$repo_root"/}"
-    for pat in "${GIT_IGNORED[@]}"; do
-      if [[ "$rel" == "$pat" || "$rel" == "$pat/"* ]]; then
-        skip=true; break
-      fi
-    done
-
-  elif [ -n "${GITIGNORE_PATTERNS+x}" ]; then
-    rel="${f#"$PWD"/}"
-    for pat in "${GITIGNORE_PATTERNS[@]}"; do
-      case "$rel" in $pat|$pat/*) skip=true; break ;; esac
-    done
-  fi
-
-  $skip || FILTERED+=("$f")
-done
-FILES=("${FILTERED[@]}")
-unset FILTERED
-
-# ─── Filter only text files ──────────────────────────────────────────────────
-TEXTFILES=()
-for f in "${FILES[@]}"; do
-  if [ -s "$f" ] && command -v file &>/dev/null; then
+  if command -v file &>/dev/null; then
     mime=$(file --mime-type -b "$f")
     if printf '%s' "$mime" | grep -Eq '^(text/|application/(json|xml|x-shellscript))'; then
-      TEXTFILES+=("$f")
+      FILTERED+=("$f")
     fi
-  elif [ -s "$f" ]; then
+  else
     case "${f##*.}" in
       png|jpg|jpeg|gif|bmp|mp4|mp3|wav|ogg|flac|mov|avi|mkv|pdf|svg) ;;
-      *) TEXTFILES+=("$f") ;;
+      *) FILTERED+=("$f") ;;
     esac
   fi
 done
-FILES=("${TEXTFILES[@]}")
+FILES=("${FILTERED[@]}")
 
 # Abort if empty
 total=${#FILES[@]}
-[ "$total" -gt 0 ] || { echo "No files to copy." >&2; exit 1; }
+if [ "$total" -eq 0 ]; then
+  echo "No files to copy." >&2
+  exit 1
+fi
 
-# Failsafe
+# Failsafe prompt
 if [ "$total" -gt "$MAX_FILES" ]; then
   read -rp "You are about to copy $total files, continue? [y/N] " ans
   case "$ans" in [Yy]) ;; *) echo "Aborted."; exit 1 ;; esac
@@ -170,7 +135,7 @@ else
   exit 1
 fi
 
-# Format & copy with progress
+# 4) Format and copy with progress
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT
 
