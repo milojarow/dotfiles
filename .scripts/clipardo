@@ -22,7 +22,7 @@ Options:
 EOF
 }
 
-# Parse flags
+# ─── Parse flags ────────────────────────────────────────────────────────────────
 RECURSIVE=false
 INCLUDE_HIDDEN=false
 while getopts ":hra-:" opt; do
@@ -36,13 +36,13 @@ while getopts ":hra-:" opt; do
         recursive) RECURSIVE=true ;;
         all) INCLUDE_HIDDEN=true ;;
         *) echo "Unknown option --${OPTARG}" >&2; exit 1 ;;
-      esac ;;
+      esac;;
     \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
   esac
 done
 shift $((OPTIND-1))
 
-# Inputs
+# ─── Inputs ────────────────────────────────────────────────────────────────────
 inputs=("$@")
 if [ ${#inputs[@]} -eq 0 ] && [ "$RECURSIVE" = true ]; then
   inputs=(".")
@@ -52,7 +52,7 @@ elif [ ${#inputs[@]} -eq 0 ]; then
   exit 1
 fi
 
-# 1) Build initial list via ls / ls -R + flags
+# ─── 1) Listado inicial con ls/ls -R + -a/-r ───────────────────────────────────
 FILES=()
 for path in "${inputs[@]}"; do
   if [ -d "$path" ]; then
@@ -71,7 +71,7 @@ for path in "${inputs[@]}"; do
         FILES+=("$cwd/$line")
       done < <(ls "${ls_opts[@]}" "$path")
     else
-      # Non-recursive: skip directories
+      # no-recursive: ignorar directorios
       continue
     fi
 
@@ -82,7 +82,7 @@ for path in "${inputs[@]}"; do
   fi
 done
 
-# 2) In non-recursive + -a, add top-level dotfiles
+# ─── 2) No-recursive + -a → dotfiles de primer nivel ───────────────────────────
 if [ "$INCLUDE_HIDDEN" = true ] && [ "$RECURSIVE" = false ]; then
   declare -A dirs=()
   for path in "${inputs[@]}"; do dirs["$(dirname "$path")"]=1; done
@@ -93,37 +93,78 @@ if [ "$INCLUDE_HIDDEN" = true ] && [ "$RECURSIVE" = false ]; then
   done
 fi
 
-# 3) Filter only text-like files (incl. empty)
+# ─── 3) Git support (solo patrones de .gitignore) ──────────────────────────────
+inside_git=false
+if git rev-parse --is-inside-work-tree &>/dev/null; then
+  inside_git=true
+  repo_root=$(git rev-parse --show-toplevel)
+  mapfile -t GIT_IGNORED < <(
+    git -C "$repo_root" ls-files --ignored --exclude-standard
+  )
+elif [ -f .gitignore ]; then
+  mapfile -t GITIGNORE_PATTERNS < <(
+    grep -Ev '^\s*#|^\s*$' .gitignore
+  )
+fi
+
 FILTERED=()
 for f in "${FILES[@]}"; do
+  skip=false
+  if [ "$inside_git" = true ]; then
+    rel="${f#"$repo_root"/}"
+    for pat in "${GIT_IGNORED[@]}"; do
+      [[ "$rel" == "$pat" || "$rel" == "$pat/"* ]] && { skip=true; break; }
+    done
+  elif [ -n "${GITIGNORE_PATTERNS+x}" ]; then
+    rel="${f#"$PWD"/}"
+    for pat in "${GITIGNORE_PATTERNS[@]}"; do
+      case "$rel" in $pat|$pat/*) skip=true; break ;; esac
+    done
+  fi
+  $skip || FILTERED+=("$f")
+done
+FILES=("${FILTERED[@]}"); unset FILTERED
+
+# ─── 4) Filtrar SOLO archivos de texto (incluir tsx/ts/jsx) ────────────────────
+TEXTFILES=()
+for f in "${FILES[@]}"; do
+  ext="${f##*.}"
+  # 4.1) Permitir explícitamente estas extensiones
+  case "$ext" in
+    tsx|ts|jsx|js|json|css|html|htm|md|sh|bash|py|c|cpp|go|rs|java|xml|toml|yaml|yml)
+      TEXTFILES+=("$f")
+      continue
+      ;;
+  esac
+  # 4.2) Para el resto, usar mime-type
   if command -v file &>/dev/null; then
     mime=$(file --mime-type -b "$f")
     if printf '%s' "$mime" | grep -Eq '^(text/|application/(json|xml|x-shellscript))'; then
-      FILTERED+=("$f")
+      TEXTFILES+=("$f")
     fi
   else
-    case "${f##*.}" in
+    case "$ext" in
       png|jpg|jpeg|gif|bmp|mp4|mp3|wav|ogg|flac|mov|avi|mkv|pdf|svg) ;;
-      *) FILTERED+=("$f") ;;
+      *) TEXTFILES+=("$f") ;;
     esac
   fi
 done
-FILES=("${FILTERED[@]}")
+FILES=("${TEXTFILES[@]}"); unset TEXTFILES
 
-# Abort if empty
+# ─── Abortar si no hay archivos ────────────────────────────────────────────────
 total=${#FILES[@]}
 if [ "$total" -eq 0 ]; then
   echo "No files to copy." >&2
   exit 1
 fi
 
-# Failsafe prompt
+# ─── Failsafe ───────────────────────────────────────────────────────────────────
 if [ "$total" -gt "$MAX_FILES" ]; then
   read -rp "You are about to copy $total files, continue? [y/N] " ans
   case "$ans" in [Yy]) ;; *) echo "Aborted."; exit 1 ;; esac
 fi
 
-# Choose clipboard tool
+# ─── Clipboard tool ────────────────────────────────────────────────────────────
 if command -v wl-copy &>/dev/null; then
   COPY_CMD="wl-copy"
 elif command -v xclip &>/dev/null; then
@@ -135,7 +176,7 @@ else
   exit 1
 fi
 
-# 4) Format and copy with progress
+# ─── 5) Formatear y copiar con progreso ────────────────────────────────────────
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT
 
@@ -144,24 +185,28 @@ for idx in "${!FILES[@]}"; do
   num=$((idx+1))
   printf "Copied [%d/%d]\r" "$num" "$total"
 
+  # Detectar lenguaje para markdown
   ext="${file##*.}"
   case "$ext" in
-    sh|bash)        lang=bash ;;
-    py)             lang=python ;;
-    js)             lang=javascript ;;
-    html|htm)       lang=html ;;
-    css)            lang=css ;;
-    json)           lang=json ;;
-    md)             lang=markdown ;;
-    c)              lang=c ;;
+    tsx)      lang=typescriptreact ;;
+    ts)       lang=typescript ;;
+    jsx)      lang=javascriptreact ;;
+    js)       lang=javascript ;;
+    json)     lang=json ;;
+    css)      lang=css ;;
+    html|htm) lang=html ;;
+    md)       lang=markdown ;;
+    sh|bash)  lang=bash ;;
+    py)       lang=python ;;
+    c)        lang=c ;;
     cpp|cc|cxx|hpp) lang=cpp ;;
-    go)             lang=go ;;
-    rs)             lang=rust ;;
-    java)           lang=java ;;
-    xml)            lang=xml ;;
-    toml)           lang=toml ;;
-    yml|yaml)       lang=yaml ;;
-    *)              lang="" ;;
+    go)       lang=go ;;
+    rs)       lang=rust ;;
+    java)     lang=java ;;
+    xml)      lang=xml ;;
+    toml)     lang=toml ;;
+    yml|yaml) lang=yaml ;;
+    *)        lang="" ;;
   esac
 
   {
