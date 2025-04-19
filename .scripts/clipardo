@@ -48,11 +48,10 @@ if [ ${#inputs[@]} -eq 0 ] && [ "$RECURSIVE" = true ]; then
   inputs=(".")
 elif [ ${#inputs[@]} -eq 0 ]; then
   echo "Error: No files specified." >&2
-  show_help
-  exit 1
+  show_help; exit 1
 fi
 
-# ─── 1) Listado inicial con ls/ls -R + -a/-r ───────────────────────────────────
+# ─── 1) List via ls/ls -R + flags ──────────────────────────────────────────────
 FILES=()
 for path in "${inputs[@]}"; do
   if [ -d "$path" ]; then
@@ -71,21 +70,18 @@ for path in "${inputs[@]}"; do
         FILES+=("$cwd/$line")
       done < <(ls "${ls_opts[@]}" "$path")
     else
-      # no-recursive: ignorar directorios
       continue
     fi
 
   elif [ -f "$path" ]; then
     FILES+=("$path")
-  else
-    echo "Warning: '$path' not found or skipped." >&2
   fi
 done
 
 # ─── 2) No-recursive + -a → dotfiles de primer nivel ───────────────────────────
 if [ "$INCLUDE_HIDDEN" = true ] && [ "$RECURSIVE" = false ]; then
   declare -A dirs=()
-  for path in "${inputs[@]}"; do dirs["$(dirname "$path")"]=1; done
+  for p in "${inputs[@]}"; do dirs["$(dirname "$p")"]=1; done
   for d in "${!dirs[@]}"; do
     for f in "$d"/.[!.]*; do
       [ -f "$f" ] && FILES+=("$f")
@@ -93,50 +89,41 @@ if [ "$INCLUDE_HIDDEN" = true ] && [ "$RECURSIVE" = false ]; then
   done
 fi
 
-# ─── 3) Git support (solo patrones de .gitignore) ──────────────────────────────
+# ─── 3) Git support ─────────────────────────────────────────────────────────────
 inside_git=false
 if git rev-parse --is-inside-work-tree &>/dev/null; then
   inside_git=true
-  repo_root=$(git rev-parse --show-toplevel)
-  mapfile -t GIT_IGNORED < <(
-    git -C "$repo_root" ls-files --ignored --exclude-standard
-  )
 elif [ -f .gitignore ]; then
-  mapfile -t GITIGNORE_PATTERNS < <(
-    grep -Ev '^\s*#|^\s*$' .gitignore
-  )
+  mapfile -t GITIGNORE_PATTERNS < <(grep -Ev '^\s*#|^\s*$' .gitignore)
 fi
 
 FILTERED=()
 for f in "${FILES[@]}"; do
   skip=false
+
   if [ "$inside_git" = true ]; then
-    rel="${f#"$repo_root"/}"
-    for pat in "${GIT_IGNORED[@]}"; do
-      [[ "$rel" == "$pat" || "$rel" == "$pat/"* ]] && { skip=true; break; }
-    done
+    git check-ignore -q "$f" && skip=true
+
   elif [ -n "${GITIGNORE_PATTERNS+x}" ]; then
     rel="${f#"$PWD"/}"
     for pat in "${GITIGNORE_PATTERNS[@]}"; do
       case "$rel" in $pat|$pat/*) skip=true; break ;; esac
     done
   fi
+
   $skip || FILTERED+=("$f")
 done
 FILES=("${FILTERED[@]}"); unset FILTERED
 
-# ─── 4) Filtrar SOLO archivos de texto (incluir tsx/ts/jsx) ────────────────────
+# ─── 4) Text-like filter (incluye tsx/jsx/ts) ─────────────────────────────────
 TEXTFILES=()
 for f in "${FILES[@]}"; do
   ext="${f##*.}"
-  # 4.1) Permitir explícitamente estas extensiones
   case "$ext" in
     tsx|ts|jsx|js|json|css|html|htm|md|sh|bash|py|c|cpp|go|rs|java|xml|toml|yaml|yml)
-      TEXTFILES+=("$f")
-      continue
+      TEXTFILES+=("$f"); continue
       ;;
   esac
-  # 4.2) Para el resto, usar mime-type
   if command -v file &>/dev/null; then
     mime=$(file --mime-type -b "$f")
     if printf '%s' "$mime" | grep -Eq '^(text/|application/(json|xml|x-shellscript))'; then
@@ -151,20 +138,15 @@ for f in "${FILES[@]}"; do
 done
 FILES=("${TEXTFILES[@]}"); unset TEXTFILES
 
-# ─── Abortar si no hay archivos ────────────────────────────────────────────────
+# ─── 5) Abort if empty & failsafe ──────────────────────────────────────────────
 total=${#FILES[@]}
-if [ "$total" -eq 0 ]; then
-  echo "No files to copy." >&2
-  exit 1
-fi
-
-# ─── Failsafe ───────────────────────────────────────────────────────────────────
+[ "$total" -gt 0 ] || { echo "No files to copy." >&2; exit 1; }
 if [ "$total" -gt "$MAX_FILES" ]; then
   read -rp "You are about to copy $total files, continue? [y/N] " ans
   case "$ans" in [Yy]) ;; *) echo "Aborted."; exit 1 ;; esac
 fi
 
-# ─── Clipboard tool ────────────────────────────────────────────────────────────
+# ─── 6) Clipboard tool ─────────────────────────────────────────────────────────
 if command -v wl-copy &>/dev/null; then
   COPY_CMD="wl-copy"
 elif command -v xclip &>/dev/null; then
@@ -176,7 +158,7 @@ else
   exit 1
 fi
 
-# ─── 5) Formatear y copiar con progreso ────────────────────────────────────────
+# ─── 7) Format & copy with progress ────────────────────────────────────────────
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT
 
@@ -185,7 +167,6 @@ for idx in "${!FILES[@]}"; do
   num=$((idx+1))
   printf "Copied [%d/%d]\r" "$num" "$total"
 
-  # Detectar lenguaje para markdown
   ext="${file##*.}"
   case "$ext" in
     tsx)      lang=typescriptreact ;;
