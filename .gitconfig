@@ -6,3 +6,9 @@
 
 [init]
 	defaultBranch = main
+[core]
+	pager = cat
+[pager]
+	branch = false
+	tag = false
+	stash = false

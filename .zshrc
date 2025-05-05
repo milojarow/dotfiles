@@ -27,3 +27,12 @@ if [[ -f "$HOME/.env" ]]; then
   source "$HOME/.env"
 fi
 
+# --- Disable all pagers ------------------------
+export PAGER=cat
+export MANPAGER=cat
+export SYSTEMD_PAGER=cat
+export GIT_PAGER=cat
+
+alias less='cat'
+alias more='cat'
+

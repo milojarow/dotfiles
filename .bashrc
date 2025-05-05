@@ -95,3 +95,12 @@ shopt -s histappend
 # Habilitar el modo vi en la línea de comandos
 set -o vi
 
+# --- Disable all pagers ------------------------
+export PAGER=cat          # programa por defecto
+export MANPAGER=cat       # man(1)
+export SYSTEMD_PAGER=cat  # systemctl / journalctl
+export GIT_PAGER=cat      # git log, diff, etc.
+
+alias less='cat'
+alias more='cat'
+
