@@ -1,0 +1,74 @@
+configuration {
+    modi: "combi,drun,run,window,ssh";
+    combi-modi: "drun,run";
+    show-icons: true;
+    terminal: "foot";
+    ssh-command: "{terminal} {ssh-client} {host} [-p {port}]";
+    run-shell-command: "{terminal} {cmd}";
+    display-drun: "Applications";
+    display-run: "Commands";
+    display-combi: "Combined";
+    drun-display-format: "{name} [<span weight='light' size='small'><i>({generic})</i></span>]";
+    window-match-fields: "title,class,name,desktop";
+    drun-match-fields: "name,generic,exec,categories,keywords";
+    font: "JetBrainsMono NF 12";
+    sort: true;
+}
+
+window {
+    width: 35%;
+    border: 2px;
+    border-color: #88ad62;
+    border-radius: 5px;
+    background-color: #222222;
+}
+
+mainbox {
+    padding: 5px;
+}
+
+inputbar {
+    padding: 5px;
+    border: 2px;
+    border-color: #88ad62;
+    border-radius: 5px;
+    background-color: #303030;
+    children: [entry];
+}
+
+entry {
+    padding: 5px;
+    text-color: #eeeeee;
+}
+
+listview {
+    lines: 10;
+    scrollbar: true;
+    border: 0px;
+    padding: 5px;
+}
+
+element {
+    padding: 5px;
+    border-radius: 3px;
+    spacing: 5px;
+}
+
+element selected {
+    background-color: #404040;
+}
+
+element-icon {
+    size: 24px;
+    padding: 0px 5px 0px 0px;
+}
+
+element-text {
+    text-color: #eeeeee;
+    vertical-align: 0.5;
+    horizontal-align: 0.0; /* 0.0 es alineación a la izquierda */
+}
+
+element-text selected {
+    text-color: #88ad62;
+}
