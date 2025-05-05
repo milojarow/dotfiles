@@ -1,0 +1,8 @@
+[user]
+	name = milojarow
+	email = ahuja@hush.com
+[alias]
+  acp = "!git add -u && git commit -m \"$1\" && git push"
+
+[init]
+	defaultBranch = main
