@@ -107,7 +107,7 @@ floating_modifier $mod normal
 
 include ~/.config/sway/config.d/*
 
-exec_always --no-startup-id ~/.local/bin/keyboard-sway.sh  # user custom behavior
+exec_always --no-startup-id ~/.config/sway/scripts/keyboard.sh
 exec_always waybar                                         # user custom behavior
 
 # Shortcut helper overlay

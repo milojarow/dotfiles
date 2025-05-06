@@ -96,11 +96,9 @@ shopt -s histappend
 set -o vi
 
 # --- Disable all pagers ------------------------
-export PAGER=cat          # programa por defecto
-export MANPAGER=cat       # man(1)
-export SYSTEMD_PAGER=cat  # systemctl / journalctl
-export GIT_PAGER=cat      # git log, diff, etc.
+export PAGER=bat          # programa por defecto
+export MANPAGER=bat       # man(1)
+export SYSTEMD_PAGER=bat  # systemctl / journalctl
+export GIT_PAGER=bat      # git log, diff, etc.
 
-alias less='cat'
-alias more='cat'
 

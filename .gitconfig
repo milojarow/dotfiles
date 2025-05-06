@@ -7,7 +7,7 @@
 [init]
 	defaultBranch = main
 [core]
-	pager = cat
+	pager = bat
 [pager]
 	branch = false
 	tag = false
