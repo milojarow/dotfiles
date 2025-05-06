@@ -6,4 +6,4 @@ export ROOT=$2
 export BACKGROUND=$3
 
 # shellcheck disable=SC2002
-cat /usr/share/sway/templates/manjarosway-scalable.svg | envsubst > "$HOME/.config/sway/generated_background.svg"
+cat ~/.config/sway/templates/manjarosway-scalable.svg | envsubst > "$HOME/.config/sway/generated_background.svg"

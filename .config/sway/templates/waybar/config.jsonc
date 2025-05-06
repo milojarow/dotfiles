@@ -179,9 +179,9 @@
         "format": "󰀼 {}",
         "interval": 3600,
         "return-type": "json",
-        "exec-if": "/usr/share/sway/scripts/checkupdates.sh check",
-        "exec": "/usr/share/sway/scripts/checkupdates.sh status",
-        "on-click": "/usr/share/sway/scripts/checkupdates.sh check && swaymsg exec \\$update_manager",
+        "exec-if": "~/.config/sway/scripts/checkupdates.sh check",
+        "exec": "~/.config/sway/scripts/checkupdates.sh status",
+        "on-click": "~/.config/sway/scripts/checkupdates.sh check && swaymsg exec \\$update_manager",
         "on-click-middle": "waybar-signal pacman",
         "signal": 14
     },
@@ -211,7 +211,7 @@
             "one": "󰖯",
             "many": "󰖲"
         },
-        "exec": "/bin/sh /usr/share/sway/scripts/scratchpad.sh",
+        "exec": "/bin/sh ~/.config/sway/scripts/scratchpad.sh",
         "on-click": "swaymsg 'scratchpad show'",
         "signal": 7
     },
@@ -224,9 +224,9 @@
             "on": "󰌵",
             "off": "󰌶"
         },
-        "exec": "fallback_latitude=50.1 fallback_longitude=8.7 latitude= longitude= /usr/share/sway/scripts/sunset.sh",
-        "on-click": "/usr/share/sway/scripts/sunset.sh toggle",
-        "exec-if": "/usr/share/sway/scripts/sunset.sh check",
+        "exec": "fallback_latitude=50.1 fallback_longitude=8.7 latitude= longitude= ~/.config/sway/scripts/sunset.sh",
+        "on-click": "~/.config/sway/scripts/sunset.sh toggle",
+        "exec-if": "~/.config/sway/scripts/sunset.sh check",
         "signal": 6
     },
     "custom/theme": {
@@ -240,10 +240,10 @@
             "auto_dark": "󱩸"
         },
         "return-type": "json",
-        "exec-if": "/usr/share/sway/scripts/theme-toggle.sh check",
-        "exec": "/usr/share/sway/scripts/theme-toggle.sh status",
-        "on-click": "/usr/share/sway/scripts/theme-toggle.sh toggle",
-        "on-click-right": "/usr/share/sway/scripts/theme-toggle.sh auto-toggle",
+        "exec-if": "~/.config/sway/scripts/theme-toggle.sh check",
+        "exec": "~/.config/sway/scripts/theme-toggle.sh status",
+        "on-click": "~/.config/sway/scripts/theme-toggle.sh toggle",
+        "on-click-right": "~/.config/sway/scripts/theme-toggle.sh auto-toggle",
         "signal": 17
     },
     "custom/wf-recorder": {
@@ -297,7 +297,7 @@
         "tooltip": true,
         "interval": 3600,
         // accepts -c/--city <city> -t/--temperature <C/F> -d/--distance <km/miles>
-        "exec": "/usr/share/sway/scripts/weather.py",
+        "exec": "~/.config/sway/scripts/weather.py",
         "return-type": "json",
         "on-click": "xdg-open \"https://wttr.in/$(curl -s https://manjaro-sway.download/geoip | jq -r '.city')\"",
         "on-click-right": "waybar-signal weather",
@@ -311,8 +311,8 @@
             "tracking": "󰖷",
             "stopped": "󰋣"
         },
-        "exec": "/usr/share/sway/scripts/zeit.sh status",
-        "on-click": "/usr/share/sway/scripts/zeit.sh click; waybar-signal zeit",
+        "exec": "~/.config/sway/scripts/zeit.sh status",
+        "on-click": "~/.config/sway/scripts/zeit.sh click; waybar-signal zeit",
         "exec-if": "[ -x \"$(command -v zeit)\" ]",
         "signal": 10
     },
@@ -324,9 +324,9 @@
             "default": "󰚢",
             "dnd": "󰚣"
         },
-        "on-click": "/usr/share/sway/scripts/dnd.sh toggle; waybar-signal dnd",
-        "on-click-right": "/usr/share/sway/scripts/dnd.sh restore",
-        "exec": "/usr/share/sway/scripts/dnd.sh status",
+        "on-click": "~/.config/sway/scripts/dnd.sh toggle; waybar-signal dnd",
+        "on-click-right": "~/.config/sway/scripts/dnd.sh restore",
+        "exec": "~/.config/sway/scripts/dnd.sh status",
         "signal": 11
     },
     "custom/adaptive-light": {
@@ -338,16 +338,16 @@
             "on": "󰃡",
             "off": "󰃠"
         },
-        "exec": "/usr/share/sway/scripts/wluma.sh",
-        "on-click": "/usr/share/sway/scripts/wluma.sh toggle",
-        "exec-if": "/usr/share/sway/scripts/wluma.sh check",
+        "exec": "~/.config/sway/scripts/wluma.sh",
+        "on-click": "~/.config/sway/scripts/wluma.sh toggle",
+        "exec-if": "~/.config/sway/scripts/wluma.sh check",
         "signal": 12
     },
     "custom/valent": {
         "format": "{icon}",
         "tooltip": true,
         "interval": 60,
-        "exec": "/usr/share/sway/scripts/valent.py",
+        "exec": "~/.config/sway/scripts/valent.py",
         "exec-if": "[ -x \"$(command -v valent)\" ]",
         "return-type": "json",
         "format-icons": {

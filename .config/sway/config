@@ -21,7 +21,6 @@ include ~/.config/sway/modes/*
 include ~/.config/sway/inputs/*
 
 exec_always --no-startup-id ~/.config/sway/scripts/keyboard.sh
-exec_always waybar                                         # user custom behavior
 
 # screenshot implementation
 exec_always --no-startup-id ~/.config/sway/scripts/screenshot-notify.sh

@@ -18,7 +18,7 @@ if [ -f "$DARK_SWAY_THEME" ]; then
 fi
 
 current_unix=$(date +%s)
-__geo_content=$(sh /usr/share/sway/scripts/geoip.sh)
+__geo_content=$(sh ~/.config/sway/scripts/geoip.sh)
 
 sunrise_unix() {
     sunrise_string=$(echo "$__geo_content" | jq -r '.sunrise // empty')
