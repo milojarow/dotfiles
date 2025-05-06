@@ -9,7 +9,7 @@ import json
 if len(sys.argv) >= 2:
     rootPath = sys.argv[1]
 else:
-    rootPath = '/etc/sway/config'
+    rootPath = '~/.config/sway/config'
 
 
 def readFile(filePath):
