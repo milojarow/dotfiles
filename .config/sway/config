@@ -17,8 +17,8 @@ output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 
 include ~/.config/sway/themes/dracula/theme.conf
 include ~/.config/sway/config.d/*
-include ~/.config/sway/modes/screenshot
-include ~/.config/sway/modes/default
+include ~/.config/sway/modes/*
+include ~/.config/sway/inputs/*
 
 exec_always --no-startup-id ~/.config/sway/scripts/keyboard.sh
 exec_always waybar                                         # user custom behavior
