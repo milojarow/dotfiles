@@ -52,6 +52,8 @@ set sidescrolloff=5                " Minimal columns to keep cursor from screen 
 "==============================================================================
 " incsearch: show matches as you type; without it Vim waits for <Enter>
 set incsearch                      " Incremental search
+set ignorecase                     " Ignore case in search patterns
+set smartcase                      " Override ignorecase when pattern has uppercase
 set wildmenu                       " Enhanced command-line completion
 set path+=**                       " Recursive file search for :find
 
