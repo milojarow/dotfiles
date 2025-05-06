@@ -10,7 +10,7 @@ $bindsym $mod+Shift+Return exec $term
 $bindsym $mod+Shift+q kill
 
 ## Launch // Open launcher ##
-$bindsym $mod+d exec $menu
+$bindsym $mod+d exec wofi --show drun --allow-images --allow-markup --prompt="" --insensitive
 $bindsym $alt_mod+space exec $menu
 
 ## Launch // Open clipboard ##
@@ -25,6 +25,9 @@ floating_modifier $mod normal
 
 ## Action // Reload Sway Configuration ##
 $bindsym $mod+Shift+c reload
+
+## Action // Exit Sway ##
+$bindsym $mod+Shift+e exec swaynag -t warning -m 'Exit Sway?' -B 'Yes' 'swaymsg exit'
 
 ## Action // Toggle Waybar ##    
 $bindsym $mod+Shift+b exec pkill -x -SIGUSR1 waybar
@@ -63,6 +66,11 @@ $bindsym $mod+$down focus down
 $bindsym $mod+$up focus up
 $bindsym $mod+$right focus right
 
+$bindsym $mod+Left focus left
+$bindsym $mod+Down focus down
+$bindsym $mod+Up focus up
+$bindsym $mod+Right focus right
+
 $bindsym $mod+$left_alt focus left
 $bindsym $mod+$down_alt focus down
 $bindsym $mod+$up_alt focus up
@@ -73,6 +81,11 @@ $bindsym $mod+Shift+$left move left
 $bindsym $mod+Shift+$down move down
 $bindsym $mod+Shift+$up move up
 $bindsym $mod+Shift+$right move right
+
+$bindsym $mod+Shift+Left move left
+$bindsym $mod+Shift+Down move down
+$bindsym $mod+Shift+Up move up
+$bindsym $mod+Shift+Right move right
 
 $bindsym $mod+Shift+$left_alt move left
 $bindsym $mod+Shift+$down_alt move down
@@ -161,13 +174,13 @@ $bindsym $mod+f fullscreen
 ## Action // Toggle global fullscreen ##
 $bindsym $mod+Shift+f fullscreen global
 
-## Action // Scale up  ##
+## Action // Scale up  ##
 $bindsym $alt_mod+plus exec $scale_up
 
-## Action // Scale down  ##
+## Action // Scale down  ##
 $bindsym $alt_mod+minus exec $scale_down
 
-## Action // Scale default  ##
+## Action // Scale default  ##
 $bindsym $mod+equal exec $scale_default
 
 ## Action // Toggle floating ##
@@ -187,6 +200,25 @@ $bindsym $mod+Shift+s exec xdg-open https://github.com/Manjaro-Sway/manjaro-sway
 
 ## Launch // Inhibit Idle ##
 $bindsym $mod+Shift+i exec inhibit-idle interactive
+
+# Scratchpad
+$bindsym $mod+Shift+minus move scratchpad
+$bindsym $mod+minus scratchpad show
+
+# resize mode
+mode "resize" {
+    $bindsym $left  resize shrink width 10px
+    $bindsym $down  resize grow  height 10px
+    $bindsym $up    resize shrink height 10px
+    $bindsym $right resize grow  width 10px
+    $bindsym Left   resize shrink width 10px
+    $bindsym Down   resize grow  height 10px
+    $bindsym Up     resize shrink height 10px
+    $bindsym Right  resize grow  width 10px
+    $bindsym Return mode "default"
+    $bindsym Escape mode "default"
+}
+$bindsym $mod+r mode "resize"
 
 default_border pixel 1
 hide_edge_borders smart
