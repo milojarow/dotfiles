@@ -8,3 +8,6 @@ input type:touchpad {
       natural_scroll enabled
 }
 
+# Pinch to zoom in/out
+bindgesture pinch:2:inward exec "wtype -k ctrl minus"
+bindgesture pinch:2:outward exec "wtype -k ctrl plus"
