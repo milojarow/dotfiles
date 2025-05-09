@@ -142,6 +142,8 @@ window#waybar {
 #custom-menu {
     padding-left: 8px;
     padding-right: 13px;
+    color: @theme_bg_color;
+    background-color: @theme_selected_bg_color;
 }
 
 #memory {
