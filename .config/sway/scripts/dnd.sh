@@ -2,7 +2,9 @@
 
 case $1'' in
 'status') 
-    printf '{\"alt\":\"%s\",\"tooltip\":\"mode: %s\"}' $(makoctl mode | grep -q 'do-not-disturb' && echo dnd || echo default) $(makoctl mode | tail -1)
+    current_mode=$(makoctl mode | tail -1)
+    is_dnd=$(echo "$current_mode" | grep -q 'do-not-disturb' && echo dnd || echo default)
+    printf '{\"alt\":\"%s\",\"tooltip\":\"mode: %s\"}' "$is_dnd" "$current_mode"
     ;;
 'restore')
     makoctl restore
