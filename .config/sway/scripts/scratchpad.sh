@@ -1,15 +1,22 @@
 #!/usr/bin/env sh
-tooltip=$(swaymsg -r -t get_tree | jq -r 'recurse(.nodes[]) | first(select(.name=="__i3_scratch")) | .floating_nodes | .[] | "\(.app_id) | \(.name)"')
-count=$(printf "%s" "$tooltip" | grep -c '^')
+# Get scratchpad windows
+windows=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name=="__i3_scratch") | .floating_nodes | length')
 
-if [ "$count" -eq 0 ]; then
+# Debug output
+echo "Found $windows windows in scratchpad" >&2
+
+# Set class based on number of windows
+if [ "$windows" -eq 0 ]; then
+    # No windows in scratchpad
     exit 1
-elif [ "$count" -eq 1 ]; then
+elif [ "$windows" -eq 1 ]; then
     class="one"
-elif [ "$count" -gt 1 ]; then
-    class="many"
 else
-    class="unknown"
+    class="many"
 fi
 
-printf '{"text":"%s", "class":"%s", "alt":"%s", "tooltip":"%s"}\n' "$count" "$class" "$class" "$(echo "${tooltip}" | sed -z 's/\n/\\n/g')"
+# Get window details for tooltip
+tooltip=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name=="__i3_scratch") | .floating_nodes[] | "\(.app_id // .window_properties.class) | \(.name)"')
+
+# Output JSON for waybar
+printf '{"text":"%s", "class":"%s", "alt":"%s", "tooltip":"%s"}\n' "$windows" "$class" "$class" "$(echo "$tooltip" | sed -z 's/\n/\\n/g')"
