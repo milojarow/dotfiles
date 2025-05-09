@@ -224,3 +224,7 @@ highlight CursorColumn  ctermbg=236                      " Current column bg
 highlight CursorLine    ctermbg=236                      " Current line bg (if enabled)
 highlight ColorColumn   ctermbg=236                      " Colorcolumn bg
 
+" Desactivar completamente la funcionalidad conceal
+set conceallevel=0
+set concealcursor=
+let g:indentLine_setConceal = 0
