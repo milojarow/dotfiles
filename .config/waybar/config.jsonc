@@ -39,7 +39,7 @@
         "custom/valent",
         // media
         "custom/playerctl",
-        "custom/idle_inhibitor",
+        "idle_inhibitor",
         "custom/dnd",
         "pulseaudio",
         "backlight",
@@ -361,17 +361,16 @@
         "on-click-middle": "waybar-signal valent",
         "signal": 13
     },
-    "custom/idle_inhibitor": {
-        "interval": 60,
-        "return-type": "json",
-        "format": "{icon}",
-        "format-icons": {
-            "on": "󰒳",
-            "off": "󰒲"
-        },
-        "exec": "inhibit-idle",
-        "on-click": "inhibit-idle off; inhibit-idle interactive",
-        "on-click-middle": "inhibit-idle off",
-        "signal": 15
+    "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+        "activated": "󰒳",
+        "deactivated": "󰒲"
+    },
+    "tooltip": true,
+    "tooltip-format-activated": "Idle inhibitor active - system will not go idle",
+    "tooltip-format-deactivated": "Idle inhibitor inactive - system will go idle after timeout",
+    "on-click-right": "~/.config/sway/scripts/idle-timeout.sh"
     }
 }
+

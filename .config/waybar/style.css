@@ -65,7 +65,7 @@ window#waybar {
 #custom-zeit,
 #custom-dnd,
 #custom-valent,
-#custom-idle_inhibitor,
+#idle_inhibitor,
 #bluetooth,
 #battery,
 #clock,
@@ -213,4 +213,12 @@ window#waybar {
 
 #custom-valent.dangerously-empty {
     color: @warning_color;
+}
+#idle_inhibitor {
+    padding-left: 9px;   /* Increased from 8px */
+    padding-right: 9px;  /* Increased from 8px */
+}
+
+#idle_inhibitor.activated {
+    color: @theme_selected_bg_color;
 }
