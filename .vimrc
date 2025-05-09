@@ -228,3 +228,4 @@ highlight ColorColumn   ctermbg=236                      " Colorcolumn bg
 set conceallevel=0
 set concealcursor=
 let g:indentLine_setConceal = 0
+
