@@ -2,6 +2,9 @@
 #
 # Basics:
 #
+## lockscreen
+$bindsym $mod+x exec $locking
+
 ## Launch // Terminal ##
 $bindsym $mod+Return exec $term_cwd
 $bindsym $mod+Shift+Return exec $term_float_persistent
