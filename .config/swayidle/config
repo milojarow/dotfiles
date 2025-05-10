@@ -1,0 +1,2 @@
+# Bloquear la pantalla después de 300 segundos (5 minutos) de inactividad
+timeout 60 /home/milo/.config/sway/scripts/lock.sh
