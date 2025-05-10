@@ -251,7 +251,7 @@
         "format": "{}",
         "exec": "echo '{\"class\": \"recording\",\"text\":\"󰑊\",\"tooltip\":\"press $mod+Esc to stop recording\"}'",
         "exec-if": "pgrep wf-recorder",
-        "on-click": "waybar-signal recorder",
+        "on-click": "pkill -SIGINT wf-recorder",
         "signal": 8
     },
     "custom/github": {
