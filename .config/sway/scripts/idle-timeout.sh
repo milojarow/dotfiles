@@ -24,8 +24,12 @@ fi
 # Convert minutes to seconds
 timeout_seconds=$((timeout_minutes * 60))
 
-# Send SIGUSR1 to swayidle to force a reset
-pkill -USR1 swayidle
+# Update config file
+sed -i "s/^timeout [0-9]* /timeout $timeout_seconds /" ~/.config/swayidle/config
+
+# Restart swayidle to apply changes
+pkill swayidle || true
+swayidle -w &
 
 # Notify user
 notify-send "Idle timeout set" "System will lock after $timeout_minutes minutes of inactivity"
