@@ -24,6 +24,8 @@
         "custom/weather"
     ],
     "modules-right": [
+        // security
+        "privacy",
         // informational
         "sway/language",
         "custom/github",
@@ -357,6 +359,18 @@
     "tooltip-format-activated": "Idle inhibitor active - system will not go idle",
     "tooltip-format-deactivated": "Idle inhibitor inactive - system will go idle after timeout",
     "on-click-right": "~/.config/sway/scripts/idle-timeout.sh"
-    }
+    },
+    "privacy": {
+    "icon-spacing": 4,
+    "icon-size": 18,
+    "transition-duration": 250,
+    "modules": [
+        {"type": "screenshare"},
+        {"type": "audio-in"},
+        {"type": "audio-out"}
+    ],
+    "tooltip": true,
+    "tooltip-icon-size": 24
+}
 }
 

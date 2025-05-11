@@ -44,6 +44,9 @@ case "$1" in
     "valent")
         signal=13
         ;;
+    "privacy")
+        signal=15
+        ;;
     *)
         echo "Warning: No signal defined for module: $1" >&2
         exit 0

@@ -219,3 +219,23 @@ window#waybar {
 #idle_inhibitor.activated {
     color: @theme_selected_bg_color;
 }
+#privacy {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+#privacy-item {
+    padding: 0 2px;
+}
+
+#privacy-item.audio-in {
+    color: @error_color;
+}
+
+#privacy-item.audio-out {
+    color: @theme_selected_bg_color;
+}
+
+#privacy-item.screenshare {
+    color: @warning_color;
+}
