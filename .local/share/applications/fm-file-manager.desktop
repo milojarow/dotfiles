@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=FM File Manager
+GenericName=File Manager
+Comment=A small, general-purpose file manager
+Exec=/home/milo/.cargo/bin/fm %f
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileManager;Utility;GTK;
+Keywords=file;manager;explorer;folder;directory;browse;files;fm;
+StartupNotify=true
