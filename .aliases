@@ -1,3 +1,13 @@
 # ~/.aliases
+# alias to work with bare repo (dotfiles repo)
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
 
+# Fixed alias to check if a file is already in remote
+alias remote-exists='f(){ 
+  if dots ls-tree -r --name-only origin/main | grep -q "^$1$"; then
+    echo "✅ File exists in remote"
+  else
+    echo "❌ File does not exist in remote"
+  fi
+  unset -f f
+}; f'
