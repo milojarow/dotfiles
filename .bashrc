@@ -101,4 +101,7 @@ export MANPAGER=bat       # man(1)
 export SYSTEMD_PAGER=bat  # systemctl / journalctl
 export GIT_PAGER=bat      # git log, diff, etc.
 
-
+#
+# 8. Zoxide
+#
+eval "$(zoxide init bash)"
