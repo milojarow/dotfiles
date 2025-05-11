@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# Theme arguments for Rofi with grayscale colors
+THEME_ARGS="
+    -theme-str 'window {background-color: #202020; border: 2px; border-color: #404040; width: 40%;}' 
+    -theme-str 'element selected {background-color: #505050; text-color: #f0f0f0;}' 
+    -theme-str 'element-text {text-color: #d0d0d0;}' 
+    -theme-str 'inputbar {padding: 8px; background-color: #181818; border: 1px; border-color: #404040;}'
+"
+
+# Launch rofimoji showing descriptions
+rofimoji \
+  --action type \
+  --skin-tone neutral \
+  --use-icons \
+  --selector-args="$THEME_ARGS" \
+  --prompt "🔍 "
+
+exit 0
