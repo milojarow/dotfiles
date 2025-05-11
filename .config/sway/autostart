@@ -16,7 +16,6 @@ set $autostart_dex '[ -x "$(command -v dex)" ] && gdbus wait --session org.kde.S
 set $flashfocus '[ -x "$(command -v flashfocus)" ] && flashfocus'
 set $wlsunset '[ -x "$(command -v wlsunset)" ] && ~/.config/sway/scripts/sunset.sh "on"'
 set $autotiling '[ -x "$(command -v autotiling)" ] && autotiling || [ -x "$(command -v autotiling-rs)" ] && autotiling-rs'
-set $help_menu '[ -x "$(command -v nwg-wrapper)" ] && [ -f $HOME/.config/nwg-wrapper/help.sh ] && ~/.config/sway/scripts/help.sh'
 set $kanshi '[ -x "$(command -v kanshi)" ] && pkill -x kanshi; exec kanshi'
 set $xdg-dirs '[ -x "$(command -v xdg-user-dirs-update)" ] && exec xdg-user-dirs-update'
 
