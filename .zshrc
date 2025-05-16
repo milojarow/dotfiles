@@ -38,3 +38,7 @@ export SYSTEMD_PAGER=bat
 export GIT_PAGER=bat
 
 
+# user custom behavior – disable command autocorrect
+unsetopt correct           # desactiva CORRECT
+unsetopt correct_all       # desactiva CORRECT_ALL
+
