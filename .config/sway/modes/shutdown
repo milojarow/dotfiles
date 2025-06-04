@@ -1,5 +1,5 @@
 set $mode_shutdown "\
-<span foreground='$color10'></span>  \
+<span foreground='$color10'></span>  \
 <span foreground='$color5'> \
 <span foreground='$color10'>(<b>l</b>)</span>lock \
 <span foreground='$color10'>(<b>e</b>)</span>logout \
@@ -17,8 +17,8 @@ mode --pango_markup $mode_shutdown {
     # logout
     $bindsym e exec $purge_cliphist; exec swaymsg exit
 
-    # suspend
-    $bindsym u mode "default", exec systemctl sleep
+    # suspend (secure version - lock first, then suspend)
+    $bindsym u mode "default", exec ~/.config/sway/scripts/secure-suspend.sh
 
     # shutdown
     $bindsym s exec $purge_cliphist; exec systemctl poweroff
