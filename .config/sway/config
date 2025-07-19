@@ -20,6 +20,8 @@ include ~/.config/sway/config.d/*
 include ~/.config/sway/modes/*
 include ~/.config/sway/inputs/*
 
+exec_always ~/.config/sway/scripts/random-wallpaper.sh
+
 exec_always --no-startup-id ~/.config/sway/scripts/keyboard.sh
 
 # screenshot implementation
