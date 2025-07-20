@@ -6,7 +6,7 @@ set $initialize_waybar '[ -x "$(command -v waybar)" ] && (pkill waybar || exit 0
 set $initialize_workspace_icons '[ -x "$(command -v sworkstyle)" ] && systemctl --now --user enable sworkstyle'
 set $initialize_poweralert_daemon '[ -x "$(command -v poweralertd)" ] && systemctl --now --user enable poweralertd'
 set $initialize_idle_daemon '[ -x "$(command -v swayidle)" ] && systemctl --now --user enable swayidle'
-set $initialize_mounting_daemon '[ -x "$(command -v fm)" ] set $initialize_mounting_daemon '[ -x "$(command -v pcmanfm-qt)" ] || [ -x "$(command -v pcmanfm)" ] && systemctl --now --user enable pcmanfm'set $initialize_mounting_daemon '[ -x "$(command -v pcmanfm-qt)" ] || [ -x "$(command -v pcmanfm)" ] && systemctl --now --user enable pcmanfm' systemctl --now --user enable pcmanfm'
+set $initialize_mounting_daemon '[ -x "$(command -v pcmanfm-qt)" ] || [ -x "$(command -v pcmanfm)" ] && systemctl --now --user enable pcmanfm'
 set $initialize_way_displays '[ -x "$(command -v way-displays)" ] && systemctl --now --user enable way-displays'
 
 # autostarts
@@ -38,4 +38,4 @@ set $nm_applet '[ -x "$(command -v nm-applet)" ] && pkill -x nm-applet && dbus-l
 set $watch_playerctl '[ -x "$(command -v playerctl)" ] && pkill -x playerctl; playerctl -a metadata --format \"{{status}} {{title}}\" --follow | while read line; do waybar-signal playerctl; done'
 
 # nwg-wrapper cheatsheet
-set $initialize_cheatsheet 'nwg-wrapper -t ~/.config/nwg-wrapper/sway-cheatsheet.pango -c ~/.config/nwg-wrapper/cheatsheet.css -p left -a start -ml 20 -mt 20'
+set $initialize_cheatsheet 'nwg-wrapper -t $HOME/.config/nwg-wrapper/sway-cheatsheet.pango -c $HOME/.config/nwg-wrapper/cheatsheet.css -p left -a start -ml 20 -mt 20 &'

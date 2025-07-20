@@ -205,4 +205,4 @@ $bindsym Ctrl+Alt+Delete exec $task_manager
 $bindsym $mod+period exec $emoji_picker
 
 ## Launch // Toggle Cheatsheet ##
-$bindsym $mod+slash exec pkill -f -USR2 "nwg-wrapper.*sway-cheatsheet" || nwg-wrapper -t ~/.config/nwg-wrapper/sway-cheatsheet.pango -c ~/.config/nwg-wrapper/cheatsheet.css -p left -a start -ml 20 -mt 20 &
+$bindsym $mod+slash exec ~/.config/sway/scripts/toggle-cheatsheet.sh
