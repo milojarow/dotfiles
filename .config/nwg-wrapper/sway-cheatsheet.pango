@@ -11,6 +11,7 @@ Power Menu		<span foreground="#8be9fd">Mod+Shift+E</span>
 
 <span foreground="#ffb86c" weight="bold">⚡ ESSENTIALS</span>
 Help/Command Finder	<span foreground="#8be9fd">Mod+?</span>
+Toggle Cheatsheet	<span foreground="#8be9fd">Mod+/</span>
 Terminal		<span foreground="#8be9fd">Mod+Return</span>
 Floating Terminal	<span foreground="#8be9fd">Mod+Shift+Return</span>
 App Launcher		<span foreground="#8be9fd">Mod+D</span>
