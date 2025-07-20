@@ -27,10 +27,6 @@ if [[ -f "$HOME/.env" ]]; then
   source "$HOME/.env"
 fi
 
-# 4) Zoxide
-eval "$(zoxide init zsh)"
-
-
 # --- Disable all pagers ------------------------
 export PAGER=bat
 export MANPAGER=bat
