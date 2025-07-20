@@ -1,0 +1,32 @@
+<span face="monospace">
+<span size="large" foreground="#50fa7b" weight="bold">󰖬 Sway Cheatsheet</span>
+
+<span foreground="#f8f8f2">Quick reference for keybindings, modes, and custom tools.
+
+<span foreground="#ff79c6" weight="bold">🎯 MODES</span>
+Screenshot Mode		<span foreground="#8be9fd">Print</span>
+Recording Mode		<span foreground="#8be9fd">Mod+Shift+R</span>
+Resize Mode		<span foreground="#8be9fd">Mod+R</span>
+Power Menu		<span foreground="#8be9fd">Mod+Shift+E</span>
+
+<span foreground="#ffb86c" weight="bold">⚡ ESSENTIALS</span>
+Help/Command Finder	<span foreground="#8be9fd">Mod+?</span>
+Terminal		<span foreground="#8be9fd">Mod+Return</span>
+Floating Terminal	<span foreground="#8be9fd">Mod+Shift+Return</span>
+App Launcher		<span foreground="#8be9fd">Mod+D</span>
+Emoji Picker		<span foreground="#8be9fd">Mod+Period</span>
+Kill Window		<span foreground="#8be9fd">Mod+Shift+Q</span>
+Lock Screen		<span foreground="#8be9fd">Mod+X</span>
+Reload Config		<span foreground="#8be9fd">Mod+Shift+C</span>
+
+<span foreground="#bd93f9" weight="bold">🛠️ CUSTOM SCRIPTS</span>
+Location: <span foreground="#50fa7b">~/.scripts/</span>
+<span foreground="#50fa7b">clipardo</span> - Copy files to clipboard with markdown formatting
+
+<span foreground="#f1fa8c" weight="bold">⚙️ SYSTEM DEFAULTS</span>
+AUR Helper		<span foreground="#8be9fd">paru</span>
+Text Editor		<span foreground="#8be9fd">vim</span>
+Terminal		<span foreground="#8be9fd">foot</span>
+File Manager		<span foreground="#8be9fd">pcmanfm</span>
+</span>
+</span>

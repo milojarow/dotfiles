@@ -36,3 +36,6 @@ set $clip-persist '[ -x "$(command -v wl-clip-persist)" ] && pkill -x wl-clip-pe
 set $calendar_daemon 'calcurse --daemon'
 set $nm_applet '[ -x "$(command -v nm-applet)" ] && pkill -x nm-applet && dbus-launch nm-applet'
 set $watch_playerctl '[ -x "$(command -v playerctl)" ] && pkill -x playerctl; playerctl -a metadata --format \"{{status}} {{title}}\" --follow | while read line; do waybar-signal playerctl; done'
+
+# nwg-wrapper cheatsheet
+set $initialize_cheatsheet 'nwg-wrapper -t ~/.config/nwg-wrapper/sway-cheatsheet.pango -c ~/.config/nwg-wrapper/cheatsheet.css -p left -a start -ml 20 -mt 20'
