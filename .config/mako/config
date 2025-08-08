@@ -1,0 +1,24 @@
+# Mako configuration - Dracula theme with bottom-right position
+
+# Position
+anchor=bottom-right
+
+# No timeout - notifications stay until clicked
+default-timeout=0
+
+# Size and spacing
+width=400
+height=200
+padding=20
+margin=20
+
+# Styling - Dracula theme colors with transparency and rounded corners
+font=JetBrainsMono NF 10
+text-color=#f8f8f2
+background-color=#141a1b90
+border-size=0
+border-radius=15
+
+# Do not disturb mode
+[mode=do-not-disturb]
+invisible=1
