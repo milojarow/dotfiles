@@ -16,6 +16,7 @@ Terminal		<span foreground="#8be9fd">Mod+Return</span>
 Floating Terminal	<span foreground="#8be9fd">Mod+Shift+Return</span>
 App Launcher		<span foreground="#8be9fd">Mod+D</span>
 Emoji Picker		<span foreground="#8be9fd">Mod+Period</span>
+Window Switcher	        <span foreground="#8be9fd">Mod+P</span>
 Kill Window		<span foreground="#8be9fd">Mod+Shift+Q</span>
 Lock Screen		<span foreground="#8be9fd">Mod+X</span>
 Reload Config		<span foreground="#8be9fd">Mod+Shift+C</span>
