@@ -7,6 +7,7 @@
 Screenshot Mode		<span foreground="#8be9fd">Print</span>
 Recording Mode		<span foreground="#8be9fd">Mod+Shift+R</span>
 Resize Mode		<span foreground="#8be9fd">Mod+R</span>
+Swap Mode		<span foreground="#8be9fd">Mod+Ctrl+W</span>
 Power Menu		<span foreground="#8be9fd">Mod+Shift+E</span>
 
 <span foreground="#ffb86c" weight="bold">⚡ ESSENTIALS</span>
