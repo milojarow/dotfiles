@@ -1,6 +1,11 @@
 # Use Vi, not Emacs, style editing
 set editing-mode vi
 
+# CRÍTICO: Esto debe estar ANTES de los mode-string
+set show-mode-in-prompt on
+set vi-ins-mode-string \1\e[6 q\2
+set vi-cmd-mode-string \1\e[2 q\2
+
 # Show all completions as soon as I press tab, even if there's more than one
 set show-all-if-ambiguous on
 # Ignore case

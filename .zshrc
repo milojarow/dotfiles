@@ -17,6 +17,24 @@ source /usr/share/cachyos-zsh-config/cachyos-config.zsh
 # 2) Enable vi-mode editing at the prompt
 #    Placed **after** all sourcing so it takes effect
 bindkey -v
+# Cursor shape for vi modes
+function zle-keymap-select {
+  if [[ ${KEYMAP} == vicmd ]] || [[ $1 = 'block' ]]; then
+    echo -ne '\e[2 q'  # steady block for command mode
+  elif [[ ${KEYMAP} == main ]] || [[ ${KEYMAP} == viins ]] || [[ ${KEYMAP} = '' ]] || [[ $1 = 'beam' ]]; then
+    echo -ne '\e[6 q'  # steady bar for insert mode
+  fi
+}
+zle -N zle-keymap-select
+
+# Start with bar cursor
+echo -ne '\e[6 q'
+
+# Reset to bar when line finishes
+function zle-line-init {
+  echo -ne '\e[6 q'
+}
+zle -N zle-line-init
 
 # 3) Source .aliases and .env only if they exist
 if [[ -f "$HOME/.aliases" ]]; then
