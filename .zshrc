@@ -11,6 +11,13 @@ fi
 # Source CachyOS default Zsh + Oh My Zsh settings
 source /usr/share/cachyos-zsh-config/cachyos-config.zsh
 
+# Colorize comments in commands
+ZSH_HIGHLIGHT_STYLES[comment]='fg=red'           # Comments in red (like Fish)
+ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=red'     # Invalid commands in red
+ZSH_HIGHLIGHT_STYLES[command]='fg=white'         # Valid commands in white
+ZSH_HIGHLIGHT_STYLES[alias]='fg=white'           # Aliases in white
+ZSH_HIGHLIGHT_STYLES[builtin]='fg=white'         # Builtins in white
+
 # To customize prompt settings, run `p10k configure` or edit ~/.p10k.zsh
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
