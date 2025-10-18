@@ -1,14 +1,12 @@
 /* Improved rofi configuration with fixed text visibility */
 configuration {
-    modi: "combi,drun,run,window,ssh";
-    combi-modi: "drun,run";
+    modi: "combi,window,ssh";
+    combi-modi: "drun";
     show-icons: true;
     terminal: "foot";
     ssh-command: "{terminal} {ssh-client} {host} [-p {port}]";
     run-shell-command: "{terminal} {cmd}";
     display-drun: "Applications";
-    display-run: "Commands";
-    display-combi: "Combined";
     drun-display-format: "{name} [<span weight='light' size='small'><i>({generic})</i></span>]";
     window-match-fields: "title,class,name,desktop";
     drun-match-fields: "name,generic,exec,categories,keywords";
