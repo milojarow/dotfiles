@@ -25,7 +25,6 @@ exec_always ~/.config/sway/scripts/random-wallpaper.sh
 exec_always --no-startup-id ~/.config/sway/scripts/keyboard.sh
 
 # screenshot implementation
-exec_always --no-startup-id ~/.config/sway/scripts/screenshot-notify.sh
 # Start systemd target
 exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
 exec hash dbus-update-activation-environment 2>/dev/null && \
