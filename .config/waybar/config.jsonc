@@ -106,8 +106,10 @@
     },
     "network": {
         "interval": 5,
+        "format": "󰈀",
         "format-wifi": "{icon}",
         "format-ethernet": "󰈀",
+        "format-linked": "󰖪",
         "format-disconnected": "󰖪",
         "format-disabled": "󰀝",
         "format-icons": [
@@ -120,6 +122,7 @@
         "tooltip-format": "{icon} {ifname}: {ipaddr}",
         "tooltip-format-ethernet": "{icon} {ifname}: {ipaddr}",
         "tooltip-format-wifi": "{icon} {ifname} ({essid}): {ipaddr}",
+        "tooltip-format-linked": "{icon} {ifname} (No IP)",
         "tooltip-format-disconnected": "{icon} disconnected",
         "tooltip-format-disabled": "{icon} disabled",
         "on-click": "swaymsg exec \\$once \\$term_float nmtui connect"
