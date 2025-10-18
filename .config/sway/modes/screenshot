@@ -1,7 +1,63 @@
+# =============================================================================
+# SCREENSHOT MODE - Comprehensive Documentation
+# =============================================================================
+#
+# This file defines the screenshot mode for Sway window manager.
+# The screenshot system consists of multiple components working together:
+#
+# PROGRAMS INVOLVED:
+#   - grim:        Captures screenshots from Wayland compositors
+#   - slurp:       Allows interactive region selection
+#   - swayimg:     Displays frozen screen during selection
+#   - magick:      ImageMagick for image processing (crop, blur, etc.)
+#   - swappy:      Interactive screenshot editor
+#   - inotifywait: Monitors filesystem for new screenshots
+#   - notify-send: Sends desktop notifications via mako/dunst
+#   - wl-paste:    Monitors Wayland clipboard for images
+#   - wl-copy:     Copies content to Wayland clipboard
+#
+# SCRIPTS INVOLVED:
+#   - screenshot-frozen.sh:           Freezes screen and allows area selection
+#   - screenshot-notify.sh:           Daemon that notifies when screenshots are saved
+#   - screenshot-clipboard-notify.sh: Monitors clipboard for screenshot copies
+#
+# CONFIGURATION FILES:
+#   - ~/.config/sway/modes/screenshot:          This file (keybindings)
+#   - ~/.config/sway/config.d/01-definitions.conf: Variable definitions
+#   - ~/.config/sway/config.d/99-autostart-applications.conf: Daemon autostart
+#   - ~/.config/swappy/config:                  Swappy editor settings
+#
+# WORKFLOW:
+#   1. Press Print key to enter screenshot mode
+#   2. Choose action:
+#      - 'p': Pick region (interactive selection with frozen screen)
+#      - 'o': Output (capture current monitor)
+#      - Shift+p/o: Upload to x0.at and copy URL to clipboard
+#   3. Swappy editor opens for annotation/editing
+#   4. Save or copy to clipboard
+#   5. Notification appears confirming the action
+#
+# NOTIFICATION SYSTEM:
+#   - When saving: screenshot-notify.sh detects the new file via inotifywait
+#   - When copying: screenshot-clipboard-notify.sh detects clipboard change
+#   - Both scripts require /tmp/screenshot-notify.lock to prevent duplicates
+#
+# IMPORTANT:
+#   The file /tmp/screenshot-notify.lock is REQUIRED for the notification
+#   system to work correctly. It prevents multiple daemon instances from
+#   running simultaneously, which would cause duplicate notifications.
+#   This file is automatically created and managed by screenshot-notify.sh
+#
+# SCREENSHOTS LOCATION:
+#   Default: ~/Screenshots/
+#   Can be changed via: export XDG_SCREENSHOTS_DIR=/your/path
+#
+# =============================================================================
+
 set $mode_screenshot "<span foreground='$color10'>󰄄</span>  \
 <span foreground='$color5'><b>Pick</b></span> <span foreground='$color10'>(<b>p</b>)</span> \
 <span foreground='$color5'><b>Output</b></span> <span foreground='$color10'>(<b>o</b>)</span> \
-<span foreground='$color7'>+ <span foreground='$color10'><b>Shift</b></span> for </span>"
+<span foreground='$color7'>+ <span foreground='$color10'><b>Shift</b></span> for </span>"
 
 mode --pango_markup $mode_screenshot {
     # output = currently active output
