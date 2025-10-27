@@ -24,7 +24,14 @@ while true; do
     FILE=$(inotifywait -q -e close_write --format '%f' "$DIR" 2>&1)
     case "$FILE" in
         *.png)
-            notify-send "Screenshot saved" "$FILE"
+            # Debounce to prevent duplicate notifications (100ms threshold)
+            NOW=$(date +%s%N)
+            LAST=$(cat /tmp/screenshot-save-last 2>/dev/null || echo 0)
+            DIFF=$((NOW - LAST))
+            if [[ $DIFF -gt 100000000 ]]; then
+                echo $NOW > /tmp/screenshot-save-last
+                notify-send "Screenshot saved" "$FILE"
+            fi
             ;;
     esac
 done
