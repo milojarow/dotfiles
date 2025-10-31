@@ -68,3 +68,6 @@ unsetopt correct_all       # desactiva CORRECT_ALL
 # Search history based on what you've typed so far
 bindkey -M vicmd 'k' history-beginning-search-backward
 bindkey -M vicmd 'j' history-beginning-search-forward
+
+# Add npm global bin to PATH
+export PATH="$HOME/.npm-global/bin:$PATH"
