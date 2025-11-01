@@ -30,6 +30,7 @@
         "sway/language",
         "custom/github",
         "custom/clipboard",
+        "custom/usb",
         "cpu",
         // "temperature",
         // "memory",
@@ -295,6 +296,23 @@
         "exec": "printf '{\"tooltip\":\"%s\"}' $(cliphist list | wc -l)' item(s) in the clipboard\r(Mid click to clear)'",
         "exec-if": "[ -x \"$(command -v cliphist)\" ] && [ $(cliphist list | wc -l) -gt 0 ]",
         "signal": 9
+    },
+    "custom/usb": {
+        "format": "{}",
+        "return-type": "json",
+        "interval": 5,
+        "exec": "/home/milo/.config/sway/scripts/usb-monitor-wrapper.sh",
+        "tooltip": true,
+        "signal": 15,
+        "menu": "on-click-right",
+        "menu-file": "~/.config/waybar/usb-menu.xml",
+        "menu-actions": {
+            "open": "~/.config/sway/scripts/usb-action-open.sh",
+            "unmount": "~/.config/sway/scripts/usb-action-unmount.sh",
+            "eject": "~/.config/sway/scripts/usb-action-eject.sh",
+            "mount": "~/.config/sway/scripts/usb-action-mount.sh",
+            "refresh": "~/.config/sway/scripts/usb-action-refresh.sh"
+        }
     },
     "custom/weather": {
         "format": "{}",
