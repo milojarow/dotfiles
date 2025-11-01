@@ -62,6 +62,7 @@ window#waybar {
 #custom-scratchpad,
 #custom-github,
 #custom-clipboard,
+#custom-usb,
 #custom-dnd,
 #custom-valent,
 #idle_inhibitor,
@@ -238,4 +239,57 @@ window#waybar {
 
 #privacy-item.screenshare {
     color: @warning_color;
+}
+
+/* -----------------------------------------------------------------------------
+ * USB Module styles
+ * -------------------------------------------------------------------------- */
+
+#custom-usb.mounted {
+    color: @success_color;
+}
+
+#custom-usb.unmounted {
+    color: @theme_text_color;
+}
+
+#custom-usb.none {
+    color: @theme_text_color;
+    opacity: 0.6;
+}
+
+/* -----------------------------------------------------------------------------
+ * Dropdown Menu styles (for USB menu)
+ * -------------------------------------------------------------------------- */
+
+menu {
+    background-color: @theme_base_color;
+    border: 1px solid @theme_selected_bg_color;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+menuitem {
+    color: @theme_text_color;
+    background-color: transparent;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+menuitem:hover {
+    background-color: @theme_selected_bg_color;
+    color: @wm_icon_bg;
+}
+
+menuitem:disabled {
+    color: @theme_text_color;
+    opacity: 0.5;
+}
+
+separator {
+    background-color: @theme_selected_bg_color;
+    opacity: 0.3;
+    margin: 4px 8px;
+    min-height: 1px;
 }
