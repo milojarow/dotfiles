@@ -44,7 +44,7 @@ main() {
     
     # No USB devices connected
     if [ "$device_count" -eq 0 ]; then
-        echo '{"text":"","tooltip":"No USB devices connected","class":"none","alt":"none"}'
+        echo "{\"text\":\"$GLYPH_UNMOUNTED\",\"tooltip\":\"No USB devices connected\",\"class\":\"none\",\"alt\":\"none\"}"
         exit 0
     fi
     
