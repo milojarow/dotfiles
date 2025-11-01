@@ -18,10 +18,6 @@ set menu-complete-display-prefix on
 # Keymaps for when we're in command mode (e.g., after hitting ESC)
 set keymap vi-command
 
-# Ignore focus events from terminal
-"\e[I": nop
-"\e[O": nop
-
 # Insert the arguments from the last command
 "p": "i !!*\r"
 
@@ -39,10 +35,6 @@ set keymap vi-command
 ###########################################################
 # Keymaps for when we're in insert (i.e., typing stuff in) mode
 set keymap vi-insert
-
-# Ignore focus events from terminal
-"\e[I": nop
-"\e[O": nop
 
 # Pressing tab will list all completions & select the first one. Pressing it
 # again will cycle through available completions.
