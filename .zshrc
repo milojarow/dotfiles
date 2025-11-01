@@ -71,3 +71,10 @@ bindkey -M vicmd 'j' history-beginning-search-forward
 
 # Add npm global bin to PATH
 export PATH="$HOME/.npm-global/bin:$PATH"
+
+# Default editor configuration
+export EDITOR=vim
+export VISUAL=vim
+
+# Disable focus reporting mode (prevents [O[I characters when switching windows)
+printf "\e[?1004l"

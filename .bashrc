@@ -107,3 +107,10 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 export PATH="$HOME/.npm-global/bin:$PATH"
+
+# Default editor configuration
+export EDITOR=vim
+export VISUAL=vim
+
+# Disable focus reporting mode (prevents [O[I characters when switching windows)
+printf "\e[?1004l"
