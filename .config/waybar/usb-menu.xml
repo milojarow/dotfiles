@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object class="GtkMenu" id="menu">
+    <child>
+      <object class="GtkMenuItem" id="open">
+        <property name="label">󰉋  Open in File Manager</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem"/>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="unmount">
+        <property name="label">  Unmount</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="eject">
+        <property name="label">  Eject (safely remove)</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem"/>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="mount">
+        <property name="label">󱘖  Mount</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem"/>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="refresh">
+        <property name="label">  Refresh</property>
+      </object>
+    </child>
+  </object>
+</interface>
