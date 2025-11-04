@@ -114,3 +114,17 @@ export VISUAL=vim
 
 # Disable focus reporting mode (prevents [O[I characters when switching windows)
 printf "\e[?1004l"
+
+# Disable mouse tracking modes (prevents scroll events becoming characters)
+# This fixes issues when programs like vim don't properly clean up mouse reporting
+printf "\e[?1000l"  # Disable X11 mouse reporting
+printf "\e[?1002l"  # Disable button movement tracking
+printf "\e[?1003l"  # Disable all movement tracking
+printf "\e[?1006l"  # Disable SGR extended mode
+
+# Function to manually fix mouse reporting if it gets stuck
+# Usage: Run 'fixmouse' after Ctrl+G in Claude Code CLI if scroll becomes broken
+fixmouse() {
+    printf "\e[?1000l\e[?1002l\e[?1003l\e[?1006l"
+    echo "Mouse tracking disabled"
+}
