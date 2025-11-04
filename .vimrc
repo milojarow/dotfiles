@@ -43,9 +43,7 @@ set number                         " Absolute line numbers
 set relativenumber                 " Relative line numbers to cursor
 
 " Mouse and Scrolling:
-" Mouse support disabled to prevent issues with terminal applications like Claude Code CLI
-" When enabled, vim's mouse reporting can leak into the parent shell after exit
-set mouse=                         " Disable mouse support
+set mouse=a                        " Enable mouse support for all modes
 set scrolloff=999                  " Keep cursor centered vertically when scrolling
 set sidescrolloff=5                " Minimal columns to keep cursor from screen edge
 
