@@ -63,6 +63,8 @@ export GIT_PAGER=bat
 unsetopt correct           # desactiva CORRECT
 unsetopt correct_all       # desactiva CORRECT_ALL
 
+# Allow seeing all history entries when navigating (including similar commands)
+unsetopt hist_find_no_dups
 
 # Vi-mode history prefix search (like fish)
 # Search history based on what you've typed so far
