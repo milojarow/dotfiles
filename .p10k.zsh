@@ -21,7 +21,6 @@ typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
   status                  # exit code
   root_indicator          # root indicator
   background_jobs         # background jobs
-  history                 # command history number
   time                    # current time
 )
 
