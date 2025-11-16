@@ -19,5 +19,5 @@ if [ -f /sys/power/state ] && grep -q "mem" /sys/power/state; then
     fi
 fi
 
-# Normal operation - lock the screen as usual
+# Normal operation - lock the screen as usual (lock.sh has internal guard)
 ~/.config/sway/scripts/lock.sh
