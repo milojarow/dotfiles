@@ -27,7 +27,7 @@
         // security
         "privacy",
         // informational
-        "sway/language",
+        "custom/keyboard-layout",
         "custom/github",
         "custom/clipboard",
         "custom/usb",
@@ -202,11 +202,12 @@
         "on-click-right": "rfkill toggle bluetooth",
         "tooltip-format": "{}"
     },
-    "sway/language": {
-        "format": " {}",
-        "min-length": 5,
-        "tooltip": false,
-        "on-click": "swaymsg input type:keyboard xkb_switch_layout next"
+    "custom/keyboard-layout": {
+        "format": "󰌓 {}",
+        "interval": "once",
+        "exec": "localectl status | grep 'X11 Layout' | sed 's/.*: //'",
+        "tooltip": true,
+        "tooltip-format": "Keyboard Layout\nSource: ~/.config/sway/scripts/keyboard.sh"
     },
     "custom/scratchpad": {
         "interval": "once",

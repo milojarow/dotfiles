@@ -76,7 +76,7 @@ window#waybar {
 #pulseaudio,
 #temperature,
 #backlight,
-#language,
+#custom-keyboard-layout,
 #custom-adaptive-light,
 #custom-sunset,
 #custom-playerctl,
@@ -202,6 +202,10 @@ window#waybar {
 
 #bluetooth.disabled {
     color: @warning_color;
+}
+
+#custom-keyboard-layout {
+    color: @theme_selected_bg_color;
 }
 
 #custom-wf-recorder {
