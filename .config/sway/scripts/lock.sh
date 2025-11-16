@@ -1,9 +1,14 @@
 #!/bin/bash
 
-# Usar siempre el mismo nombre de archivo para sobrescribir la imagen anterior
+# Prevent multiple lock instances - if swaylock is already running, exit
+if pgrep -x swaylock > /dev/null; then
+    exit 0
+fi
+
+# Use consistent filename to overwrite previous image
 SCREENSHOT="/tmp/swaylock-blur.png"
 
-# Captura la pantalla
+# Capture the screen
 grim "$SCREENSHOT"
 
 # Detecta qué comando usar para ImageMagick
