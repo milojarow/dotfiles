@@ -17,11 +17,13 @@ Personal configuration files for **CachyOS/Arch Linux** with **Sway WM**.
 ### Fresh CachyOS/Arch Install
 
 ```bash
-# Download and run the installer
+# Download and run the installer (DO NOT use sudo)
 curl -sL https://raw.githubusercontent.com/milojarow/dotfiles/main/install.sh -o install.sh
 chmod +x install.sh
 ./install.sh
 ```
+
+> **Important:** Run the script as your normal user, NOT with sudo. The script will prompt for your password when it needs elevated privileges (package installation). Running with sudo would deploy dotfiles to `/root/` instead of your home directory.
 
 The installer will:
 1. Check system compatibility

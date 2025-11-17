@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Prevent running as root
+if [[ $EUID -eq 0 ]]; then
+    echo "ERROR: Do not run this script as root or with sudo."
+    echo "The script will ask for sudo password when needed."
+    echo "Run as: ./install.sh"
+    exit 1
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
