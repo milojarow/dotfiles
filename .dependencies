@@ -1,0 +1,66 @@
+# Core dotfiles dependencies
+# This file is read by install.sh to install required packages
+# Lines starting with # are ignored
+# Packages are installed via paru (handles both official repos and AUR)
+
+# Window Manager & Core Components
+sway
+waybar
+rofi
+foot
+mako
+swaylock
+swayidle
+swaybg
+xdg-desktop-portal-wlr
+
+# Screenshot & Recording
+grim
+slurp
+grimshot
+swappy
+wf-recorder
+
+# Clipboard
+wl-clipboard
+cliphist
+
+# System Utilities
+brightnessctl
+playerctl
+pulseaudio
+pulsemixer
+libnotify
+jq
+curl
+imagemagick
+inotify-tools
+
+# Terminal Utilities
+btop
+calcurse
+
+# Fonts (required for icons in waybar/cheatsheet)
+ttf-jetbrains-mono-nerd
+ttf-font-awesome
+otf-font-awesome
+
+# Python dependencies (for custom scripts)
+python
+python-i3ipc
+python-requests
+python-dbus
+
+# Additional tools
+nwg-wrapper
+swaycwd
+xdg-user-dirs
+
+# Bluetooth (optional but recommended)
+bluetuith
+
+# File manager
+pcmanfm-gtk3
+
+# For gsettings (GTK theme switching)
+glib2

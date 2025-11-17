@@ -1,0 +1,29 @@
+# Optional dependencies for enhanced functionality
+# These are not required but provide additional features
+# Install with: paru -S --needed $(grep -v '^#' ~/.dependencies-optional | tr '\n' ' ')
+
+# GitHub integration (for waybar notifications module)
+github-cli
+
+# Phone integration (KDE Connect alternative)
+valent
+
+# Night light / Blue light filter
+wlsunset
+
+# Adaptive brightness based on ambient light
+wluma
+
+# System update tools
+topgrade
+pacseek
+
+# Display management
+way-displays
+
+# Color picker
+hyprpicker
+
+# Application specific
+firefox
+code
