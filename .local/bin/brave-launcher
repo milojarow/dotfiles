@@ -1,0 +1,25 @@
+#!/bin/bash
+# Brave launcher script that reads flags from ~/.config/brave-flags.conf
+# Based on the wrapper script from the brave AUR package
+
+# Set default config location
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+FLAGS_FILE="${XDG_CONFIG_HOME}/brave-flags.conf"
+
+# Array to store flags
+declare -a flags
+
+# Read flags from config file if it exists
+if [[ -f "${FLAGS_FILE}" ]]; then
+    mapfile -t < "${FLAGS_FILE}"
+fi
+
+# Parse flags (skip comments and empty lines)
+for line in "${MAPFILE[@]}"; do
+    if [[ ! "${line}" =~ ^[[:space:]]*#.* ]] && [[ -n "${line}" ]]; then
+        flags+=("${line}")
+    fi
+done
+
+# Execute Brave with flags
+exec /opt/brave-bin/brave "${flags[@]}" "$@"
