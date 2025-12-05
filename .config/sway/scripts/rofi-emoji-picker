@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-# Wrapper for rofi that applies left-alignment for emoji picker
+# Wrapper for rofi that uses compact emoji picker theme
 
-rofi -p 🔍 -i -dmenu -theme-str 'element-text {horizontal-align: 0;}' "$@"
+rofi -p 🔍 -i -dmenu -theme ~/.config/rofi/themes/emoji-picker.rasi "$@"
