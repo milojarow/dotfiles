@@ -10,7 +10,7 @@ export BEMOJI_PICKER_CMD="$HOME/.config/sway/scripts/rofi-emoji-picker"
 
 # Launch bemoji with typing enabled (-t flag)
 # Uses custom rofi wrapper (configured above)
-# Does not save to history (-p flag for private mode)
-bemoji -t -p
+# Saves to history for recent emojis
+bemoji -t
 
 exit 0
