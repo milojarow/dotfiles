@@ -1,0 +1,12 @@
+[Unit]
+Description=Screenshot clipboard notification daemon
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.config/sway/scripts/screenshot-clipboard-notify.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=sway-session.target
