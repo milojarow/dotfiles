@@ -2,8 +2,8 @@
 
 # Configure bemoji to use wl-ime-type for direct emoji typing
 # This avoids clipboard usage and works with Chromium/Brave + Wayland IME flags
-# xargs is needed because bemoji pipes the emoji through stdin
-export BEMOJI_TYPE_CMD="xargs wl-ime-type"
+# xargs -n1 processes one line at a time to prevent buffering
+export BEMOJI_TYPE_CMD="xargs -n1 wl-ime-type"
 
 # Use custom rofi wrapper that applies left-alignment
 export BEMOJI_PICKER_CMD="$HOME/.config/sway/scripts/rofi-emoji-picker"
