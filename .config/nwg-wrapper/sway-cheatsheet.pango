@@ -22,6 +22,13 @@ Kill Window		<span foreground="#8be9fd">Mod+Shift+Q</span>
 Lock Screen		<span foreground="#8be9fd">Mod+X</span>
 Reload Config		<span foreground="#8be9fd">Mod+Shift+C</span>
 
+<span foreground="#50fa7b" weight="bold"> WINDOW LAYOUTS</span>
+Stacking Mode		<span foreground="#8be9fd">Mod+S</span>
+Tabbed Mode		<span foreground="#8be9fd">Mod+W</span>
+Tiled/Split Mode	<span foreground="#8be9fd">Mod+E</span>
+Toggle Floating		<span foreground="#8be9fd">Mod+Shift+Space</span>
+Toggle Fullscreen	<span foreground="#8be9fd">Mod+F</span>
+
 <span foreground="#bd93f9" weight="bold">  TOOLS &amp; SCRIPTS</span>
 Location: <span foreground="#50fa7b">~/.scripts/</span>
 <span foreground="#50fa7b">clipardo</span> - Copy files to clipboard with markdown formatting
