@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Robust lockfile mechanism to prevent multiple concurrent executions
+LOCKFILE="/tmp/lock.sh.lock"
+
+# Attempt to acquire lock with timeout
+exec 200>"$LOCKFILE"
+if ! flock -n 200; then
+    # Another instance is running, exit silently
+    exit 0
+fi
+
 # Prevent multiple lock instances - if swaylock is already running, exit
 if pgrep -x swaylock > /dev/null; then
     exit 0

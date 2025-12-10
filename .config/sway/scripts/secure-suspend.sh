@@ -1,12 +1,6 @@
 #!/bin/bash
 # ~/.config/sway/scripts/secure-suspend.sh
-# Lock the screen first, then suspend to ensure security on resume
+# Suspend system - swayidle before-sleep handler will lock the screen
 
-# Lock the screen immediately (lock.sh has internal guard against multiple instances)
-~/.config/sway/scripts/lock.sh &
-
-# Give lock screen time to fully initialize
-sleep 2
-
-# Now suspend the system
-systemctl sleep
+# Suspend the system (swayidle's before-sleep will trigger lock.sh)
+systemctl suspend
