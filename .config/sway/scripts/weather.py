@@ -1,15 +1,67 @@
 #!/usr/bin/env python
-"""Script for the Waybar weather module."""
+"""Script for the Waybar weather module using wttr.in."""
 
 import getopt
 import json
 import locale
 import sys
 import urllib.parse
-from datetime import datetime
 import requests
 import configparser
 from os import path, environ
+
+# Weather code mapping to emoji icons
+# Based on wttr.in weather codes: https://github.com/chubin/wttr.in/blob/master/lib/constants.py
+WEATHER_CODES = {
+    "113": "☀️",   # Clear/Sunny
+    "116": "⛅",   # Partly Cloudy
+    "119": "☁️",   # Cloudy
+    "122": "☁️",   # Overcast
+    "143": "🌫️",  # Mist
+    "176": "🌦️",  # Patchy rain nearby
+    "179": "🌨️",  # Patchy snow nearby
+    "182": "🌧️",  # Patchy sleet nearby
+    "185": "🌧️",  # Patchy freezing drizzle nearby
+    "200": "⛈️",   # Thundery outbreaks nearby
+    "227": "🌨️",  # Blowing snow
+    "230": "🌨️",  # Blizzard
+    "248": "🌫️",  # Fog
+    "260": "🌫️",  # Freezing fog
+    "263": "🌦️",  # Patchy light drizzle
+    "266": "🌦️",  # Light drizzle
+    "281": "🌧️",  # Freezing drizzle
+    "284": "🌧️",  # Heavy freezing drizzle
+    "293": "🌦️",  # Patchy light rain
+    "296": "🌦️",  # Light rain
+    "299": "🌧️",  # Moderate rain at times
+    "302": "🌧️",  # Moderate rain
+    "305": "🌧️",  # Heavy rain at times
+    "308": "🌧️",  # Heavy rain
+    "311": "🌧️",  # Light freezing rain
+    "314": "🌧️",  # Moderate or heavy freezing rain
+    "317": "🌨️",  # Light sleet
+    "320": "🌨️",  # Moderate or heavy sleet
+    "323": "🌨️",  # Patchy light snow
+    "326": "🌨️",  # Light snow
+    "329": "🌨️",  # Patchy moderate snow
+    "332": "🌨️",  # Moderate snow
+    "335": "🌨️",  # Patchy heavy snow
+    "338": "🌨️",  # Heavy snow
+    "350": "🌧️",  # Ice pellets
+    "353": "🌦️",  # Light rain shower
+    "356": "🌧️",  # Moderate or heavy rain shower
+    "359": "🌧️",  # Torrential rain shower
+    "362": "🌨️",  # Light sleet showers
+    "365": "🌨️",  # Moderate or heavy sleet showers
+    "368": "🌨️",  # Light snow showers
+    "371": "🌨️",  # Moderate or heavy snow showers
+    "374": "🌧️",  # Light showers of ice pellets
+    "377": "🌧️",  # Moderate or heavy showers of ice pellets
+    "386": "⛈️",   # Patchy light rain in area with thunder
+    "389": "⛈️",   # Moderate or heavy rain in area with thunder
+    "392": "⛈️",   # Patchy light snow in area with thunder
+    "395": "⛈️",   # Moderate or heavy snow in area with thunder
+}
 
 config_path = path.join(
     environ.get('APPDATA') or
@@ -21,18 +73,21 @@ config_path = path.join(
 config = configparser.ConfigParser()
 config.read(config_path)
 
-# see https://docs.python.org/3/library/locale.html#background-details-hints-tips-and-caveats
+# Set default locale
 locale.setlocale(locale.LC_ALL, "")
 current_locale, _ = locale.getlocale(locale.LC_NUMERIC)
-city = config.get('DEFAULT', 'city', fallback='auto')
+
+# Read config or use defaults
+city = config.get('DEFAULT', 'city', fallback='')
 temperature = config.get('DEFAULT', 'temperature', fallback='C')
 distance = config.get('DEFAULT', 'distance', fallback='km')
-lng = config.get('DEFAULT', 'locale', fallback=locale.getlocale()[0] or current_locale)
 
+# Override with US defaults if applicable
 if current_locale == "en_US":
     temperature = temperature or "F"
     distance = distance or "miles"
 
+# Parse command line arguments
 argument_list = sys.argv[1:]
 options = "t:c:d:"
 long_options = ["temperature=", "city=", "distance="]
@@ -49,37 +104,69 @@ try:
         elif current_argument in ("-d", "--distance"):
             distance = current_value.lower()
             if distance not in ("km", "miles"):
-                msg = "distance unit is neither km, nor miles", distance
+                msg = "distance unit is neither km, nor miles"
                 raise RuntimeError(msg)
-        else:
-            city = urllib.parse.quote(current_value)
+        elif current_argument in ("-c", "--city"):
+            city = current_value
 except getopt.error as err:
     print(str(err))
     sys.exit(1)
 
-if temperature == "F":
-    temperature_unit = "fahrenheit"
-elif temperature == "C":
-    temperature_unit = "celsius"
-
-if distance == "miles":
-    wind_speed_unit = "mph"
-elif distance == "km":
-    wind_speed_unit = "kmh"
+# Build wttr.in URL
+# If no city specified, wttr.in will auto-detect based on IP
+url = f"https://wttr.in/{urllib.parse.quote(city) if city else ''}?format=j1"
 
 try:
-    headers = {"Accept-Language": f"{lng.replace('_', '-')},{lng.split('_')[0]};q=0.5"}
-    weather = requests.get(
-        f"https://manjaro-sway.download/weather/{city}?temperature_unit={temperature_unit}&wind_speed_unit={wind_speed_unit}",
-        timeout=10,
-        headers=headers
-    ).json()
-except (requests.exceptions.HTTPError,
-        requests.exceptions.ConnectionError,
-        requests.exceptions.Timeout) as err:
-    # En caso de error, imprime un JSON válido y termina con código 0.
-    print(json.dumps({"error": "No data", "temperature": "N/A"}))
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+
+    # Extract current condition
+    current = data['current_condition'][0]
+
+    # Get temperature in correct unit
+    temp = current['temp_C'] if temperature == 'C' else current['temp_F']
+    temp_unit = '°C' if temperature == 'C' else '°F'
+
+    # Get weather icon from code
+    weather_code = current['weatherCode']
+    icon = WEATHER_CODES.get(weather_code, "🌡️")
+
+    # Get weather description
+    weather_desc = current['weatherDesc'][0]['value']
+
+    # Get location info
+    location = data['nearest_area'][0]
+    area_name = location['areaName'][0]['value']
+    country = location['country'][0]['value']
+
+    # Get wind info
+    if distance == "km":
+        wind_speed = current['windspeedKmph']
+        wind_unit = "km/h"
+    else:
+        wind_speed = current['windspeedMiles']
+        wind_unit = "mph"
+
+    wind_dir = current['winddir16Point']
+    humidity = current['humidity']
+    feels_like = current['FeelsLikeC'] if temperature == 'C' else current['FeelsLikeF']
+
+    # Format output for waybar
+    output = {
+        "text": f"{icon} {temp}{temp_unit}",
+        "tooltip": f"{area_name}, {country}\n{weather_desc}\nFeels like: {feels_like}{temp_unit}\nWind: {wind_speed} {wind_unit} {wind_dir}\nHumidity: {humidity}%",
+        "class": "weather"
+    }
+
+    print(json.dumps(output))
+
+except (requests.exceptions.RequestException, KeyError, ValueError) as err:
+    # In case of error, return a fallback message
+    output = {
+        "text": "🌡️ N/A",
+        "tooltip": f"Weather data unavailable\nError: {str(err)}",
+        "class": "weather-error"
+    }
+    print(json.dumps(output))
     sys.exit(0)
-
-print(json.dumps(weather))
-
