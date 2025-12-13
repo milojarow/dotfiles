@@ -3,7 +3,7 @@
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
 
 # Fixed alias to check if a file is already in remote
-alias remote-exists='f(){ 
+alias remote-exists='f(){
   if dots ls-tree -r --name-only origin/main | grep -q "^$1$"; then
     echo "✅ File exists in remote"
   else
@@ -11,3 +11,6 @@ alias remote-exists='f(){
   fi
   unset -f f
 }; f'
+
+# Alias to run Claude with skip permissions flag
+alias claude='claude --dangerously-skip-permissions'
