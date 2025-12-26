@@ -44,6 +44,9 @@ case "$1" in
     "valent")
         signal=13
         ;;
+    "window-title" | "window_title")
+        signal=10
+        ;;
     "privacy")
         signal=15
         ;;

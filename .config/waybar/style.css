@@ -87,6 +87,21 @@ window#waybar {
     padding-right: 8px;
 }
 
+#custom-window-title {
+    padding-left: 10px;
+    padding-right: 10px;
+    font-weight: normal;
+    color: @theme_text_color;
+}
+
+#custom-window-title.terminal {
+    color: @theme_selected_bg_color;
+}
+
+#custom-window-title.empty {
+    opacity: 0.5;
+}
+
 /* -----------------------------------------------------------------------------
  * Module styles
  * -------------------------------------------------------------------------- */

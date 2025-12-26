@@ -21,7 +21,7 @@
     "modules-center": [
         "custom/wf-recorder",
         "sway/mode",
-        "custom/weather"
+        "custom/window-title"
     ],
     "modules-right": [
         // security
@@ -50,6 +50,7 @@
         "custom/adaptive-light",
         "custom/sunset",
         "custom/pacman",
+        "custom/weather",
         "tray",
         "clock"
     ],
@@ -325,6 +326,15 @@
         "on-click": "xdg-open \"https://wttr.in/$(curl -s https://manjaro-sway.download/geoip | jq -r '.city')\"",
         "on-click-right": "waybar-signal weather",
         "signal": 16
+    },
+    "custom/window-title": {
+        "interval": "once",
+        "return-type": "json",
+        "format": "{}",
+        "exec": "~/.config/sway/scripts/window-title-output.sh",
+        "signal": 10,
+        "tooltip": true,
+        "max-length": 70
     },
     "custom/dnd": {
         "interval": "once",
