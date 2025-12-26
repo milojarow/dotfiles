@@ -26,34 +26,62 @@ if [ -z "$title" ] || [ "$title" = "null" ]; then
     exit 0
 fi
 
-# Get working directory from process if it's a terminal
+# Get working directory from terminal foreground process
 get_process_cwd() {
     if [ "$pid" != "0" ] && [ "$pid" != "null" ]; then
-        # Try to get cwd from /proc
+        # For terminals, we need to find the foreground shell process, not the terminal itself
+        # Find all child processes and get the deepest one (usually the active shell)
+
+        # Get all descendant PIDs
+        children=$(pgrep -P "$pid" 2>/dev/null)
+
+        if [ -n "$children" ]; then
+            # Look for shell processes (fish, bash, zsh, sh) among children
+            for child_pid in $children; do
+                # Check if it's a shell
+                cmd=$(ps -p "$child_pid" -o comm= 2>/dev/null)
+                case "$cmd" in
+                    fish|bash|zsh|sh)
+                        # Found a shell, get its cwd
+                        cwd=$(readlink -f "/proc/$child_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
+                        if [ -n "$cwd" ] && [ "$cwd" != "~" ]; then
+                            echo "$cwd"
+                            return
+                        fi
+                        ;;
+                esac
+            done
+        fi
+
+        # Fallback: use terminal's own cwd
         if [ -d "/proc/$pid" ]; then
             readlink -f "/proc/$pid/cwd" 2>/dev/null | sed "s|^$HOME|~|"
         fi
     fi
 }
 
-# Check if title already has directory format (path:command)
-has_directory_in_title() {
-    echo "$title" | grep -qE '^[~/].*:'
-}
-
-# Build display text based on whether terminal and whether dir is in title
-display_text="$title"
-
-# If it's a terminal app but title doesn't have directory, prepend the cwd
+# Build display text
+# For terminals: always show real cwd from process, ignore window title (unreliable)
+# For other apps: use window title as-is
 case "$app_id" in
     *terminal* | *foot* | *alacritty* | *kitty* | *ghostty*)
-        if ! has_directory_in_title; then
-            cwd=$(get_process_cwd)
-            if [ -n "$cwd" ]; then
-                # Prepend directory to title
-                display_text="$cwd: $title"
+        cwd=$(get_process_cwd)
+        if [ -n "$cwd" ]; then
+            # Show directory + shell name if available
+            shell_name=$(echo "$title" | grep -oE '(fish|bash|zsh|sh)$' || echo "")
+            if [ -n "$shell_name" ]; then
+                display_text="$cwd - $shell_name"
+            else
+                display_text="$cwd"
             fi
+        else
+            # Fallback to title if can't get cwd
+            display_text="$title"
         fi
+        ;;
+    *)
+        # Not a terminal, use title as-is
+        display_text="$title"
         ;;
 esac
 
