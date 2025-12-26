@@ -9,6 +9,8 @@ import urllib.parse
 import requests
 import configparser
 from os import path, environ
+from datetime import datetime
+from pathlib import Path
 
 # Weather code mapping to emoji icons
 # Based on wttr.in weather codes: https://github.com/chubin/wttr.in/blob/master/lib/constants.py
@@ -63,6 +65,10 @@ WEATHER_CODES = {
     "395": "⛈️",   # Moderate or heavy snow in area with thunder
 }
 
+# Cache configuration
+CACHE_FILE = Path.home() / ".cache" / "weather_data.json"
+CACHE_MAX_AGE_HOURS = 24
+
 config_path = path.join(
     environ.get('APPDATA') or
     environ.get('XDG_CONFIG_HOME') or
@@ -112,6 +118,47 @@ except getopt.error as err:
     print(str(err))
     sys.exit(1)
 
+def save_cache(data):
+    """Save weather data to cache file."""
+    cache_data = {
+        "timestamp": datetime.now().isoformat(),
+        "data": data
+    }
+    try:
+        CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(CACHE_FILE, 'w') as f:
+            json.dump(cache_data, f)
+    except Exception:
+        pass  # Fail silently if can't write cache
+
+def load_cache():
+    """Load cached weather data if still valid."""
+    try:
+        if not CACHE_FILE.exists():
+            return None
+
+        with open(CACHE_FILE, 'r') as f:
+            cache_data = json.load(f)
+
+        # Check cache age
+        cached_time = datetime.fromisoformat(cache_data['timestamp'])
+        age_hours = (datetime.now() - cached_time).total_seconds() / 3600
+
+        if age_hours > CACHE_MAX_AGE_HOURS:
+            return None  # Cache too old
+
+        # Add staleness indicator
+        data = cache_data['data'].copy()
+        if age_hours > 6:
+            data['text'] = "⟳ " + data['text']
+            data['tooltip'] = f"⚠️ Cached data ({int(age_hours)}h old)\n\n{data['tooltip']}"
+        elif age_hours > 2:
+            data['text'] = "⟳ " + data['text']
+
+        return data
+    except Exception:
+        return None  # Invalid cache
+
 # Build wttr.in URL
 # If no city specified, wttr.in will auto-detect based on IP
 url = f"https://wttr.in/{urllib.parse.quote(city) if city else ''}?format=j1"
@@ -159,14 +206,23 @@ try:
         "class": "weather"
     }
 
+    save_cache(output)
     print(json.dumps(output))
 
 except (requests.exceptions.RequestException, KeyError, ValueError) as err:
-    # In case of error, return a fallback message
-    output = {
-        "text": "🌡️ N/A",
-        "tooltip": f"Weather data unavailable\nError: {str(err)}",
-        "class": "weather-error"
-    }
-    print(json.dumps(output))
-    sys.exit(0)
+    # Try to use cached data first
+    cached_data = load_cache()
+
+    if cached_data:
+        # Return cached data
+        print(json.dumps(cached_data))
+        sys.exit(0)  # Exit with success - waybar should keep showing cached data
+    else:
+        # No cache available, show N/A
+        output = {
+            "text": "🌡️ N/A",
+            "tooltip": f"Weather data unavailable\nError: {str(err)}",
+            "class": "weather-error"
+        }
+        print(json.dumps(output))
+        sys.exit(0)  # Exit with success - waybar should keep showing error state
