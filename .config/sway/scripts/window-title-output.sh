@@ -8,7 +8,8 @@ get_focused_info() {
         {
             name: .name // "",
             app_id: .app_id // "",
-            class: .window_properties.class // ""
+            class: .window_properties.class // "",
+            pid: .pid // 0
         }
     '
 }
@@ -17,6 +18,7 @@ info=$(get_focused_info)
 title=$(echo "$info" | jq -r '.name')
 app_id=$(echo "$info" | jq -r '.app_id')
 class=$(echo "$info" | jq -r '.class')
+pid=$(echo "$info" | jq -r '.pid')
 
 # If no focused window (empty workspace)
 if [ -z "$title" ] || [ "$title" = "null" ]; then
@@ -24,8 +26,36 @@ if [ -z "$title" ] || [ "$title" = "null" ]; then
     exit 0
 fi
 
-# Display full title with path + command (user preference)
+# Get working directory from process if it's a terminal
+get_process_cwd() {
+    if [ "$pid" != "0" ] && [ "$pid" != "null" ]; then
+        # Try to get cwd from /proc
+        if [ -d "/proc/$pid" ]; then
+            readlink -f "/proc/$pid/cwd" 2>/dev/null | sed "s|^$HOME|~|"
+        fi
+    fi
+}
+
+# Check if title already has directory format (path:command)
+has_directory_in_title() {
+    echo "$title" | grep -qE '^[~/].*:'
+}
+
+# Build display text based on whether terminal and whether dir is in title
 display_text="$title"
+
+# If it's a terminal app but title doesn't have directory, prepend the cwd
+case "$app_id" in
+    *terminal* | *foot* | *alacritty* | *kitty* | *ghostty*)
+        if ! has_directory_in_title; then
+            cwd=$(get_process_cwd)
+            if [ -n "$cwd" ]; then
+                # Prepend directory to title
+                display_text="$cwd: $title"
+            fi
+        fi
+        ;;
+esac
 
 # Truncate if too long (max 60 chars)
 # For terminal titles with path:command format, try to preserve both path and command
