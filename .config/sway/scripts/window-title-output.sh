@@ -60,22 +60,57 @@ get_process_cwd() {
     fi
 }
 
+# Extract directory from terminal title
+# Handles formats: "~/path: cmd", "~/path - shell", "~ - fish", etc.
+extract_path_from_title() {
+    local t="$1"
+
+    # Pattern 1: "~/path: anything" or "/path: anything"
+    if echo "$t" | grep -qE '^[~/][^:]*:'; then
+        echo "$t" | sed -E 's/^([~/][^:]*):.*$/\1/'
+        return
+    fi
+
+    # Pattern 2: "~/path - shell" or "/path - shell"
+    if echo "$t" | grep -qE '^[~/].* - (fish|bash|zsh|sh)$'; then
+        echo "$t" | sed -E 's/^([~/].*) - (fish|bash|zsh|sh)$/\1/'
+        return
+    fi
+
+    # Pattern 3: Just "~ - fish" (home directory)
+    if echo "$t" | grep -qE '^~ - '; then
+        echo "~"
+        return
+    fi
+
+    # No path found in title
+    return 1
+}
+
 # Build display text
-# For terminals: always show real cwd from process, ignore window title (unreliable)
+# For terminals: extract path from title (most reliable), fallback to /proc
 # For other apps: use window title as-is
 case "$app_id" in
     *terminal* | *foot* | *alacritty* | *kitty* | *ghostty*)
-        cwd=$(get_process_cwd)
+        # Try to extract path from title first
+        cwd=$(extract_path_from_title "$title")
+
+        # If no path in title, try /proc as fallback
+        if [ -z "$cwd" ]; then
+            cwd=$(get_process_cwd)
+        fi
+
         if [ -n "$cwd" ]; then
-            # Show directory + shell name if available
-            shell_name=$(echo "$title" | grep -oE '(fish|bash|zsh|sh)$' || echo "")
-            if [ -n "$shell_name" ]; then
-                display_text="$cwd - $shell_name"
+            # Show directory + rest of title after path
+            # Extract what comes after the path (command, shell, etc)
+            suffix=$(echo "$title" | sed -E "s|^[~/][^:]*:? ?(.*)$|\1|" | sed 's/^ *- *//')
+            if [ -n "$suffix" ] && [ "$suffix" != "$title" ]; then
+                display_text="$cwd: $suffix"
             else
                 display_text="$cwd"
             fi
         else
-            # Fallback to title if can't get cwd
+            # Complete fallback: use title as-is
             display_text="$title"
         fi
         ;;
