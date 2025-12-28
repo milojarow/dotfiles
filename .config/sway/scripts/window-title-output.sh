@@ -61,20 +61,38 @@ get_foreground_command() {
 }
 
 # Get working directory from terminal foreground process
+# NOTE: This only works reliably for single-shell terminals.
+# For multi-tab terminals (ghostty), window title is the only reliable source.
 get_process_cwd() {
     if [ "$pid" != "0" ] && [ "$pid" != "null" ]; then
         # Get all descendant PIDs
         children=$(pgrep -P "$pid" 2>/dev/null)
 
         if [ -n "$children" ]; then
-            # Look for shell processes (fish, bash, zsh, sh) among children
+            # Count shell processes
+            shell_count=0
             for child_pid in $children; do
                 cmd=$(ps -p "$child_pid" -o comm= 2>/dev/null)
                 case "$cmd" in
                     fish|bash|zsh|sh)
-                        # Found a shell, get its cwd
+                        shell_count=$((shell_count + 1))
+                        ;;
+                esac
+            done
+
+            # If multiple shells detected, don't use /proc (unreliable for multi-tab)
+            # Window title is the only reliable source for multi-tab terminals
+            if [ "$shell_count" -gt 1 ]; then
+                return 1
+            fi
+
+            # Single shell: safe to use /proc
+            for child_pid in $children; do
+                cmd=$(ps -p "$child_pid" -o comm= 2>/dev/null)
+                case "$cmd" in
+                    fish|bash|zsh|sh)
                         cwd=$(readlink -f "/proc/$child_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
-                        if [ -n "$cwd" ] && [ "$cwd" != "~" ]; then
+                        if [ -n "$cwd" ]; then
                             echo "$cwd"
                             return
                         fi
@@ -83,7 +101,7 @@ get_process_cwd() {
             done
         fi
 
-        # Fallback: use terminal's own cwd
+        # Fallback: use terminal's own cwd (only if no children or single shell)
         if [ -d "/proc/$pid" ]; then
             readlink -f "/proc/$pid/cwd" 2>/dev/null | sed "s|^$HOME|~|"
         fi
