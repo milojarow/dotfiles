@@ -3,6 +3,63 @@
 
 set -euo pipefail
 
+# Show help if requested
+if [[ "${1:-}" =~ ^(-h|--help)$ ]]; then
+    cat <<'EOF'
+ssh-tmux - SSH wrapper with persistent tmux sessions
+
+USAGE:
+    ssh-tmux <host> [session_name]
+    ssht <host> [session_name]       (fish alias)
+
+DESCRIPTION:
+    Connects to remote host via SSH and automatically creates or attaches
+    to a tmux session. This allows your work to persist even if:
+    - Computer is suspended/hibernated
+    - Network connection drops
+    - SSH connection times out
+
+    Perfect for long-running tasks like Claude Code CLI sessions with
+    pending questions.
+
+ARGUMENTS:
+    host            SSH host (e.g., hostinger-vps)
+    session_name    tmux session name (default: "default")
+
+EXAMPLES:
+    # Connect to VPS with session named "work"
+    ssh-tmux hostinger-vps work
+    ssht hostinger-vps work
+
+    # Connect with default session name
+    ssh-tmux hostinger-vps
+    ssht hostinger-vps
+
+    # After suspend/resume, reconnect to same session
+    ssht hostinger-vps work    # Everything is as you left it!
+
+TMUX BASICS:
+    Ctrl+b d        Detach from session (leaves it running)
+    Ctrl+b ?        Show all tmux keybindings
+    Ctrl+b c        Create new window
+    Ctrl+b n/p      Next/previous window
+    tmux ls         List active sessions (run inside SSH)
+
+LOCATION:
+    Full guide: ~/.config/tmux/README.md
+
+EOF
+    exit 0
+fi
+
+# Validate arguments
+if [ -z "${1:-}" ]; then
+    echo "Error: HOST argument is required" >&2
+    echo "Usage: ssh-tmux <host> [session_name]" >&2
+    echo "Try 'ssh-tmux --help' for more information" >&2
+    exit 1
+fi
+
 HOST="$1"
 SESSION_NAME="${2:-default}"
 

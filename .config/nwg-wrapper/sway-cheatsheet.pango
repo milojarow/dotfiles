@@ -33,6 +33,8 @@ Toggle Fullscreen	<span foreground="#8be9fd">Mod+F</span>
 Location: <span foreground="#50fa7b">~/.scripts/</span>
 <span foreground="#50fa7b">clipardo</span> - Copy files to clipboard with markdown formatting
 <span foreground="#50fa7b">hyprpicker</span> - Pick colors from screen with cursor
+<span foreground="#50fa7b">ssht &lt;host&gt; [session]</span> - SSH with persistent tmux sessions
+   Survives suspend/resume. Use <span foreground="#8be9fd">ssht --help</span> for details
 
 <span foreground="#f1fa8c" weight="bold">󰖷 SYSTEM SETTINGS</span>
 AUR Helper		<span foreground="#8be9fd">paru</span>
