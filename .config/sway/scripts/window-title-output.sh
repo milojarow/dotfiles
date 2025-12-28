@@ -136,39 +136,64 @@ extract_path_from_title() {
 }
 
 # Build display text
-# For terminals: check for foreground command first, then path
-# For other apps: use window title as-is
+# Format: [location]: [context]
+# - location: directory path OR "ssh hostname"
+# - context: window title (cleaned) OR foreground command
 case "$app_id" in
     *terminal* | *foot* | *alacritty* | *kitty* | *ghostty*)
-        # First priority: check if there's an interactive command running (ssh, vim, etc.)
+        # Step 1: Get LOCATION (where we are)
+        location=""
         fg_cmd=$(get_foreground_command)
 
-        if [ -n "$fg_cmd" ]; then
-            # Show the foreground command (e.g., "ssh hostinger-vps")
-            display_text="$fg_cmd"
+        # Check if it's an SSH session
+        if echo "$fg_cmd" | grep -q '^ssh '; then
+            # Extract hostname from "ssh hostname" or "ssh user@hostname"
+            ssh_target=$(echo "$fg_cmd" | awk '{print $2}' | sed 's/.*@//')
+            location="ssh $ssh_target"
         else
-            # No foreground command, show directory
-            # Try to extract path from title first
-            cwd=$(extract_path_from_title "$title")
+            # Not SSH, get directory path
+            # Try to extract from title first
+            location=$(extract_path_from_title "$title")
 
             # If no path in title, try /proc as fallback
-            if [ -z "$cwd" ]; then
-                cwd=$(get_process_cwd)
+            if [ -z "$location" ]; then
+                location=$(get_process_cwd)
             fi
+        fi
 
-            if [ -n "$cwd" ]; then
-                # Show directory + rest of title after path
-                # Extract what comes after the path (command, shell, etc)
-                suffix=$(echo "$title" | sed -E "s|^[~/][^:]*:? ?(.*)$|\1|" | sed 's/^ *- *//')
-                if [ -n "$suffix" ] && [ "$suffix" != "$title" ]; then
-                    display_text="$cwd: $suffix"
-                else
-                    display_text="$cwd"
-                fi
+        # Step 2: Get CONTEXT (what we're doing)
+        context=""
+
+        if echo "$location" | grep -q '^ssh '; then
+            # In SSH session: context comes from window title
+            # (remote commands aren't visible in local process tree)
+            context="$title"
+        else
+            # Not in SSH: check for foreground commands (vim, htop, etc)
+            if [ -n "$fg_cmd" ]; then
+                context="$fg_cmd"
             else
-                # Complete fallback: use title as-is
-                display_text="$title"
+                # No foreground command, extract context from title
+                # Remove path prefix if present
+                cleaned_title=$(echo "$title" | sed -E 's|^[~/][^:]*:? ?||' | sed 's/^ *- *//' | sed 's/^ *- .*//')
+
+                # If title has meaningful context (not just shell name), use it
+                if [ -n "$cleaned_title" ] && ! echo "$cleaned_title" | grep -qE '^(fish|bash|zsh|sh)$'; then
+                    context="$cleaned_title"
+                fi
             fi
+        fi
+
+        # Step 3: Build display text
+        if [ -n "$location" ] && [ -n "$context" ]; then
+            display_text="$location: $context"
+        elif [ -n "$location" ]; then
+            display_text="$location"
+        elif [ -n "$context" ]; then
+            display_text="$context"
+        else
+            # Complete fallback: use title as-is
+            display_text="$title"
         fi
         ;;
     *)
