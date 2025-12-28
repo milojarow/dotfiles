@@ -1,0 +1,149 @@
+.TH SSH-TMUX 1 "2025-12-28" "1.0" "User Commands"
+.SH NAME
+ssh-tmux, ssht \- SSH wrapper with persistent tmux sessions
+.SH SYNOPSIS
+.B ssh-tmux
+.I host
+.RI [ session_name ]
+.br
+.B ssht
+.I host
+.RI [ session_name ]
+.SH DESCRIPTION
+.B ssh-tmux
+connects to a remote host via SSH and automatically creates or attaches to a tmux session. This allows your work to persist even if:
+.IP \(bu 2
+Computer is suspended/hibernated
+.IP \(bu
+Network connection drops
+.IP \(bu
+SSH connection times out
+.PP
+Perfect for long-running tasks like Claude Code CLI sessions with pending questions.
+.SH ARGUMENTS
+.TP
+.I host
+SSH host (e.g., hostinger-vps). Must be a valid host configured in
+.IR ~/.ssh/config .
+.TP
+.I session_name
+Optional tmux session name (default: "default"). Use descriptive names like "work", "blindando", or "finanzas" to organize different projects.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Display help message and exit.
+.SH EXAMPLES
+.PP
+Connect to VPS with session named "work":
+.RS
+.nf
+ssh-tmux hostinger-vps work
+ssht hostinger-vps work
+.fi
+.RE
+.PP
+Connect with default session name:
+.RS
+.nf
+ssh-tmux hostinger-vps
+ssht hostinger-vps
+.fi
+.RE
+.PP
+After suspend/resume, reconnect to same session:
+.RS
+.nf
+ssht hostinger-vps work    # Everything is as you left it!
+.fi
+.RE
+.SH TMUX BASICS
+Once connected, you can use these tmux keybindings:
+.TP
+.B Ctrl+b d
+Detach from session (leaves it running on server)
+.TP
+.B Ctrl+b ?
+Show all tmux keybindings
+.TP
+.B Ctrl+b c
+Create new window within session
+.TP
+.B Ctrl+b n
+Next window
+.TP
+.B Ctrl+b p
+Previous window
+.TP
+.B Ctrl+b ,
+Rename current window
+.TP
+.B Ctrl+b %
+Split window vertically
+.TP
+.B Ctrl+b "
+Split window horizontally
+.PP
+Inside SSH session, you can also run:
+.TP
+.B tmux ls
+List all active tmux sessions
+.TP
+.B tmux attach -t name
+Attach to specific session by name
+.TP
+.B tmux kill-session -t name
+Kill specific session by name
+.SH WORKFLOW
+.PP
+Typical workflow for persistent sessions:
+.IP 1. 4
+Start working on a project:
+.RS
+.nf
+ssht hostinger-vps blindando
+.fi
+.RE
+.IP 2.
+Work normally (Claude Code CLI, vim, etc.)
+.IP 3.
+Computer gets suspended or connection drops
+.IP 4.
+Later, reconnect to continue exactly where you left off:
+.RS
+.nf
+ssht hostinger-vps blindando
+.fi
+.RE
+.SH FILES
+.TP
+.I ~/.config/tmux/tmux.conf
+tmux configuration file with vi mode and custom styling
+.TP
+.I ~/.config/tmux/README.md
+Complete tmux guide with examples
+.TP
+.I ~/.ssh/config
+SSH configuration with keepalive settings
+.SH NOTES
+.PP
+.B ssh-tmux
+uses SSH keepalive to maintain connections during short network interruptions (configured via
+.IR ~/.ssh/config ).
+However, tmux is the real solution for persistent sessions across long suspends.
+.PP
+tmux sessions run on the
+.BR server ,
+not your local machine. This means your work persists even if you close your terminal, suspend your computer, or lose network connection.
+.SH AUTHOR
+Created for persistent SSH workflows, particularly for Claude Code CLI sessions.
+.SH SEE ALSO
+.BR ssh (1),
+.BR tmux (1),
+.BR ssh_config (5)
+.PP
+Full guide:
+.I ~/.config/tmux/README.md
+.PP
+Sway cheatsheet: Press
+.B Super+/
+to see quick reference.
