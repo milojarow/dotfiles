@@ -13,6 +13,18 @@ fish_vi_key_bindings
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
 alias claude='claude --dangerously-skip-permissions'
 
+# SSH with tmux for persistent sessions
+function ssht
+    set host $argv[1]
+    set session_name $argv[2]
+
+    if test -z "$session_name"
+        set session_name "default"
+    end
+
+    ssh-tmux $host $session_name
+end
+
 # Function to check if a file exists in remote
 function remote-exists
     set filepath $argv[1]

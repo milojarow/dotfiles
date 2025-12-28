@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# SSH wrapper that automatically uses tmux for persistent sessions
+
+set -euo pipefail
+
+HOST="$1"
+SESSION_NAME="${2:-default}"
+
+# SSH to host and either:
+# 1. Attach to existing tmux session
+# 2. Create new tmux session if none exists
+ssh -t "$HOST" "tmux attach -t '$SESSION_NAME' 2>/dev/null || tmux new -s '$SESSION_NAME'"
