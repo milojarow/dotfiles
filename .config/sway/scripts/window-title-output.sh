@@ -131,6 +131,12 @@ extract_path_from_title() {
         return
     fi
 
+    # Pattern 4: Claude Code CLI in HOME (e.g., "✳ Session title")
+    if echo "$t" | grep -qE '^✳ '; then
+        echo "~"
+        return
+    fi
+
     # No path found in title
     return 1
 }
