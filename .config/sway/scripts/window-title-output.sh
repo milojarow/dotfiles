@@ -26,19 +26,49 @@ if [ -z "$title" ] || [ "$title" = "null" ]; then
     exit 0
 fi
 
+# Get foreground command from terminal (ssh, vim, etc.)
+get_foreground_command() {
+    if [ "$pid" != "0" ] && [ "$pid" != "null" ]; then
+        # Get all shell processes under terminal
+        children=$(pgrep -P "$pid" 2>/dev/null)
+
+        if [ -n "$children" ]; then
+            # For each shell, check if it has an interactive command running
+            for child_pid in $children; do
+                cmd=$(ps -p "$child_pid" -o comm= 2>/dev/null)
+                case "$cmd" in
+                    fish|bash|zsh|sh)
+                        # Check if shell has foreground children (ssh, vim, etc.)
+                        shell_children=$(pgrep -P "$child_pid" -a 2>/dev/null)
+                        if [ -n "$shell_children" ]; then
+                            # Look for interactive commands
+                            echo "$shell_children" | while read child_info; do
+                                child_cmd=$(echo "$child_info" | awk '{print $2}')
+                                case "$child_cmd" in
+                                    ssh|vim|nvim|htop|top|less|man|nano|emacs|tmux|screen)
+                                        # Found interactive command, return full command line
+                                        echo "$shell_children" | awk '{$1=""; print $0}' | sed 's/^ //'
+                                        return
+                                        ;;
+                                esac
+                            done
+                        fi
+                        ;;
+                esac
+            done
+        fi
+    fi
+}
+
 # Get working directory from terminal foreground process
 get_process_cwd() {
     if [ "$pid" != "0" ] && [ "$pid" != "null" ]; then
-        # For terminals, we need to find the foreground shell process, not the terminal itself
-        # Find all child processes and get the deepest one (usually the active shell)
-
         # Get all descendant PIDs
         children=$(pgrep -P "$pid" 2>/dev/null)
 
         if [ -n "$children" ]; then
             # Look for shell processes (fish, bash, zsh, sh) among children
             for child_pid in $children; do
-                # Check if it's a shell
                 cmd=$(ps -p "$child_pid" -o comm= 2>/dev/null)
                 case "$cmd" in
                     fish|bash|zsh|sh)
@@ -88,30 +118,39 @@ extract_path_from_title() {
 }
 
 # Build display text
-# For terminals: extract path from title (most reliable), fallback to /proc
+# For terminals: check for foreground command first, then path
 # For other apps: use window title as-is
 case "$app_id" in
     *terminal* | *foot* | *alacritty* | *kitty* | *ghostty*)
-        # Try to extract path from title first
-        cwd=$(extract_path_from_title "$title")
+        # First priority: check if there's an interactive command running (ssh, vim, etc.)
+        fg_cmd=$(get_foreground_command)
 
-        # If no path in title, try /proc as fallback
-        if [ -z "$cwd" ]; then
-            cwd=$(get_process_cwd)
-        fi
-
-        if [ -n "$cwd" ]; then
-            # Show directory + rest of title after path
-            # Extract what comes after the path (command, shell, etc)
-            suffix=$(echo "$title" | sed -E "s|^[~/][^:]*:? ?(.*)$|\1|" | sed 's/^ *- *//')
-            if [ -n "$suffix" ] && [ "$suffix" != "$title" ]; then
-                display_text="$cwd: $suffix"
-            else
-                display_text="$cwd"
-            fi
+        if [ -n "$fg_cmd" ]; then
+            # Show the foreground command (e.g., "ssh hostinger-vps")
+            display_text="$fg_cmd"
         else
-            # Complete fallback: use title as-is
-            display_text="$title"
+            # No foreground command, show directory
+            # Try to extract path from title first
+            cwd=$(extract_path_from_title "$title")
+
+            # If no path in title, try /proc as fallback
+            if [ -z "$cwd" ]; then
+                cwd=$(get_process_cwd)
+            fi
+
+            if [ -n "$cwd" ]; then
+                # Show directory + rest of title after path
+                # Extract what comes after the path (command, shell, etc)
+                suffix=$(echo "$title" | sed -E "s|^[~/][^:]*:? ?(.*)$|\1|" | sed 's/^ *- *//')
+                if [ -n "$suffix" ] && [ "$suffix" != "$title" ]; then
+                    display_text="$cwd: $suffix"
+                else
+                    display_text="$cwd"
+                fi
+            else
+                # Complete fallback: use title as-is
+                display_text="$title"
+            fi
         fi
         ;;
     *)
