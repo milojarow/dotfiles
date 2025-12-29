@@ -61,47 +61,45 @@ get_foreground_command() {
 }
 
 # Get working directory from terminal foreground process
-# NOTE: This only works reliably for single-shell terminals.
-# For multi-tab terminals (ghostty), window title is the only reliable source.
+# Uses process tree traversal to find the active shell's working directory
 get_process_cwd() {
     if [ "$pid" != "0" ] && [ "$pid" != "null" ]; then
-        # Get all descendant PIDs
-        children=$(pgrep -P "$pid" 2>/dev/null)
+        # Get all descendant PIDs (not just direct children)
+        all_descendants=$(pstree -p "$pid" 2>/dev/null | grep -oP '\(\K[0-9]+' | grep -v "^$pid$")
 
-        if [ -n "$children" ]; then
-            # Count shell processes
-            shell_count=0
-            for child_pid in $children; do
-                cmd=$(ps -p "$child_pid" -o comm= 2>/dev/null)
+        if [ -n "$all_descendants" ]; then
+            # Find shells and their commands
+            best_shell_pid=""
+
+            for desc_pid in $all_descendants; do
+                cmd=$(ps -p "$desc_pid" -o comm= 2>/dev/null)
                 case "$cmd" in
                     fish|bash|zsh|sh)
-                        shell_count=$((shell_count + 1))
-                        ;;
-                esac
-            done
-
-            # If multiple shells detected, don't use /proc (unreliable for multi-tab)
-            # Window title is the only reliable source for multi-tab terminals
-            if [ "$shell_count" -gt 1 ]; then
-                return 1
-            fi
-
-            # Single shell: safe to use /proc
-            for child_pid in $children; do
-                cmd=$(ps -p "$child_pid" -o comm= 2>/dev/null)
-                case "$cmd" in
-                    fish|bash|zsh|sh)
-                        cwd=$(readlink -f "/proc/$child_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
-                        if [ -n "$cwd" ]; then
-                            echo "$cwd"
-                            return
+                        # Found a shell, check if it has foreground command
+                        shell_children=$(pgrep -P "$desc_pid" 2>/dev/null)
+                        if [ -n "$shell_children" ]; then
+                            # Shell has children (claude, vim, etc.), use this shell's CWD
+                            best_shell_pid="$desc_pid"
+                            break
+                        elif [ -z "$best_shell_pid" ]; then
+                            # No foreground command, but remember first shell as fallback
+                            best_shell_pid="$desc_pid"
                         fi
                         ;;
                 esac
             done
+
+            # Read CWD from best shell candidate
+            if [ -n "$best_shell_pid" ]; then
+                cwd=$(readlink -f "/proc/$best_shell_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
+                if [ -n "$cwd" ]; then
+                    echo "$cwd"
+                    return
+                fi
+            fi
         fi
 
-        # Fallback: use terminal's own cwd (only if no children or single shell)
+        # Fallback: use terminal's own cwd
         if [ -d "/proc/$pid" ]; then
             readlink -f "/proc/$pid/cwd" 2>/dev/null | sed "s|^$HOME|~|"
         fi
@@ -127,12 +125,6 @@ extract_path_from_title() {
 
     # Pattern 3: Just "~ - fish" (home directory)
     if echo "$t" | grep -qE '^~ - '; then
-        echo "~"
-        return
-    fi
-
-    # Pattern 4: Claude Code CLI in HOME (e.g., "✳ Session title")
-    if echo "$t" | grep -qE '^✳ '; then
         echo "~"
         return
     fi
