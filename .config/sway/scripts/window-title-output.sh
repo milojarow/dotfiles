@@ -45,7 +45,7 @@ get_foreground_command() {
                             echo "$shell_children" | while read child_info; do
                                 child_cmd=$(echo "$child_info" | awk '{print $2}')
                                 case "$child_cmd" in
-                                    ssh|vim|nvim|htop|top|less|man|nano|emacs|tmux|screen)
+                                    ssh|vim|nvim|htop|top|less|man|nano|emacs|tmux|screen|claude)
                                         # Found interactive command, return full command line
                                         echo "$shell_children" | awk '{$1=""; print $0}' | sed 's/^ //'
                                         return
@@ -70,32 +70,44 @@ get_process_cwd() {
         if [ -n "$all_descendants" ]; then
             # Find shells and their commands
             best_shell_pid=""
+            best_shell_cwd=""
 
             for desc_pid in $all_descendants; do
                 cmd=$(ps -p "$desc_pid" -o comm= 2>/dev/null)
                 case "$cmd" in
                     fish|bash|zsh|sh)
-                        # Found a shell, check if it has foreground command
+                        # Found a shell, check if it has children
                         shell_children=$(pgrep -P "$desc_pid" 2>/dev/null)
-                        if [ -n "$shell_children" ]; then
-                            # Shell has children (claude, vim, etc.), use this shell's CWD
+
+                        # Try to read PWD from process environment (more reliable for Fish)
+                        shell_cwd=""
+                        if [ -r "/proc/$desc_pid/environ" ]; then
+                            shell_cwd=$(tr '\0' '\n' < "/proc/$desc_pid/environ" 2>/dev/null | grep '^PWD=' | cut -d= -f2- | sed "s|^$HOME|~|")
+                        fi
+
+                        # Fallback to readlink if PWD not available
+                        if [ -z "$shell_cwd" ]; then
+                            shell_cwd=$(readlink -f "/proc/$desc_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
+                        fi
+
+                        # Prioritize shells WITHOUT children (at prompt)
+                        if [ -z "$shell_children" ] && [ -n "$shell_cwd" ]; then
                             best_shell_pid="$desc_pid"
+                            best_shell_cwd="$shell_cwd"
                             break
-                        elif [ -z "$best_shell_pid" ]; then
-                            # No foreground command, but remember first shell as fallback
+                        elif [ -z "$best_shell_pid" ] && [ -n "$shell_cwd" ]; then
+                            # Shell with children - remember as fallback
                             best_shell_pid="$desc_pid"
+                            best_shell_cwd="$shell_cwd"
                         fi
                         ;;
                 esac
             done
 
-            # Read CWD from best shell candidate
-            if [ -n "$best_shell_pid" ]; then
-                cwd=$(readlink -f "/proc/$best_shell_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
-                if [ -n "$cwd" ]; then
-                    echo "$cwd"
-                    return
-                fi
+            # Return best shell's CWD
+            if [ -n "$best_shell_cwd" ]; then
+                echo "$best_shell_cwd"
+                return
             fi
         fi
 
@@ -112,24 +124,69 @@ extract_path_from_title() {
     local t="$1"
 
     # Pattern 1: "~/path: anything" or "/path: anything"
+    # Matches: "~/projects/foo: npm run dev - npm"
     if echo "$t" | grep -qE '^[~/][^:]*:'; then
         echo "$t" | sed -E 's/^([~/][^:]*):.*$/\1/'
         return
     fi
 
     # Pattern 2: "~/path - shell" or "/path - shell"
+    # Matches: "~/projects/foo - fish"
     if echo "$t" | grep -qE '^[~/].* - (fish|bash|zsh|sh)$'; then
         echo "$t" | sed -E 's/^([~/].*) - (fish|bash|zsh|sh)$/\1/'
         return
     fi
 
-    # Pattern 3: Just "~ - fish" (home directory)
-    if echo "$t" | grep -qE '^~ - '; then
+    # Pattern 3: "~ - anything" or "~: anything"
+    # Matches: "~ - fish", "~: ssh server"
+    if echo "$t" | grep -qE '^~[: -]'; then
         echo "~"
         return
     fi
 
-    # No path found in title
+    # Pattern 4: "[command] ~/path" or "[command] /path"
+    # Matches: "ssh ~/projects/foo", "vim /etc/config"
+    if echo "$t" | grep -qE '^[a-zA-Z0-9_-]+ [~/]'; then
+        echo "$t" | sed -E 's/^[a-zA-Z0-9_-]+ ([~/][^ ]*).*/\1/'
+        return
+    fi
+
+    # No path found
+    return 1
+}
+
+# Extract context (command/description) from terminal title
+extract_context_from_title() {
+    local t="$1"
+    local context=""
+
+    # Pattern 1: "path: command - name"
+    # Example: "~/projects/foo: npm run dev - npm"
+    if echo "$t" | grep -qE ':.*-'; then
+        context=$(echo "$t" | sed -E 's/^[^:]*: (.*) - .*$/\1/')
+        echo "$context"
+        return
+    fi
+
+    # Pattern 2: "path: command"
+    # Example: "~: ssht hostinger-vps blindando"
+    if echo "$t" | grep -q ':'; then
+        context=$(echo "$t" | cut -d: -f2- | sed 's/^ *//')
+        echo "$context"
+        return
+    fi
+
+    # Pattern 3: Claude Code session
+    # Example: "✳ UI/UX Bug Fixes"
+    if echo "$t" | grep -qE '^✳'; then
+        context=$(echo "$t" | sed 's/^✳ *//')
+        echo "$context"
+        return
+    fi
+
+    # Pattern 4: "path - shell"
+    # Example: "~/projects/foo - fish"
+    # Don't return anything (shell name is not interesting context)
     return 1
 }
 
@@ -138,8 +195,33 @@ extract_path_from_title() {
 # - location: directory path OR "ssh hostname"
 # - context: window title (cleaned) OR foreground command
 case "$app_id" in
+    *footclient*)
+        # footclient shares PID across all terminals - ONLY use title
+        location=$(extract_path_from_title "$title")
+
+        # If no path in title, use fallback
+        if [ -z "$location" ]; then
+            # Check if it's a Claude Code session
+            if echo "$title" | grep -qE '^✳'; then
+                location="claude"
+            else
+                location="~"  # Conservative fallback
+            fi
+        fi
+
+        # Extract context from title
+        context=$(extract_context_from_title "$title")
+
+        # Build display
+        if [ -n "$context" ]; then
+            display_text="$location: $context"
+        else
+            display_text="$location"
+        fi
+        ;;
+
     *terminal* | *foot* | *alacritty* | *kitty* | *ghostty*)
-        # Step 1: Get LOCATION (where we are)
+        # For other terminals (standalone PIDs), use existing logic
         location=""
         fg_cmd=$(get_foreground_command)
 
@@ -172,13 +254,7 @@ case "$app_id" in
                 context="$fg_cmd"
             else
                 # No foreground command, extract context from title
-                # Remove path prefix if present
-                cleaned_title=$(echo "$title" | sed -E 's|^[~/][^:]*:? ?||' | sed 's/^ *- *//' | sed 's/^ *- .*//')
-
-                # If title has meaningful context (not just shell name), use it
-                if [ -n "$cleaned_title" ] && ! echo "$cleaned_title" | grep -qE '^(fish|bash|zsh|sh)$'; then
-                    context="$cleaned_title"
-                fi
+                context=$(extract_context_from_title "$title")
             fi
         fi
 
@@ -194,6 +270,7 @@ case "$app_id" in
             display_text="$title"
         fi
         ;;
+
     *)
         # Not a terminal, use title as-is
         display_text="$title"
@@ -245,8 +322,9 @@ case "$app_id" in
         ;;
 esac
 
-# Output JSON
-printf '{"text":"%s", "tooltip":"%s", "class":"%s"}\n' \
-    "$display_text" \
-    "$(echo "$tooltip" | sed -z 's/\n/\\n/g')" \
-    "$css_class"
+# Output JSON (using jq for proper escaping, -c for compact output)
+jq -nc \
+    --arg text "$display_text" \
+    --arg tooltip "$tooltip" \
+    --arg class "$css_class" \
+    '{text: $text, tooltip: $tooltip, class: $class}'
