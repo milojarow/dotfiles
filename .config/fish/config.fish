@@ -54,4 +54,21 @@ set -gx KUBECONFIG "$HOME/.kube/config-hostinger"
 # Disable focus reporting mode (prevents [O[I characters when switching windows)
 printf "\e[?1004l"
 
+# Override fish_title to always include current directory
+# This ensures waybar can extract the path even when commands are running
+# Includes shell PID for footclient CWD detection (footclient shares PID across all terminals)
+function fish_title
+    set -l command_part ""
+    set -l running_command (status current-command)
+
+    # If there's a foreground command running, include it
+    if test -n "$running_command" -a "$running_command" != "fish"
+        set command_part ": $running_command - $running_command"
+    end
+
+    # Include shell PID at the end for waybar to map window -> shell -> CWD
+    # Format: "~/path [PID]" or "~/path: command - command [PID]"
+    echo (prompt_pwd)$command_part" [%self]"
+end
+
 

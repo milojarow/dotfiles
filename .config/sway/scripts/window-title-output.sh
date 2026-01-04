@@ -118,60 +118,98 @@ get_process_cwd() {
     fi
 }
 
+# Extract shell PID from terminal title (if present)
+# Fish includes PID in format: "path [PID]" or "path: command [PID]"
+extract_shell_pid_from_title() {
+    local t="$1"
+
+    # Pattern: [PID] at the end
+    if echo "$t" | grep -qE '\[[0-9]+\]$'; then
+        echo "$t" | grep -oP '\[(\K[0-9]+)(?=\]$)'
+        return
+    fi
+
+    return 1
+}
+
 # Get working directory for footclient terminals
-# Since footclient shares PID across all terminals, we need special handling
-# Strategy: find shell processes (with or without children) and use readlink on their /proc/$pid/cwd
+# Since footclient shares PID across all terminals, we have a fundamental limitation:
+# We CANNOT reliably determine which shell corresponds to the focused window.
+#
+# This function accepts an optional shell_pid parameter (from title):
+# - If shell_pid provided: use it directly (ACCURATE)
+# - If no shell_pid: return NOTHING if there's ambiguity (multiple shells with children)
 get_footclient_cwd() {
+    local shell_pid="$1"  # Optional: specific shell PID from title
+
+    # If caller provided a specific shell PID, use it directly
+    if [ -n "$shell_pid" ]; then
+        shell_cwd=$(readlink -f "/proc/$shell_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
+        if [ -n "$shell_cwd" ] && [ "$shell_cwd" != "/" ]; then
+            echo "$shell_cwd"
+            return
+        fi
+    fi
+
+    # No specific PID provided, try to auto-detect (with limitations)
     if [ "$pid" != "0" ] && [ "$pid" != "null" ]; then
         # Get all descendant PIDs
         all_descendants=$(pstree -p "$pid" 2>/dev/null | grep -oP '\(\K[0-9]+' | grep -v "^$pid$")
 
         if [ -n "$all_descendants" ]; then
-            # First pass: find shells WITH children (command running like Claude)
-            # These are more likely to be the focused window
+            # Collect all shells and their CWDs
+            shell_count=0
+            shell_with_children_count=0
+            last_cwd=""
+            last_cwd_with_children=""
+
             for desc_pid in $all_descendants; do
                 cmd=$(ps -p "$desc_pid" -o comm= 2>/dev/null)
                 case "$cmd" in
                     fish|bash|zsh|sh)
+                        shell_count=$((shell_count + 1))
+                        shell_cwd=$(readlink -f "/proc/$desc_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
+
                         # Check if shell has children (command running)
                         shell_children=$(pgrep -P "$desc_pid" 2>/dev/null)
 
                         if [ -n "$shell_children" ]; then
-                            # Shell has children, get CWD using readlink
-                            # readlink shows CURRENT cwd, not initial cwd like environ
-                            shell_cwd=$(readlink -f "/proc/$desc_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
-
-                            if [ -n "$shell_cwd" ] && [ "$shell_cwd" != "/" ]; then
-                                echo "$shell_cwd"
-                                return
-                            fi
+                            shell_with_children_count=$((shell_with_children_count + 1))
+                            last_cwd_with_children="$shell_cwd"
                         fi
+
+                        last_cwd="$shell_cwd"
                         ;;
                 esac
             done
 
-            # Second pass: fallback to shells WITHOUT children (at prompt)
-            for desc_pid in $all_descendants; do
-                cmd=$(ps -p "$desc_pid" -o comm= 2>/dev/null)
-                case "$cmd" in
-                    fish|bash|zsh|sh)
-                        shell_cwd=$(readlink -f "/proc/$desc_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
+            # If there's exactly ONE shell with children, we can confidently use its CWD
+            if [ $shell_with_children_count -eq 1 ]; then
+                echo "$last_cwd_with_children"
+                return
+            fi
 
-                        if [ -n "$shell_cwd" ] && [ "$shell_cwd" != "/" ]; then
-                            echo "$shell_cwd"
-                            return
-                        fi
-                        ;;
-                esac
-            done
+            # If all shells are idle (no children) and there's only one, use it
+            if [ $shell_with_children_count -eq 0 ] && [ $shell_count -eq 1 ]; then
+                echo "$last_cwd"
+                return
+            fi
+
+            # Multiple shells with children - we cannot determine which is focused
+            # Return nothing and let the caller handle it
+            return 1
         fi
     fi
 }
 
 # Extract directory from terminal title
 # Handles formats: "~/path: cmd", "~/path - shell", "~ - fish", etc.
+# Also removes [PID] suffix if present
 extract_path_from_title() {
     local t="$1"
+
+    # Remove [PID] suffix if present (added by fish_title for footclient detection)
+    t=$(echo "$t" | sed -E 's/ \[[0-9]+\]$//')
 
     # Pattern 1: "~/path: anything" or "/path: anything"
     # Matches: "~/projects/foo: npm run dev - npm"
@@ -206,9 +244,13 @@ extract_path_from_title() {
 }
 
 # Extract context (command/description) from terminal title
+# Also removes [PID] suffix if present
 extract_context_from_title() {
     local t="$1"
     local context=""
+
+    # Remove [PID] suffix if present (added by fish_title for footclient detection)
+    t=$(echo "$t" | sed -E 's/ \[[0-9]+\]$//')
 
     # Pattern 1: "path: command - name"
     # Example: "~/projects/foo: npm run dev - npm"
@@ -247,12 +289,15 @@ extract_context_from_title() {
 case "$app_id" in
     *footclient*)
         # footclient shares PID across all terminals
+        # Extract shell PID from title (if present) for accurate CWD detection
+        shell_pid=$(extract_shell_pid_from_title "$title")
+
         # Try to extract location from title first (most reliable when available)
         location=$(extract_path_from_title "$title")
 
-        # If no path in title, get CWD from process tree
+        # If no path in title, get CWD from process tree using shell PID
         if [ -z "$location" ]; then
-            location=$(get_footclient_cwd)
+            location=$(get_footclient_cwd "$shell_pid")
         fi
 
         # If still no location, use fallback
