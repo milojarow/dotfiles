@@ -118,6 +118,56 @@ get_process_cwd() {
     fi
 }
 
+# Get working directory for footclient terminals
+# Since footclient shares PID across all terminals, we need special handling
+# Strategy: find shell processes (with or without children) and use readlink on their /proc/$pid/cwd
+get_footclient_cwd() {
+    if [ "$pid" != "0" ] && [ "$pid" != "null" ]; then
+        # Get all descendant PIDs
+        all_descendants=$(pstree -p "$pid" 2>/dev/null | grep -oP '\(\K[0-9]+' | grep -v "^$pid$")
+
+        if [ -n "$all_descendants" ]; then
+            # First pass: find shells WITH children (command running like Claude)
+            # These are more likely to be the focused window
+            for desc_pid in $all_descendants; do
+                cmd=$(ps -p "$desc_pid" -o comm= 2>/dev/null)
+                case "$cmd" in
+                    fish|bash|zsh|sh)
+                        # Check if shell has children (command running)
+                        shell_children=$(pgrep -P "$desc_pid" 2>/dev/null)
+
+                        if [ -n "$shell_children" ]; then
+                            # Shell has children, get CWD using readlink
+                            # readlink shows CURRENT cwd, not initial cwd like environ
+                            shell_cwd=$(readlink -f "/proc/$desc_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
+
+                            if [ -n "$shell_cwd" ] && [ "$shell_cwd" != "/" ]; then
+                                echo "$shell_cwd"
+                                return
+                            fi
+                        fi
+                        ;;
+                esac
+            done
+
+            # Second pass: fallback to shells WITHOUT children (at prompt)
+            for desc_pid in $all_descendants; do
+                cmd=$(ps -p "$desc_pid" -o comm= 2>/dev/null)
+                case "$cmd" in
+                    fish|bash|zsh|sh)
+                        shell_cwd=$(readlink -f "/proc/$desc_pid/cwd" 2>/dev/null | sed "s|^$HOME|~|")
+
+                        if [ -n "$shell_cwd" ] && [ "$shell_cwd" != "/" ]; then
+                            echo "$shell_cwd"
+                            return
+                        fi
+                        ;;
+                esac
+            done
+        fi
+    fi
+}
+
 # Extract directory from terminal title
 # Handles formats: "~/path: cmd", "~/path - shell", "~ - fish", etc.
 extract_path_from_title() {
@@ -196,10 +246,16 @@ extract_context_from_title() {
 # - context: window title (cleaned) OR foreground command
 case "$app_id" in
     *footclient*)
-        # footclient shares PID across all terminals - ONLY use title
+        # footclient shares PID across all terminals
+        # Try to extract location from title first (most reliable when available)
         location=$(extract_path_from_title "$title")
 
-        # If no path in title, use fallback
+        # If no path in title, get CWD from process tree
+        if [ -z "$location" ]; then
+            location=$(get_footclient_cwd)
+        fi
+
+        # If still no location, use fallback
         if [ -z "$location" ]; then
             # Check if it's a Claude Code session
             if echo "$title" | grep -qE '^✳'; then
