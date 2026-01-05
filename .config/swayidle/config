@@ -6,7 +6,6 @@ timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"'
 
 # Lock before sleep (lock.sh has internal guard against multiple instances)
 before-sleep '/home/milo/.config/sway/scripts/lock.sh'
-after-resume 'waybar-signal window-title'
 
 # Make sure there's only one lock when the lock command is used
 lock 'pgrep -x swaylock > /dev/null || /home/milo/.config/sway/scripts/lock.sh'
