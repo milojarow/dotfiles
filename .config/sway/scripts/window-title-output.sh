@@ -136,8 +136,9 @@ cache_location() {
     local win_id="$1"
     local loc="$2"
 
-    # Only cache real locations (not fallbacks)
-    if [ -z "$loc" ] || [ "$loc" = "claude" ] || [ "$loc" = "~" ]; then
+    # Only cache real locations (not fallback "claude")
+    # Note: "~" is a valid location and should be cached
+    if [ -z "$loc" ] || [ "$loc" = "claude" ]; then
         return
     fi
 
@@ -269,9 +270,9 @@ extract_path_from_title() {
         return
     fi
 
-    # Pattern 3: "~ - anything" or "~: anything"
-    # Matches: "~ - fish", "~: ssh server"
-    if echo "$t" | grep -qE '^~[: -]'; then
+    # Pattern 3: "~ - anything" or "~: anything" or just "~"
+    # Matches: "~ - fish", "~: ssh server", "~"
+    if echo "$t" | grep -qE '^~($|[: -])'; then
         echo "~"
         return
     fi
@@ -345,7 +346,7 @@ case "$app_id" in
         fi
 
         # If we successfully determined location, cache it
-        if [ -n "$location" ] && [ "$location" != "claude" ] && [ "$location" != "~" ]; then
+        if [ -n "$location" ] && [ "$location" != "claude" ]; then
             cache_location "$window_id" "$location"
         fi
 
