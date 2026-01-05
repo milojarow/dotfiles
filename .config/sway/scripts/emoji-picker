@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 
+# Warmup wl-ime-type to establish Wayland IME connection
+# This prevents cold-start issues on first emoji insertion
+if ! pgrep -x "wl-ime-type" > /dev/null 2>&1; then
+    # Send empty string to initialize connection (xargs converts stdin to args)
+    echo -n "" | xargs -n1 wl-ime-type 2>/dev/null || true
+    # Brief delay for socket initialization
+    sleep 0.1
+fi
+
 # Configure bemoji to use wl-ime-type for direct emoji typing
+# xargs is REQUIRED to convert stdin (emoji from bemoji) to positional argument
 # This avoids clipboard usage and works with Chromium/Brave + Wayland IME flags
-# xargs -n1 processes one line at a time to prevent buffering
 export BEMOJI_TYPE_CMD="xargs -n1 wl-ime-type"
 
 # Use custom rofi wrapper that applies left-alignment
