@@ -68,7 +68,8 @@ function fish_title
 
     # Include shell PID at the end for waybar to map window -> shell -> CWD
     # Format: "~/path [PID]" or "~/path: command - command [PID]"
-    echo (prompt_pwd)$command_part" [%self]"
+    # Use full path instead of abbreviated prompt_pwd for waybar clarity
+    echo (pwd | sed "s|^$HOME|~|")$command_part" [%self]"
 end
 
 
