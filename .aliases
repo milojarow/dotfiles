@@ -14,3 +14,6 @@ alias remote-exists='f(){
 
 # Alias to run Claude with skip permissions flag
 alias claude='claude --dangerously-skip-permissions'
+
+# Alias to launch Firefox in isolated sandbox
+alias firefox-sandbox='firefox-sandbox'
