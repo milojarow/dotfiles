@@ -6,6 +6,7 @@ get_focused_info() {
     swaymsg -t get_tree | jq -r '
         .. | select(.focused? == true) |
         {
+            id: .id,
             name: .name // "",
             app_id: .app_id // "",
             class: .window_properties.class // "",
@@ -15,6 +16,7 @@ get_focused_info() {
 }
 
 info=$(get_focused_info)
+window_id=$(echo "$info" | jq -r '.id')
 title=$(echo "$info" | jq -r '.name')
 app_id=$(echo "$info" | jq -r '.app_id')
 class=$(echo "$info" | jq -r '.class')
@@ -115,6 +117,48 @@ get_process_cwd() {
         if [ -d "/proc/$pid" ]; then
             readlink -f "/proc/$pid/cwd" 2>/dev/null | sed "s|^$HOME|~|"
         fi
+    fi
+}
+
+# Cache directory for window locations
+CACHE_DIR="/tmp/waybar-window-locations-$USER"
+
+# Ensure cache directory exists
+ensure_cache_dir() {
+    if [ ! -d "$CACHE_DIR" ]; then
+        mkdir -p "$CACHE_DIR" 2>/dev/null
+    fi
+}
+
+# Write location to cache for a window
+# Args: window_id, location
+cache_location() {
+    local win_id="$1"
+    local loc="$2"
+
+    # Only cache real locations (not fallbacks)
+    if [ -z "$loc" ] || [ "$loc" = "claude" ] || [ "$loc" = "~" ]; then
+        return
+    fi
+
+    ensure_cache_dir
+    echo "$loc" > "$CACHE_DIR/$win_id.cache" 2>/dev/null
+}
+
+# Read location from cache for a window
+# Args: window_id
+read_cached_location() {
+    local win_id="$1"
+
+    if [ -f "$CACHE_DIR/$win_id.cache" ]; then
+        cat "$CACHE_DIR/$win_id.cache" 2>/dev/null
+    fi
+}
+
+# Clean up old cache files (older than 24 hours)
+cleanup_old_cache() {
+    if [ -d "$CACHE_DIR" ]; then
+        find "$CACHE_DIR" -name "*.cache" -mtime +1 -delete 2>/dev/null
     fi
 }
 
@@ -300,7 +344,20 @@ case "$app_id" in
             location=$(get_footclient_cwd "$shell_pid")
         fi
 
-        # If still no location, use fallback
+        # If we successfully determined location, cache it
+        if [ -n "$location" ] && [ "$location" != "claude" ] && [ "$location" != "~" ]; then
+            cache_location "$window_id" "$location"
+        fi
+
+        # If still no location, try to read from cache
+        if [ -z "$location" ]; then
+            cached_loc=$(read_cached_location "$window_id")
+            if [ -n "$cached_loc" ]; then
+                location="$cached_loc"
+            fi
+        fi
+
+        # If STILL no location, use fallback
         if [ -z "$location" ]; then
             # Check if it's a Claude Code session
             if echo "$title" | grep -qE '^✳'; then
@@ -318,6 +375,11 @@ case "$app_id" in
             display_text="$location: $context"
         else
             display_text="$location"
+        fi
+
+        # Periodic cleanup (every ~100 invocations, probabilistic)
+        if [ $((RANDOM % 100)) -eq 0 ]; then
+            cleanup_old_cache &
         fi
         ;;
 
