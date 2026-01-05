@@ -36,13 +36,17 @@ export WAYLAND_DISPLAY="${WAYLAND_DISPLAY}"
 
 MIME=$(wl-paste -l | head -1)
 if [[ "$MIME" == "image/png" ]]; then
-    NOW=$(date +%s%N)
-    LAST=$(cat /tmp/screenshot-clipboard-last 2>/dev/null || echo 0)
-    DIFF=$((NOW - LAST))
-    if [[ $DIFF -gt 100000000 ]]; then
-        echo $NOW > /tmp/screenshot-clipboard-last
-        notify-send "Screenshot copied to clipboard"
-    fi
+    # Use flock to prevent race condition when multiple clipboard events fire simultaneously
+    (
+        flock -x 200
+        NOW=$(date +%s%N)
+        LAST=$(cat /tmp/screenshot-clipboard-last 2>/dev/null || echo 0)
+        DIFF=$((NOW - LAST))
+        if [[ $DIFF -gt 100000000 ]]; then
+            echo $NOW > /tmp/screenshot-clipboard-last
+            notify-send "Screenshot copied to clipboard"
+        fi
+    ) 200>/tmp/screenshot-clipboard-debounce.lock
 fi
 EOF
 
