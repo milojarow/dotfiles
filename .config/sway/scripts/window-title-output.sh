@@ -284,6 +284,14 @@ extract_path_from_title() {
         return
     fi
 
+    # Pattern 5: Simple path starting with ~ or / (with at least one subdirectory)
+    # Matches: "~/projects/web-blindando", "/etc/nginx/sites"
+    # This catches Fish idle terminals where title is just the path
+    if echo "$t" | grep -qE '^[~/].*/'; then
+        echo "$t"
+        return
+    fi
+
     # No path found
     return 1
 }
