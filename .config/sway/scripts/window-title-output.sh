@@ -3,19 +3,18 @@
 # Shows path + command for terminals to help identify context
 
 get_focused_info() {
-    local tree=$(swaymsg -t get_tree)
-
-    # Get the focused workspace name
-    local focused_ws=$(echo "$tree" | jq -r '.. | select(.type? == "workspace" and .focused? == true) | .name' | head -1)
+    # Get the currently focused workspace name
+    local focused_ws=$(swaymsg -t get_workspaces | jq -r '.[] | select(.focused == true) | .name')
 
     # If no focused workspace, return empty
-    if [ -z "$focused_ws" ] || [ "$focused_ws" = "null" ]; then
+    if [ -z "$focused_ws" ]; then
         echo '{"id":0,"name":"","app_id":"","class":"","pid":0}'
         return
     fi
 
-    # Get focused window info ONLY if it's within the focused workspace
-    local result=$(echo "$tree" | jq -r --arg ws "$focused_ws" '
+    # Get focused window info from tree
+    # Filter to only windows within the focused workspace
+    swaymsg -t get_tree | jq -c --arg ws "$focused_ws" '
         .. |
         select(.type? == "workspace" and .name? == $ws) |
         .. |
@@ -27,14 +26,7 @@ get_focused_info() {
             class: .window_properties.class // "",
             pid: .pid // 0
         }
-    ' | head -1)
-
-    # If no result (empty workspace), output empty object
-    if [ -z "$result" ]; then
-        echo '{"id":0,"name":"","app_id":"","class":"","pid":0}'
-    else
-        echo "$result"
-    fi
+    ' | head -1 || echo '{"id":0,"name":"","app_id":"","class":"","pid":0}'
 }
 
 info=$(get_focused_info)
