@@ -183,7 +183,6 @@
     },
     "custom/pacman": {
         "format": "󰀼 {}",
-        "interval": 3600,
         "return-type": "json",
         "exec-if": "~/.config/sway/scripts/checkupdates.sh check",
         "exec": "~/.config/sway/scripts/checkupdates.sh status",
