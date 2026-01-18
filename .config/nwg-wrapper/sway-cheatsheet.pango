@@ -29,6 +29,10 @@ Tiled/Split Mode	<span foreground="#8be9fd">Mod+E</span>
 Toggle Floating		<span foreground="#8be9fd">Mod+Shift+Space</span>
 Toggle Fullscreen	<span foreground="#8be9fd">Mod+F</span>
 
+<span foreground="#ff5555" weight="bold">󰘸 SCRATCHPAD</span>
+Send to Scratchpad	<span foreground="#8be9fd">Mod+Shift+-</span>
+Show Scratchpad		<span foreground="#8be9fd">Mod+-</span>
+
 <span foreground="#bd93f9" weight="bold">  TOOLS &amp; SCRIPTS</span>
 Location: <span foreground="#50fa7b">~/.scripts/</span>
 <span foreground="#50fa7b">clipardo</span> - Copy files to clipboard with markdown formatting
