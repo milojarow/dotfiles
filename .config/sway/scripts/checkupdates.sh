@@ -11,7 +11,7 @@ case $1 in
       exit 0
     fi
 
-    count=$(printf '%s' "$updates" | wc -l)
+    count=$(printf '%s\n' "$updates" | wc -l)
     # Escapa los saltos de línea para JSON válido y escapa las comillas dobles
     escaped_updates=$(printf '%s' "$updates" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
     # Imprime un JSON con el número de actualizaciones y la lista en el tooltip
