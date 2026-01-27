@@ -39,6 +39,7 @@ Location: <span foreground="#50fa7b">~/.scripts/</span>
 <span foreground="#50fa7b">hyprpicker</span> - Pick colors from screen with cursor
 <span foreground="#50fa7b">ssht &lt;host&gt; [session]</span> - SSH with persistent tmux sessions
    Survives suspend/resume. Use <span foreground="#8be9fd">ssht --help</span> for details
+<span foreground="#50fa7b">bt-audio-fix</span> - Restore bluetooth A2DP audio after dropout
 
 <span foreground="#f1fa8c" weight="bold">󰖷 SYSTEM SETTINGS</span>
 AUR Helper		<span foreground="#8be9fd">paru</span>
