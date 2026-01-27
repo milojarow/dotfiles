@@ -1,0 +1,44 @@
+#!/bin/bash
+# Bluetooth A2DP audio watchdog
+# Monitors WirePlumber logs for transport failures and auto-recovers
+
+DEVICE_MAC="44:1D:B1:4B:0B:A0"
+CARD_NAME="bluez_card.${DEVICE_MAC//:/_}"
+COOLDOWN=15
+
+recover_audio() {
+    logger -t bt-watchdog "A2DP transport error detected, recovering..."
+
+    # Attempt 1: Profile toggle (most reliable method)
+    pactl set-card-profile "$CARD_NAME" off 2>/dev/null
+    sleep 2
+    if pactl set-card-profile "$CARD_NAME" a2dp-sink 2>/dev/null; then
+        logger -t bt-watchdog "A2DP restored via profile toggle"
+        notify-send -t 3000 "Bluetooth Audio" "A2DP recovered automatically" 2>/dev/null
+        return
+    fi
+
+    # Attempt 2: Restart WirePlumber to re-establish all transports
+    logger -t bt-watchdog "Profile toggle failed, restarting WirePlumber..."
+    systemctl --user restart wireplumber
+    sleep 3
+
+    # Verify the card came back
+    if pactl list cards short 2>/dev/null | grep -q "$CARD_NAME"; then
+        pactl set-card-profile "$CARD_NAME" a2dp-sink 2>/dev/null
+        logger -t bt-watchdog "A2DP restored via WirePlumber restart"
+        notify-send -t 3000 "Bluetooth Audio" "A2DP recovered (WirePlumber restart)" 2>/dev/null
+    else
+        logger -t bt-watchdog "Recovery failed - card not found after restart"
+        notify-send -t 5000 "Bluetooth Audio" "Auto-recovery failed. Run: bt-audio-fix" 2>/dev/null
+    fi
+}
+
+logger -t bt-watchdog "Starting bluetooth audio watchdog"
+
+journalctl --user -u wireplumber -f -o cat --no-pager | while read -r line; do
+    if echo "$line" | grep -q "spa.bluez5.sink.media.*error"; then
+        recover_audio
+        sleep "$COOLDOWN"
+    fi
+done
