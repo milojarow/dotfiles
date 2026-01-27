@@ -9,6 +9,9 @@ fish_vi_key_bindings
 #    # smth smth
 #end
 
+# Add npm global bin to PATH (must be before aliases that use npm binaries)
+fish_add_path $HOME/.npm-global/bin
+
 # aliases
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
 alias claude='claude --dangerously-skip-permissions'
@@ -40,9 +43,6 @@ set -Ux PAGER bat
 set -Ux MANPAGER bat
 set -Ux SYSTEMD_PAGER bat
 set -Ux GIT_PAGER bat
-
-# Add npm global bin to PATH
-fish_add_path $HOME/.npm-global/bin
 
 # Default editor configuration
 set -gx EDITOR vim
