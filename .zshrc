@@ -80,3 +80,6 @@ export VISUAL=vim
 
 # Disable focus reporting mode (prevents [O[I characters when switching windows)
 printf "\e[?1004l"
+
+# Fix for Node 25 experimental localStorage API issue
+export NODE_OPTIONS="--localstorage-file=/tmp/node-localstorage.json"
