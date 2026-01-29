@@ -1,37 +1,37 @@
 #!/bin/bash
 # Bluetooth A2DP audio watchdog
 # Monitors WirePlumber logs for transport failures and auto-recovers
+#
+# IMPORTANT: Do NOT restart WirePlumber as recovery - it triggers a
+# double-free crash in BlueZ 5.85 (a2dp_select_capabilities) which
+# kills the bluetooth controller entirely.
 
 DEVICE_MAC="44:1D:B1:4B:0B:A0"
 CARD_NAME="bluez_card.${DEVICE_MAC//:/_}"
 COOLDOWN=15
+MAX_RETRIES=3
 
 recover_audio() {
+    local attempt=1
+
     logger -t bt-watchdog "A2DP transport error detected, recovering..."
 
-    # Attempt 1: Profile toggle (most reliable method)
-    pactl set-card-profile "$CARD_NAME" off 2>/dev/null
-    sleep 2
-    if pactl set-card-profile "$CARD_NAME" a2dp-sink 2>/dev/null; then
-        logger -t bt-watchdog "A2DP restored via profile toggle"
-        notify-send -t 3000 "Bluetooth Audio" "A2DP recovered automatically" 2>/dev/null
-        return
-    fi
+    while [ $attempt -le $MAX_RETRIES ]; do
+        logger -t bt-watchdog "Recovery attempt $attempt/$MAX_RETRIES"
 
-    # Attempt 2: Restart WirePlumber to re-establish all transports
-    logger -t bt-watchdog "Profile toggle failed, restarting WirePlumber..."
-    systemctl --user restart wireplumber
-    sleep 3
+        pactl set-card-profile "$CARD_NAME" off 2>/dev/null
+        sleep $((attempt + 1))
+        if pactl set-card-profile "$CARD_NAME" a2dp-sink 2>/dev/null; then
+            logger -t bt-watchdog "A2DP restored on attempt $attempt"
+            notify-send -t 3000 "Bluetooth Audio" "A2DP recovered (attempt $attempt)" 2>/dev/null
+            return
+        fi
 
-    # Verify the card came back
-    if pactl list cards short 2>/dev/null | grep -q "$CARD_NAME"; then
-        pactl set-card-profile "$CARD_NAME" a2dp-sink 2>/dev/null
-        logger -t bt-watchdog "A2DP restored via WirePlumber restart"
-        notify-send -t 3000 "Bluetooth Audio" "A2DP recovered (WirePlumber restart)" 2>/dev/null
-    else
-        logger -t bt-watchdog "Recovery failed - card not found after restart"
-        notify-send -t 5000 "Bluetooth Audio" "Auto-recovery failed. Run: bt-audio-fix" 2>/dev/null
-    fi
+        attempt=$((attempt + 1))
+    done
+
+    logger -t bt-watchdog "All recovery attempts failed"
+    notify-send -t 5000 "Bluetooth Audio" "Auto-recovery failed. Run: bt-audio-fix" 2>/dev/null
 }
 
 logger -t bt-watchdog "Starting bluetooth audio watchdog"
