@@ -62,8 +62,14 @@ function fish_title
     set -l running_command (status current-command)
 
     # If there's a foreground command running, include it
+    # $argv[1] contains the full command line with arguments (provided by Fish)
+    # status current-command only returns the command name (no args)
     if test -n "$running_command" -a "$running_command" != "fish"
-        set command_part ": $running_command - $running_command"
+        set -l full_command $argv[1]
+        if test -z "$full_command"
+            set full_command $running_command
+        end
+        set command_part ": $full_command - $running_command"
     end
 
     # Include shell PID at the end for waybar to map window -> shell -> CWD
