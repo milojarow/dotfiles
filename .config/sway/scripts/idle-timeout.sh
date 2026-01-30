@@ -41,7 +41,7 @@ EOF
 
 # Restart swayidle to apply changes
 pkill swayidle || true
-swayidle -w &
+swayidle -w -S seat0 &
 
 # Notify user
 notify-send "Idle timeout set" "System will lock after $timeout_minutes minutes of inactivity"

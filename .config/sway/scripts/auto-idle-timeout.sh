@@ -24,4 +24,4 @@ EOF
 
 # Restart swayidle to apply changes
 pkill swayidle || true
-swayidle -w &
+swayidle -w -S seat0 &
