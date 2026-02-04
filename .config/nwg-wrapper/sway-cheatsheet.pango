@@ -47,5 +47,7 @@ Text Editor		<span foreground="#8be9fd">vim</span>
 Terminal		<span foreground="#8be9fd">foot</span>
 File Manager		<span foreground="#8be9fd">pcmanfm</span>
 USB Devices		<span foreground="#8be9fd">Automounted by default</span>
+Lid Close		<span foreground="#8be9fd">Screen off (processes keep running)</span>
+Lid Open		<span foreground="#8be9fd">Screen on + BT reconnect</span>
 </span>
 </span>
