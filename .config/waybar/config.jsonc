@@ -291,7 +291,7 @@
         "format": "󰨸",
         "interval": "once",
         "return-type": "json",
-        "on-click": "swaymsg -q exec '$clipboard'; waybar-signal clipboard",
+        "on-click": "swaymsg -q exec '$clipboard'",
         "on-click-right": "swaymsg -q exec '$clipboard-del'; waybar-signal clipboard",
         "on-click-middle": "rm -f ~/.cache/cliphist/db; waybar-signal clipboard",
         "exec": "printf '{\"tooltip\":\"%s\"}' $(cliphist list | wc -l)' item(s) in the clipboard\r(Mid click to clear)'",
