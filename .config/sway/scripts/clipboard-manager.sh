@@ -10,17 +10,19 @@ while true; do
         break
     fi
 
+    # Process substitution feeds cliphist to rofi's stdin without a pipe,
+    # so rofi runs in the current shell and $? captures its exit code directly.
     # -kb-custom-1 Delete   → exit code 10 on Delete key
     # -kb-remove-char-forward ""  → unbind Delete from default rofi action
-    selection=$(cliphist list | rofi \
+    selection=$(rofi \
         -theme "$ROFI_THEME" \
         -dmenu \
         -font "$FONT" \
         -p "Clipboard (Enter=copy, Del=remove)" \
         -lines 10 \
         -kb-custom-1 Delete \
-        -kb-remove-char-forward "" || true)
-    exit_code=${PIPESTATUS[1]}
+        -kb-remove-char-forward "" < <(cliphist list))
+    exit_code=$?
 
     case $exit_code in
         0)  # Enter → copy selected item
