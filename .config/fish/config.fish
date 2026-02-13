@@ -1,5 +1,10 @@
 source /usr/share/cachyos-fish-config/cachyos-config.fish
 
+# Override "done" plugin settings (sourced by cachyos-config)
+# Bell sound triggers foot urgency flag → workspace turns red in waybar
+set -U __done_notify_sound 1
+set -U __done_notification_urgency_level normal
+
 # activar modo vi en línea de comandos
 fish_vi_key_bindings
 
