@@ -18,20 +18,27 @@ fi
 # Use consistent filename to overwrite previous image
 SCREENSHOT="/tmp/swaylock-blur.png"
 
-# Capture the screen
-grim "$SCREENSHOT"
-
-# Detecta qué comando usar para ImageMagick
-if command -v magick &> /dev/null; then
-    # Para ImageMagick 7 - aumentado el nivel de desenfoque de 8 a 15
-    magick "$SCREENSHOT" -blur 0x15 "$SCREENSHOT"
-else
-    # Para ImageMagick 6 o anterior - aumentado el nivel de desenfoque de 8 a 15
-    convert "$SCREENSHOT" -blur 0x15 "$SCREENSHOT"
+# Capture the screen (fallback to solid color lock if grim fails)
+if ! grim "$SCREENSHOT" 2>/dev/null; then
+    swaylock -c 282a36
+    exit 0
 fi
 
-# Bloquea la pantalla con la imagen desenfocada
+# Apply blur - reduced from 0x15 to 0x8 to stay within InhibitDelayMaxSec
+if command -v magick &> /dev/null; then
+    magick "$SCREENSHOT" -blur 0x8 "$SCREENSHOT" 2>/dev/null
+else
+    convert "$SCREENSHOT" -blur 0x8 "$SCREENSHOT" 2>/dev/null
+fi
+
+# Fallback to solid color if blur failed
+if [ ! -f "$SCREENSHOT" ]; then
+    swaylock -c 282a36
+    exit 0
+fi
+
+# Lock screen with blurred background
 swaylock -i "$SCREENSHOT"
 
-# Elimina la captura cuando termine swaylock
-rm "$SCREENSHOT"
+# Cleanup after unlock
+rm -f "$SCREENSHOT"
