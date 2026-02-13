@@ -10,7 +10,8 @@ fi
 
 # Write our PID and setup cleanup
 echo $$ > "$LOCKFILE"
-trap "rm -f '$LOCKFILE'" EXIT INT TERM
+trap "rm -f '$LOCKFILE'" EXIT
+trap "rm -f '$LOCKFILE'; exit 0" INT TERM
 
 # Export necessary environment variables for notify-send
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"

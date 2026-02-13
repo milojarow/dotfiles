@@ -42,7 +42,7 @@ if [[ "$MIME" == "image/png" ]]; then
         NOW=$(date +%s%N)
         LAST=$(cat /tmp/screenshot-clipboard-last 2>/dev/null || echo 0)
         DIFF=$((NOW - LAST))
-        if [[ $DIFF -gt 100000000 ]]; then
+        if [[ $DIFF -gt 500000000 ]]; then
             echo $NOW > /tmp/screenshot-clipboard-last
             notify-send "Screenshot copied to clipboard"
         fi
