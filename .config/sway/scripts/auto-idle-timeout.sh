@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Set timeout value (in minutes)
-timeout_minutes=5  # Changed from 1 to 5 for a more reasonable default
+timeout_minutes=5
 
 # Convert minutes to seconds
 timeout_seconds=$((timeout_minutes * 60))
 
-# Update swayidle config file with a more complete configuration
+# Update swayidle config file
 mkdir -p ~/.config/swayidle
 cat > ~/.config/swayidle/config << EOF
 # Lock screen after timeout
@@ -22,6 +22,9 @@ before-sleep '/home/milo/.config/sway/scripts/lock.sh'
 lock 'pgrep -x swaylock > /dev/null || /home/milo/.config/sway/scripts/lock.sh'
 EOF
 
-# Restart swayidle to apply changes
-pkill swayidle || true
+# Restart swayidle cleanly - minimize gap without sleep inhibitor
+pkill -x swayidle 2>/dev/null
+# Wait for old process to fully exit before starting new one
+while pgrep -x swayidle > /dev/null 2>&1; do sleep 0.1; done
 swayidle -w -S seat0 &
+disown
