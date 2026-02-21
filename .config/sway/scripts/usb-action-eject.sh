@@ -1,93 +1,87 @@
 #!/bin/bash
 # Eject (safely remove) USB device(s)
+# Operates on physical disks: unmounts all partitions then powers off the disk
 
-# Function to get USB devices
-get_usb_devices() {
+# Returns physical USB disk info: device|label|size
+get_usb_disks() {
     while IFS= read -r line; do
         device=$(echo "$line" | awk '{print $1}')
         rm=$(echo "$line" | awk '{print $2}')
         type=$(echo "$line" | awk '{print $3}')
 
-        [[ "$rm" != "1" || "$type" != "part" ]] && continue
+        [[ "$rm" != "1" || "$type" != "disk" ]] && continue
 
         hotplug=$(lsblk -ndo HOTPLUG "$device" 2>/dev/null)
         [[ "$hotplug" != "1" ]] && continue
 
-        mountpoint=$(lsblk -ndo MOUNTPOINT "$device" 2>/dev/null)
-        label=$(lsblk -ndo LABEL "$device" 2>/dev/null)
-
-        echo "$device|$mountpoint|$label"
+        model=$(lsblk -ndo MODEL "$device" 2>/dev/null | xargs)
+        size=$(lsblk -ndo SIZE "$device" 2>/dev/null)
+        label="${model:-$(basename "$device")}"
+        echo "$device|$label|$size"
     done < <(lsblk -nlo NAME,RM,TYPE -p)
 }
 
-# Function to show notification
 notify() {
     notify-send -u normal "USB Manager" "$1"
 }
 
-# Function to eject device
-eject_device() {
-    local device="$1"
+# Unmounts all mounted partitions of a disk, then powers it off
+eject_disk() {
+    local disk="$1"
     local label="$2"
-    local mountpoint="$3"
 
-    # Unmount first if mounted
-    if [ -n "$mountpoint" ]; then
-        if ! udisksctl unmount -b "$device" 2>/dev/null; then
-            notify "Failed to unmount ${label:-$(basename "$device")}"
-            return 1
+    while IFS= read -r line; do
+        part=$(echo "$line" | awk '{print $1}')
+        type=$(echo "$line" | awk '{print $2}')
+        [[ "$type" != "part" ]] && continue
+
+        mountpoint=$(lsblk -ndo MOUNTPOINT "$part" 2>/dev/null)
+        if [ -n "$mountpoint" ]; then
+            if ! udisksctl unmount -b "$part" 2>/dev/null; then
+                notify "Failed to unmount $part before ejecting $label"
+                return 1
+            fi
         fi
-    fi
+    done < <(lsblk -nlo NAME,TYPE -p "$disk")
 
-    # Then power off (eject)
-    if udisksctl power-off -b "$device" 2>/dev/null; then
-        notify "Successfully ejected ${label:-$(basename "$device")}"
+    if udisksctl power-off -b "$disk" 2>/dev/null; then
+        notify "Successfully ejected $label"
         pkill -RTMIN+15 waybar
         return 0
     else
-        notify "Failed to eject ${label:-$(basename "$device")}"
+        notify "Failed to eject $label"
         return 1
     fi
 }
 
-# Main logic
 main() {
-    mapfile -t usb_devices < <(get_usb_devices)
+    mapfile -t usb_disks < <(get_usb_disks)
 
-    if [ "${#usb_devices[@]}" -eq 0 ]; then
+    if [ "${#usb_disks[@]}" -eq 0 ]; then
         notify "No USB devices found"
         exit 0
     fi
 
-    # If only one USB, eject it
-    if [ "${#usb_devices[@]}" -eq 1 ]; then
-        IFS='|' read -r device mountpoint label <<< "${usb_devices[0]}"
-        eject_device "$device" "$label" "$mountpoint"
+    # Single disk: eject directly
+    if [ "${#usb_disks[@]}" -eq 1 ]; then
+        IFS='|' read -r disk label size <<< "${usb_disks[0]}"
+        eject_disk "$disk" "$label"
         exit 0
     fi
 
-    # Multiple USBs - ask which one or all
-    menu_items=("All USB devices|all|")
-    menu_items+=("---SEPARATOR---|separator|")
+    # Multiple disks: let the user pick
+    menu_items=("All USB devices|all")
+    menu_items+=("---SEPARATOR---|separator")
 
-    for device_info in "${usb_devices[@]}"; do
-        IFS='|' read -r device mountpoint label <<< "$device_info"
-        device_name=$(basename "$device")
-        display_label="${label:-$device_name}"
-
-        if [ -n "$mountpoint" ]; then
-            status="(mounted at $mountpoint)"
-        else
-            status="(not mounted)"
-        fi
-
-        menu_items+=("$display_label $status|single|$device|$label|$mountpoint")
+    for disk_info in "${usb_disks[@]}"; do
+        IFS='|' read -r disk label size <<< "$disk_info"
+        menu_items+=("$label ($size)|single|$disk|$label")
     done
 
     selection=$(printf '%s\n' "${menu_items[@]}" | grep -v "SEPARATOR" | rofi -dmenu -i \
         -theme "$HOME/.config/rofi/themes/usb-manager.rasi" \
         -p "Eject USB" \
-        -mesg "Select which USB(s) to safely remove" \
+        -mesg "Select which USB to safely remove" \
         -no-custom)
 
     [ -z "$selection" ] && exit 0
@@ -95,20 +89,16 @@ main() {
     action=$(echo "$selection" | cut -d'|' -f2)
 
     if [ "$action" = "all" ]; then
-        # Eject all
         success_count=0
-        for device_info in "${usb_devices[@]}"; do
-            IFS='|' read -r device mountpoint label <<< "$device_info"
-            if eject_device "$device" "$label" "$mountpoint"; then
-                success_count=$((success_count + 1))
-            fi
+        for disk_info in "${usb_disks[@]}"; do
+            IFS='|' read -r disk label size <<< "$disk_info"
+            eject_disk "$disk" "$label" && success_count=$((success_count + 1))
         done
-        notify "Ejected $success_count of ${#usb_devices[@]} USB(s)"
+        notify "Ejected $success_count of ${#usb_disks[@]} USB(s)"
     elif [ "$action" = "single" ]; then
-        device=$(echo "$selection" | cut -d'|' -f3)
+        disk=$(echo "$selection" | cut -d'|' -f3)
         label=$(echo "$selection" | cut -d'|' -f4)
-        mountpoint=$(echo "$selection" | cut -d'|' -f5)
-        eject_device "$device" "$label" "$mountpoint"
+        eject_disk "$disk" "$label"
     fi
 }
 
