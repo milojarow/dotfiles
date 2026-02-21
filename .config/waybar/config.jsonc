@@ -331,6 +331,7 @@
         "return-type": "json",
         "format": "{}",
         "exec": "~/.config/sway/scripts/window-title-output.sh",
+        "on-click": "~/.config/sway/scripts/window-title-click.sh",
         "signal": 10,
         "tooltip": true,
         "max-length": 70
