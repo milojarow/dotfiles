@@ -398,6 +398,8 @@ done < <(swaymsg -t subscribe -m '["window","workspace"]' | jq --unbuffered -r '
     if .container then
         if (.change == "focus" or (.change == "title" and .container.focused)) then
             [(.container.id|tostring), (.container.name // ""), (.container.app_id // ""), (.container.window_properties.class // ""), (.container.pid|tostring)] | @tsv
+        elif (.change == "close" and .container.focused) then
+            "EMPTY"
         else "SKIP" end
     elif .current then
         if .change == "focus" then
