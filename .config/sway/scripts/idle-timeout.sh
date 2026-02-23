@@ -32,8 +32,8 @@ timeout $timeout_seconds 'pgrep -x swaylock > /dev/null || /home/milo/.config/sw
 # Turn off displays after 2x timeout
 timeout $(($timeout_seconds * 2)) 'swaymsg "output * power off"' resume 'swaymsg "output * power on"'
 
-# Lock before sleep (lock.sh has internal guard against multiple instances)
-before-sleep '/home/milo/.config/sway/scripts/lock.sh'
+# Lock before sleep (skip if already locked)
+before-sleep 'pgrep -x swaylock > /dev/null || /home/milo/.config/sway/scripts/lock.sh'
 
 # Make sure there's only one lock when the lock command is used
 lock 'pgrep -x swaylock > /dev/null || /home/milo/.config/sway/scripts/lock.sh'
