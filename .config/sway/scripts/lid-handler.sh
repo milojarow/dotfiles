@@ -21,5 +21,7 @@ if pgrep -f "systemd-sleep\|systemctl.*sleep" > /dev/null; then
     exit 0
 fi
 
-# Normal lid close: just turn off displays
+# Normal lid close: turn off displays and keyboard backlight
+brightnessctl --device="dell::kbd_backlight" get > /tmp/kbd-lid-brightness 2>/dev/null
+brightnessctl --device="dell::kbd_backlight" set 0 --quiet 2>/dev/null
 swaymsg "output * power off"
