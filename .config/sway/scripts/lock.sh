@@ -13,7 +13,7 @@ _on_exit() {
         # Reset swayidle idle timer after unlock to prevent immediate re-lock
         pkill -x swayidle 2>/dev/null
         while pgrep -x swayidle > /dev/null 2>&1; do sleep 0.05; done
-        swayidle -w -S seat0 &
+        swayidle -w -S seat0 200>&- &
         disown
     fi
 }
