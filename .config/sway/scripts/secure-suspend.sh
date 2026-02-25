@@ -3,6 +3,13 @@
 # Lock screen, then suspend.
 # Keyboard backlight is handled by /usr/lib/systemd/system-sleep/kbd-backlight
 
+# Prevent double-execution: if already suspending, exit silently
+LOCKFILE="/tmp/secure-suspend.lock"
+exec 200>"$LOCKFILE"
+if ! flock -n 200; then
+    exit 0
+fi
+
 # Lock screen FIRST so grim captures before lid might close
 ~/.config/sway/scripts/lock.sh &
 
