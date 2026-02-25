@@ -1,3 +1,8 @@
+// ── Clipboard Functionality ──────────────────────────────────────────────────
+// Role:     Rofi theme for the clipboard history picker and deletion dialogs
+// Used by:  clipboard-manager.sh · $clipboard-del (01-definitions.conf)
+// ─────────────────────────────────────────────────────────────────────────────
+
 * {
     /* Coffee color palette */
     espresso:        #2C1C0D;

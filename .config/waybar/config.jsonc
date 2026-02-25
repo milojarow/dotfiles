@@ -287,6 +287,7 @@
         "on-scroll-down": "playerctl position 10-",
         "signal": 5
     },
+    // [Clipboard Functionality] — requires: cliphist, waybar-signal (signal 9)
     "custom/clipboard": {
         "format": "󰨸",
         "interval": "once",

@@ -17,7 +17,7 @@ $bindsym $mod+Shift+q kill
 $bindsym $mod+d exec $menu
 $bindsym $alt_mod+space exec $menu
 
-## Launch // Open clipboard ##
+## Launch // Open clipboard ##  [Clipboard Functionality]
 $bindsym $mod+Shift+p exec $clipboard
 
 # Drag floating windows by holding down $mod and left mouse button.

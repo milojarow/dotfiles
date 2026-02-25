@@ -8,7 +8,7 @@ set $mode_shutdown "\
 <span foreground='$color10'>(<b>s</b>)</span>shutdown \
 </span>"
 
-set $purge_cliphist [ $purge_cliphist_logout == 'true' ] && rm -f $HOME/.cache/cliphist/db || exit 0
+set $purge_cliphist [ $purge_cliphist_logout == 'true' ] && rm -f $HOME/.cache/cliphist/db || exit 0  # [Clipboard Functionality] purge history on logout/shutdown/reboot
 
 mode --pango_markup $mode_shutdown {
     # lock
