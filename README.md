@@ -60,6 +60,9 @@ paru -S --needed $(grep -v '^#' ~/.dependencies | grep -v '^\s*$' | tr '\n' ' ')
 
 # 7. Make scripts executable
 chmod +x ~/.config/sway/scripts/*.sh ~/.config/sway/scripts/*.py ~/.scripts/*
+
+# 8. Index user man pages
+mandb --user-db
 ```
 
 ## Structure
@@ -257,6 +260,9 @@ chmod +x ~/.config/sway/scripts/*
 
 # Install any new dependencies
 paru -S --needed $(grep -v '^#' ~/.dependencies | grep -v '^\s*$' | tr '\n' ' ')
+
+# Index user man pages (if new .1 files were added under ~/.local/share/man/)
+mandb --user-db
 
 # Reload sway
 swaymsg reload
