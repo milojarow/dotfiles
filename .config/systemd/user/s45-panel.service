@@ -6,8 +6,17 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=%h/projects/s45-panel
+
+# This panel manages a REMOTE Kubernetes cluster, not a local one.
+# KUBECONFIG must point to the remote cluster config explicitly because
+# systemd user services do not inherit shell environment variables.
+# If your kubeconfig file lives elsewhere, update this path.
 Environment=KUBECONFIG=%h/.kube/config-hostinger
+
+# Wait for the remote cluster API to be reachable before starting the panel.
+# Without this, the panel starts but returns empty client lists on first load.
 ExecStartPre=/bin/sh -c 'until kubectl get nodes >/dev/null 2>&1; do sleep 2; done'
+
 ExecStart=%h/projects/s45-panel/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=on-failure
 RestartSec=5s
