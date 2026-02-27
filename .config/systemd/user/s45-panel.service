@@ -6,6 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=%h/projects/s45-panel
+Environment=KUBECONFIG=%h/.kube/config-hostinger
 ExecStartPre=/bin/sh -c 'until kubectl get nodes >/dev/null 2>&1; do sleep 2; done'
 ExecStart=%h/projects/s45-panel/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=on-failure
