@@ -1,0 +1,254 @@
+.TH SCREENSHOTS 1 "2026-03-01" "sway dotfiles" "User Commands"
+.SH NAME
+screenshots \- screenshot capture, editing, and notification system for sway
+.SH DESCRIPTION
+The Screenshots functionality covers the full pipeline from capture to notification:
+interactive region or output capture, annotation via
+.BR swappy (1),
+and two background daemons that fire desktop notifications when a screenshot is
+saved to disk or copied to the clipboard.
+.PP
+Three scripts handle the distinct roles:
+.TP
+.B screenshot-frozen.sh
+Used for region capture. Captures a full-screen PNG with
+.BR grim (1),
+displays it fullscreen with
+.BR swayimg (1)
+to produce a "frozen" visual, then launches
+.BR slurp (1)
+for interactive area selection. After selection, crops the chosen region out of
+the frozen PNG using ImageMagick and writes the result to stdout. The caller
+(the
+.I $pipe_selection
+variable) pipes this output directly into
+.BR swappy (1).
+.TP
+.B screenshot-notify.sh
+Daemon. Monitors
+.I ~/Screenshots
+(or
+.IR $XDG_SCREENSHOTS_DIR )
+using
+.BR inotifywait (1).
+When a PNG file is written (
+.B close_write
+event), fires a
+.BR notify-send (1)
+notification. Uses a lockfile and debounce logic to prevent duplicate
+notifications. Managed by
+.IR screenshot-notify.service .
+.TP
+.B screenshot-clipboard-notify.sh
+Daemon. Uses
+.B wl-paste --watch
+to monitor the Wayland clipboard. When the clipboard contains a PNG image,
+fires a
+.BR notify-send (1)
+notification. Uses a lockfile and debounce (500 ms) to prevent duplicates
+when multiple clipboard events fire in quick succession. Managed by
+.IR screenshot-clipboard-notify.service .
+.SH KEYBINDINGS
+Enter screenshot mode by pressing
+.BR Print .
+Inside the mode:
+.TP
+.B p
+Pick region — launches
+.I screenshot-frozen.sh
+(frozen screen + slurp selection), pipes result into
+.BR swappy (1).
+.TP
+.B o
+Output — captures the current monitor with
+.BR grimshot (1),
+pipes into
+.BR swappy (1).
+.TP
+.B Shift+p
+Pick region and upload the PNG to x0.at; URL copied to clipboard and shown in a notification.
+.TP
+.B Shift+o
+Output capture and upload to x0.at; URL copied to clipboard and shown in a notification.
+.TP
+.B Escape
+Return to default mode without capturing.
+.SH FILES
+.TP
+.I ~/.config/sway/scripts/screenshot-frozen.sh
+Frozen-screen region capture; outputs cropped PNG to stdout.
+.TP
+.I ~/.config/sway/scripts/screenshot-notify.sh
+Daemon: save-to-disk notification via
+.BR inotifywait (1).
+.TP
+.I ~/.config/sway/scripts/screenshot-clipboard-notify.sh
+Daemon: clipboard PNG notification via
+.BR wl-paste (1)
+--watch.
+.TP
+.I ~/.config/swappy/config
+swappy editor configuration: save directory, filename format, panel defaults.
+.TP
+.I ~/.config/systemd/user/screenshot-notify.service
+Systemd user unit for the save-notification daemon. Enabled for
+.IR sway-session.target .
+.TP
+.I ~/.config/systemd/user/screenshot-clipboard-notify.service
+Systemd user unit for the clipboard-notification daemon. Enabled for
+.IR sway-session.target .
+.TP
+.I ~/.config/sway/modes/screenshot
+Sway mode configuration: defines
+.I $mode_screenshot
+and all keybindings, including the
+.B Print
+entry binding.
+.TP
+.I ~/.config/sway/config.d/01-definitions.conf
+Defines
+.IR $grimshot ,
+.IR $pipe_output ,
+.IR $pipe_selection ,
+.IR $swappy ,
+.IR $upload_pipe ,
+and the composite
+.I $screenshot_screen
+/
+.I $screenshot_selection
+(with optional upload variants).
+.TP
+.I ~/.config/sway/autostart
+Defines
+.I $swappy_notify
+and
+.I $screenshot_clipboard_notify
+variables (daemon restart commands).
+.TP
+.I ~/.config/sway/config.d/99-autostart-applications.conf
+Calls
+.I $swappy_notify
+and
+.I $screenshot_clipboard_notify
+inside
+.B exec_always
+so both daemons restart on every sway reload.
+.SH PROGRAMS
+.BR grim (1),
+.BR slurp (1),
+.BR swayimg (1),
+.BR magick / convert
+(ImageMagick),
+.BR swappy (1),
+.BR inotifywait (1),
+.BR notify-send (1),
+.BR wl-paste (1),
+.BR wl-copy (1),
+.BR curl (1)
+(upload to x0.at)
+.SH DAEMONS
+Both notification daemons run as systemd user services under
+.IR sway-session.target .
+They are started (or restarted) every time sway reloads, via
+.B exec_always
+in
+.IR 99-autostart-applications.conf .
+.TP
+.B screenshot-notify.service
+Wraps
+.IR screenshot-notify.sh .
+The unit clears
+.I /tmp/screenshot-notify.lock
+via
+.B ExecStartPre
+before each start to prevent stale lockfile issues.
+.TP
+.B screenshot-clipboard-notify.service
+Wraps
+.IR screenshot-clipboard-notify.sh .
+.SH FLOW
+.SS Capture flow (region example)
+.nr step 1 1
+.IP \n[step]. 3
+User presses
+.B Print
+\[->] sway enters
+.I $mode_screenshot
+.IP \n+[step].
+User presses
+.B p
+\[->] sway exits mode and executes
+.I $screenshot_selection
+.IP \n+[step].
+.I $screenshot_selection
+=
+.I $pipe_selection
+|
+.I $swappy
+: runs
+.I screenshot-frozen.sh
+piped into
+.B swappy -f -
+.IP \n+[step].
+.I screenshot-frozen.sh
+captures full screen \[->] displays with
+.BR swayimg (1)
+\[->] user draws selection with
+.BR slurp (1)
+.IP \n+[step].
+Crops region from frozen PNG using ImageMagick \[->] writes PNG bytes to stdout
+.IP \n+[step].
+.BR swappy (1)
+receives PNG on stdin, opens editor with annotation tools
+.IP \n+[step].
+User saves or copies; swappy exits
+.SS Notification flow (save)
+.nr step 1 1
+.IP \n[step]. 3
+swappy saves PNG to
+.I ~/Screenshots/
+.IP \n+[step].
+.I screenshot-notify.sh
+detects
+.B close_write
+on the directory via
+.BR inotifywait (1)
+.IP \n+[step].
+Debounce check (100 ms) prevents duplicate events
+.IP \n+[step].
+.BR notify-send (1)
+fires "Screenshot saved" notification
+.SS Notification flow (clipboard copy)
+.nr step 1 1
+.IP \n[step]. 3
+swappy copies PNG to Wayland clipboard
+.IP \n+[step].
+.B wl-paste --watch
+in
+.I screenshot-clipboard-notify.sh
+fires callback script
+.IP \n+[step].
+Callback checks MIME type; if
+.BR image/png ,
+debounce check (500 ms) runs under
+.BR flock (1)
+.IP \n+[step].
+.BR notify-send (1)
+fires "Screenshot copied to clipboard" notification
+.SH STORAGE
+Screenshots are saved to
+.I ~/Screenshots/
+by default. Override by setting
+.B XDG_SCREENSHOTS_DIR
+in your environment before starting sway.
+.PP
+The swappy filename format is configured in
+.I ~/.config/swappy/config
+as
+.BR save_filename_format=%Y-%m-%d-%H%M%S_swappy.png .
+.SH SEE ALSO
+.BR grim (1),
+.BR slurp (1),
+.BR swappy (1),
+.BR inotifywait (1),
+.BR systemctl (1)
