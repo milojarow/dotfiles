@@ -3,7 +3,7 @@
 # Basics:
 #
 ## lockscreen
-$bindsym $mod+x exec $locking
+$bindsym $mod+x exec $locking  # [Lock Screen & Idle]
 
 ## Launch // Terminal ##
 $bindsym $mod+Return exec $term_cwd

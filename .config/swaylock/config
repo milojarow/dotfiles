@@ -1,3 +1,7 @@
+# ── Lock Screen & Idle ────────────────────────────────────────────────────────
+# Role:     swaylock visual configuration (indicator, colors, font)
+# Used by:  lock.sh (invokes swaylock with blurred screenshot)
+# ─────────────────────────────────────────────────────────────────────────────
 # Tamaño y grosor del círculo
 indicator-radius=135
 indicator-thickness=15

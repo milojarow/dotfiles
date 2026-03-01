@@ -1,4 +1,18 @@
 #!/bin/bash
+# ── Lock Screen & Idle ────────────────────────────────────────────────────────
+# Role:     Interactive rofi dialog to set custom idle timeout; regenerates swayidle config
+# Files:    lock.sh · idle-timeout.sh · auto-idle-timeout.sh · secure-suspend.sh
+#           ~/.config/swaylock/config           (swaylock visual config)
+#           ~/.config/swayidle/config           (generated — do not edit manually)
+#           ~/.config/sway/autostart            ($initialize_idle_daemon)
+#           ~/.config/sway/config.d/01-definitions.conf  ($locking)
+#           ~/.config/sway/modes/default        ($mod+x keybind)
+#           ~/.config/sway/modes/shutdown       (l=lock, u=suspend)
+#           ~/.config/waybar/config.jsonc       (idle_inhibitor module)
+# Programs: swaylock  swayidle  grim  imagemagick  systemctl  notify-send  rofi
+# Daemon:   swayidle (systemd user service, config at ~/.config/swayidle/config)
+# Triggers: $mod+x keybind · swayidle timeout · before-sleep · shutdown menu
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Use rofi in dmenu mode to get timeout input with custom theme
 timeout_minutes=$(rofi -dmenu \

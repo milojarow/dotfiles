@@ -383,6 +383,7 @@
         "on-click-middle": "waybar-signal valent",
         "signal": 13
     },
+    // [Lock Screen & Idle]
     "idle_inhibitor": {
     "format": "{icon}",
     "format-icons": {

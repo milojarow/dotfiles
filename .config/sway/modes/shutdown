@@ -12,13 +12,13 @@ set $purge_cliphist [ $purge_cliphist_logout == 'true' ] && rm -f $HOME/.cache/c
 
 mode --pango_markup $mode_shutdown {
     # lock
-    $bindsym l mode "default", exec $locking
+    $bindsym l mode "default", exec $locking  # [Lock Screen & Idle]
 
     # logout
     $bindsym e exec $purge_cliphist; exec swaymsg exit
 
     # suspend (secure version - lock first, then suspend)
-    $bindsym u mode "default", exec ~/.config/sway/scripts/secure-suspend.sh
+    $bindsym u mode "default", exec ~/.config/sway/scripts/secure-suspend.sh  # [Lock Screen & Idle]
 
     # shutdown
     $bindsym s exec $purge_cliphist; exec systemctl poweroff

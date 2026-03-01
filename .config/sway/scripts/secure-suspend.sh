@@ -1,7 +1,18 @@
 #!/bin/bash
-# ~/.config/sway/scripts/secure-suspend.sh
-# Lock screen, then suspend.
-# Keyboard backlight is handled by /usr/lib/systemd/system-sleep/kbd-backlight
+# ── Lock Screen & Idle ────────────────────────────────────────────────────────
+# Role:     Locks screen before suspending so screenshot is taken while monitor is on
+# Files:    lock.sh · idle-timeout.sh · auto-idle-timeout.sh · secure-suspend.sh
+#           ~/.config/swaylock/config           (swaylock visual config)
+#           ~/.config/swayidle/config           (generated — do not edit manually)
+#           ~/.config/sway/autostart            ($initialize_idle_daemon)
+#           ~/.config/sway/config.d/01-definitions.conf  ($locking)
+#           ~/.config/sway/modes/default        ($mod+x keybind)
+#           ~/.config/sway/modes/shutdown       (l=lock, u=suspend)
+#           ~/.config/waybar/config.jsonc       (idle_inhibitor module)
+# Programs: swaylock  swayidle  grim  imagemagick  systemctl  notify-send  rofi
+# Daemon:   swayidle (systemd user service, config at ~/.config/swayidle/config)
+# Triggers: $mod+x keybind · swayidle timeout · before-sleep · shutdown menu
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Prevent double-execution: if already suspending, exit silently
 LOCKFILE="/tmp/secure-suspend.lock"
