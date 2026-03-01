@@ -1,6 +1,14 @@
 #!/bin/bash
-# ~/.config/sway/scripts/lid-handler.sh
-# Handle lid close: turn off displays, and re-suspend if ACPI wake interrupted a suspend
+# ── Lid Handling ──────────────────────────────────────────────────────────────
+# Role:     Lid close: detects S3 wake interrupt, saves backlight, turns off displays
+# Files:    lid-handler.sh · lid-open-handler.sh · lid-bluetooth-reconnect.sh
+#           ~/.config/sway/config.d/75-lid-switch.conf  (bindswitch config)
+# Programs: swaymsg  brightnessctl  journalctl  systemctl  bluetoothctl  pactl
+# Trigger:  sway bindswitch lid:on / lid:off  (via 75-lid-switch.conf)
+# Requires: HandleLidSwitch=ignore in /etc/systemd/logind.conf
+# Logs:     ~/.cache/lid-handler.log · ~/.local/log/bluetooth-reconnect.log
+# State:    /tmp/kbd-lid-brightness  (keyboard backlight saved on close)
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Check if the system just woke from suspend (within last 5 seconds)
 # This happens when closing the lid generates an ACPI wake event during S3

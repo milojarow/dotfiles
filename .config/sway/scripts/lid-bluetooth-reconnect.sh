@@ -1,6 +1,6 @@
 #!/bin/bash
 # ── Lid Handling ──────────────────────────────────────────────────────────────
-# Role:     Lid open: restores display, backlight, calls bluetooth fix
+# Role:     Detects/fixes zombie Bluetooth connections after lid resume
 # Files:    lid-handler.sh · lid-open-handler.sh · lid-bluetooth-reconnect.sh
 #           ~/.config/sway/config.d/75-lid-switch.conf  (bindswitch config)
 # Programs: swaymsg  brightnessctl  journalctl  systemctl  bluetoothctl  pactl
@@ -9,16 +9,24 @@
 # Logs:     ~/.cache/lid-handler.log · ~/.local/log/bluetooth-reconnect.log
 # State:    /tmp/kbd-lid-brightness  (keyboard backlight saved on close)
 # ─────────────────────────────────────────────────────────────────────────────
+# Bluetooth reconnect failsafe for lid resume
+# Should become unnecessary after btusb autosuspend fix
 
-swaymsg "output * power on"
+LOG_FILE="$HOME/.local/log/bluetooth-reconnect.log"
+mkdir -p "$(dirname "$LOG_FILE")"
 
-# Restore keyboard backlight to pre-close brightness
-if [ -f /tmp/kbd-lid-brightness ]; then
-    SAVED=$(cat /tmp/kbd-lid-brightness)
-    brightnessctl --device="dell::kbd_backlight" set "${SAVED}" --quiet 2>/dev/null
-    rm -f /tmp/kbd-lid-brightness
-else
-    brightnessctl --device="dell::kbd_backlight" set 2 --quiet 2>/dev/null
+# Wait for system to stabilize
+sleep 3
+
+BT_MAC="44:1D:B1:4B:0B:A0"
+
+# Check if device is in zombie state
+if bluetoothctl info "$BT_MAC" | grep -q "Connected: yes"; then
+    # Check if audio is actually working
+    if ! pactl list sinks short | grep -q "bluez_output.44_1D_B1_4B_0B_A0.*RUNNING\|IDLE"; then
+        echo "[$(date)] Zombie connection detected, forcing reconnect" >> "$LOG_FILE"
+        bluetoothctl disconnect "$BT_MAC"
+        sleep 2
+        bluetoothctl connect "$BT_MAC"
+    fi
 fi
-
-~/.config/sway/scripts/lid-bluetooth-reconnect.sh
