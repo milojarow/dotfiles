@@ -1,4 +1,19 @@
 #!/usr/bin/env bash
+# ── Screenshots ───────────────────────────────────────────────────────────────
+# Role:     Daemon: monitors clipboard via wl-paste --watch; sends notify-send on PNG copy
+# Files:    screenshot-frozen.sh · screenshot-notify.sh · screenshot-clipboard-notify.sh
+#           ~/.config/swappy/config                                    (editor settings)
+#           ~/.config/systemd/user/screenshot-notify.service          (save daemon unit)
+#           ~/.config/systemd/user/screenshot-clipboard-notify.service (clipboard daemon unit)
+#           ~/.config/sway/modes/screenshot                           (mode + keybindings)
+#           ~/.config/sway/config.d/01-definitions.conf               (grimshot, swappy, upload_pipe vars)
+#           ~/.config/sway/autostart                                   ($swappy_notify, $screenshot_clipboard_notify)
+#           ~/.config/sway/config.d/99-autostart-applications.conf    (exec_always daemon start)
+# Programs: grim  slurp  swayimg  imagemagick  swappy  inotifywait  notify-send  wl-paste  wl-copy  curl
+# Daemons:  screenshot-notify.service · screenshot-clipboard-notify.service  (sway-session.target)
+# Triggers: Print keybind → screenshot mode → p / o / Shift+p / Shift+o
+# Storage:  ~/Screenshots/  (or $XDG_SCREENSHOTS_DIR)
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Monitor clipboard for image copies and notify
 LOCKFILE="/tmp/screenshot-clipboard-notify.lock"
