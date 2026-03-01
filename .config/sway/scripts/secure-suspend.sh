@@ -24,11 +24,18 @@ fi
 # Lock screen FIRST so grim captures before lid might close
 ~/.config/sway/scripts/lock.sh &
 
-# Wait for swaylock to actually start (means screenshot is done)
+# Wait for swaylock process to start (screenshot captured, swaylock launched)
 for i in $(seq 1 50); do
     pgrep -x swaylock > /dev/null && break
     sleep 0.1
 done
 
-# Suspend - screen is already locked, safe to close lid anytime
+# Wait for swaylock to lock the session in logind (surfaces rendered on all outputs)
+# LockedHint=yes is set by swaylock via SetLockedHint(true) once ext-session-lock is acquired
+for i in $(seq 1 50); do
+    loginctl show-session "${XDG_SESSION_ID}" 2>/dev/null | grep -q "^LockedHint=yes" && break
+    pgrep -x swaylock > /dev/null || break  # bail if swaylock died unexpectedly
+    sleep 0.1
+done
+
 systemctl suspend
