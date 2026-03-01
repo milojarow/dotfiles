@@ -1,3 +1,7 @@
+# ── Screenshots ───────────────────────────────────────────────────────────────
+# Role:     swappy editor settings (save dir, filename format, painting defaults)
+# Used by:  $swappy in 01-definitions.conf (receives screenshot PNG via stdin)
+# ─────────────────────────────────────────────────────────────────────────────
 [Default]
 # Save to the same directory as your other screenshots
 save_dir=$HOME/Screenshots

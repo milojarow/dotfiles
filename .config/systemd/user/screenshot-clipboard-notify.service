@@ -1,3 +1,6 @@
+# ── Screenshots ───────────────────────────────────────────────────────────────
+# Role:     Systemd unit — runs screenshot-clipboard-notify.sh; notifies on clipboard PNG copy
+# ─────────────────────────────────────────────────────────────────────────────
 [Unit]
 Description=Screenshot clipboard notification daemon
 After=graphical-session.target

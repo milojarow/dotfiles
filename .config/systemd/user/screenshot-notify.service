@@ -1,3 +1,6 @@
+# ── Screenshots ───────────────────────────────────────────────────────────────
+# Role:     Systemd unit — runs screenshot-notify.sh; notifies on PNG save to ~/Screenshots
+# ─────────────────────────────────────────────────────────────────────────────
 [Unit]
 Description=Screenshot save notification daemon
 After=graphical-session.target
