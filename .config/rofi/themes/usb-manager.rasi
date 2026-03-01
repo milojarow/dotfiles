@@ -1,7 +1,8 @@
-/**
- * USB Manager Rofi Theme
- * Gray tones theme for USB device management
- */
+// ── USB Management ────────────────────────────────────────────────────────────
+// Role:     Rofi theme for USB device selection menus (mount/unmount/eject/open)
+// Used by:  usb-action-mount.sh · usb-action-unmount.sh · usb-action-eject.sh
+//           usb-action-open.sh
+// ─────────────────────────────────────────────────────────────────────────────
 
 * {
     /* Color palette - Gray tones */

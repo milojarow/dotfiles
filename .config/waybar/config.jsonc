@@ -299,6 +299,7 @@
         "exec-if": "[ -x \"$(command -v cliphist)\" ] && [ $(cliphist list | wc -l) -gt 0 ]",
         "signal": 9
     },
+    // [USB Management] — requires: lsblk, udisksctl, udisks2, signal RTMIN+15
     "custom/usb": {
         "format": "{}",
         "return-type": "json",

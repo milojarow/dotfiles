@@ -1,6 +1,16 @@
 #!/bin/bash
-# USB Monitor Script for Waybar
-# Detects connected USB storage devices and outputs JSON
+# ── USB Management ────────────────────────────────────────────────────────────
+# Role:     Detects connected USB storage devices and outputs JSON for waybar
+# Files:    usb-monitor.sh · usb-monitor-wrapper.sh
+#           usb-action-mount.sh · usb-action-unmount.sh · usb-action-eject.sh
+#           usb-action-open.sh · usb-action-refresh.sh
+#           ~/.config/rofi/themes/usb-manager.rasi   (picker UI theme)
+#           ~/.config/waybar/usb-menu.xml             (right-click GTK menu)
+#           ~/.config/waybar/config.jsonc             (custom/usb module)
+# Programs: lsblk  udisksctl  rofi  notify-send  xdg-open  pkill
+# Trigger:  waybar right-click → usb-menu.xml → menu-actions in config.jsonc
+# Signal:   pkill -RTMIN+15 waybar  (refreshes the module after any action)
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Glyphs
 GLYPH_MOUNTED="󱊞"

@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- ── USB Management ──────────────────────────────────────────────────────────
+     Role:    Right-click context menu for the waybar USB module
+     Used by: ~/.config/waybar/config.jsonc  (menu-file property of custom/usb)
+     Actions: usb-action-open.sh · usb-action-mount.sh · usb-action-unmount.sh
+              usb-action-eject.sh · usb-action-refresh.sh
+     ──────────────────────────────────────────────────────────────────────────── -->
 <interface>
   <object class="GtkMenu" id="menu">
     <child>

@@ -1,5 +1,16 @@
 #!/bin/bash
-# Open mounted USB in file manager
+# ── USB Management ────────────────────────────────────────────────────────────
+# Role:     Opens a mounted USB partition in the file manager via xdg-open;
+#           shows rofi picker if multiple devices are mounted
+# Files:    usb-monitor.sh · usb-monitor-wrapper.sh
+#           usb-action-mount.sh · usb-action-unmount.sh · usb-action-eject.sh
+#           usb-action-open.sh · usb-action-refresh.sh
+#           ~/.config/rofi/themes/usb-manager.rasi   (picker UI theme)
+#           ~/.config/waybar/usb-menu.xml             (right-click GTK menu)
+#           ~/.config/waybar/config.jsonc             (custom/usb module)
+# Programs: lsblk  xdg-open  rofi  notify-send
+# Trigger:  waybar right-click → usb-menu.xml → "open" action
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Function to get USB devices
 get_usb_devices() {

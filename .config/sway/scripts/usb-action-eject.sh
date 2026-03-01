@@ -1,6 +1,18 @@
 #!/bin/bash
-# Eject (safely remove) USB device(s)
-# Operates on physical disks: unmounts all partitions then powers off the disk
+# ── USB Management ────────────────────────────────────────────────────────────
+# Role:     Safely removes USB disks — unmounts all partitions then powers off
+#           the physical disk via udisksctl; rofi picker if multiple devices
+# Files:    usb-monitor.sh · usb-monitor-wrapper.sh
+#           usb-action-mount.sh · usb-action-unmount.sh · usb-action-eject.sh
+#           usb-action-open.sh · usb-action-refresh.sh
+#           ~/.config/rofi/themes/usb-manager.rasi   (picker UI theme)
+#           ~/.config/waybar/usb-menu.xml             (right-click GTK menu)
+#           ~/.config/waybar/config.jsonc             (custom/usb module)
+# Programs: lsblk  udisksctl  rofi  notify-send  pkill
+# Trigger:  waybar right-click → usb-menu.xml → "eject" action
+# Signal:   pkill -RTMIN+15 waybar  (refreshes the module after ejecting)
+# Note:     Operates on physical disks (not partitions) unlike mount/unmount
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Returns physical USB disk info: device|label|size
 get_usb_disks() {

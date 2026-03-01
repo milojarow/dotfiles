@@ -1,5 +1,17 @@
 #!/bin/bash
-# Mount USB device(s)
+# ── USB Management ────────────────────────────────────────────────────────────
+# Role:     Mounts unmounted USB partitions via udisksctl; shows rofi picker
+#           if multiple devices are available, auto-mounts if only one
+# Files:    usb-monitor.sh · usb-monitor-wrapper.sh
+#           usb-action-mount.sh · usb-action-unmount.sh · usb-action-eject.sh
+#           usb-action-open.sh · usb-action-refresh.sh
+#           ~/.config/rofi/themes/usb-manager.rasi   (picker UI theme)
+#           ~/.config/waybar/usb-menu.xml             (right-click GTK menu)
+#           ~/.config/waybar/config.jsonc             (custom/usb module)
+# Programs: lsblk  udisksctl  rofi  notify-send  pkill
+# Trigger:  waybar right-click → usb-menu.xml → "mount" action
+# Signal:   pkill -RTMIN+15 waybar  (refreshes the module after mounting)
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Function to get USB devices
 get_usb_devices() {
