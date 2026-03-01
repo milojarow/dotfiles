@@ -29,6 +29,13 @@ if pgrep -f "systemd-sleep\|systemctl.*sleep" > /dev/null; then
     exit 0
 fi
 
+# Check if manual secure-suspend is preparing the lock screen
+# (window between lock.sh launch and systemctl suspend — grim must not see a dark screen)
+if pgrep -f "secure-suspend.sh" > /dev/null; then
+    echo "$(date): Secure suspend in progress, lid close ignored" >> ~/.cache/lid-handler.log
+    exit 0
+fi
+
 # Normal lid close: turn off displays and keyboard backlight
 brightnessctl --device="dell::kbd_backlight" get > /tmp/kbd-lid-brightness 2>/dev/null
 brightnessctl --device="dell::kbd_backlight" set 0 --quiet 2>/dev/null
