@@ -24,6 +24,9 @@ way-displays
 # Color picker
 hyprpicker
 
+# Bluetooth TUI manager
+bluetuith
+
 # Application specific
 firefox
 code
