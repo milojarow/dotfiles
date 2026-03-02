@@ -210,6 +210,9 @@ Located in `~/.config/sway/scripts/`:
 Install enhanced features:
 
 ```bash
+# Bluetooth TUI manager
+paru -S bluetuith
+
 # GitHub notifications in waybar
 paru -S github-cli
 gh auth login
@@ -225,6 +228,30 @@ paru -S wluma
 
 # All optional packages
 paru -S --needed $(grep -v '^#' ~/.dependencies-optional | grep -v '^\s*$' | tr '\n' ' ')
+```
+
+## System Services
+
+After installation, enable services required for full functionality:
+
+```bash
+# Bluetooth
+sudo systemctl enable --now bluetooth.service
+```
+
+### Bluetooth Audio (WirePlumber)
+
+The file `.config/wireplumber/wireplumber.conf.d/50-bluetooth-config.conf` forces A2DP
+(high-quality audio only) and disables HFP/HSP for a specific speaker, identified by MAC address.
+
+If you have a different device (or no such device), either delete the file or update the
+`device.name` field to match your hardware:
+
+```bash
+# List paired devices and their MAC addresses
+bluetoothctl devices
+# Example output: Device 44:1D:B1:4B:0B:A0 DEA700
+# → device.name = "~bluez_card.44_1D_B1_4B_0B_A0"  (colons replaced by underscores)
 ```
 
 ## Troubleshooting
