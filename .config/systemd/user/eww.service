@@ -1,0 +1,15 @@
+[Unit]
+Description=eww daemon
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+Environment="PATH=/home/milo/.cargo/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/home/milo/.cargo/bin/eww daemon --no-daemonize
+ExecStop=/home/milo/.cargo/bin/eww kill
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
