@@ -1,0 +1,5 @@
+#!/bin/bash
+# Defines which eww windows to open on startup.
+# Add or remove windows here as your eww config grows.
+
+eww open activate-linux

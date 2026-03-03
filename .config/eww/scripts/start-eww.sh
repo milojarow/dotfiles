@@ -1,8 +1,9 @@
 #!/bin/bash
-# Wait for eww daemon to be ready, then open widgets.
-# Called by sway exec_always on startup and reload.
+# Entry point called by sway exec_always.
+# Waits for eww daemon to be ready, then delegates window opening.
 
 until eww ping &>/dev/null; do
     sleep 0.2
 done
-eww open activate-linux
+
+~/.config/eww/scripts/open-windows.sh
