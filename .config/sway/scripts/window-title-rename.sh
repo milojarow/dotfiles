@@ -16,9 +16,18 @@ info=$(swaymsg -t get_tree | jq -r '
 
 IFS=$'\t' read -r win_id app_id <<< "$info"
 
-# Read current custom name as default input
-current_name=""
-[ -f "$NAMES_DIR/$win_id.name" ] && current_name=$(cat "$NAMES_DIR/$win_id.name" 2>/dev/null)
+# Default input: existing custom context, or current context extracted from waybar cache
+current_ctx=""
+if [ -f "$NAMES_DIR/$win_id.name" ]; then
+    current_ctx=$(cat "$NAMES_DIR/$win_id.name" 2>/dev/null)
+elif [ -f "$CACHE_FILE" ]; then
+    current_text=$(jq -r '.text // ""' "$CACHE_FILE" 2>/dev/null)
+    if [[ "$current_text" == *": "* ]]; then
+        current_ctx="${current_text#*: }"
+    else
+        current_ctx="$current_text"
+    fi
+fi
 
 # Show rofi text input just below waybar (north anchor, centered)
 new_name=$(rofi \
@@ -27,7 +36,7 @@ new_name=$(rofi \
     -theme-str 'listview {lines: 0;}' \
     -theme-str 'inputbar {padding: 10px 14px;}' \
     -p "Window name:" \
-    -filter "$current_name")
+    -filter "$current_ctx")
 
 # Escape or cancel → no change
 [ $? -ne 0 ] && exit 0
@@ -40,11 +49,24 @@ if [ -z "$new_name" ]; then
     exit 0
 fi
 
-# Save custom name and update waybar immediately (no wait for sway event)
+# Save custom context (just the label, not the full display)
 mkdir -p "$NAMES_DIR"
 printf '%s' "$new_name" > "$NAMES_DIR/$win_id.name"
 
-_escaped="${new_name//\\/\\\\}"
+# Build display text preserving location prefix from current cache
+location_prefix=""
+if [ -f "$CACHE_FILE" ]; then
+    current_text=$(jq -r '.text // ""' "$CACHE_FILE" 2>/dev/null)
+    [[ "$current_text" == *": "* ]] && location_prefix="${current_text%%: *}"
+fi
+
+if [ -n "$location_prefix" ]; then
+    display_text="$location_prefix: $new_name"
+else
+    display_text="$new_name"
+fi
+
+_escaped="${display_text//\\/\\\\}"
 _escaped="${_escaped//\"/\\\"}"
 printf '{"text":"%s","tooltip":"%s","class":"window-title custom-named"}\n' \
     "$_escaped" "${app_id:-window}" \
