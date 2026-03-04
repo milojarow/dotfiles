@@ -1,0 +1,18 @@
+(defwidget activate-linux []
+  (box
+    :orientation "v"
+    :space-evenly false
+    :halign "start"
+    :valign "start"
+    (label :style "font-size: 56px; color: rgba(255,255,255,0.5);" :xalign 0 :text "Activate Linux")
+    (label :style "font-size: 44px; color: rgba(255,255,255,0.4); margin-top: 16px;" :xalign 0 :text "Go to Settings to activate Linux")))
+
+(defwindow activate-linux
+  :monitor 0
+  :stacking "bg"
+  :focusable false
+  :geometry (geometry :x "8px"
+                      :y "101px"
+                      :width "787px"
+                      :anchor "bottom right")
+  (activate-linux))
