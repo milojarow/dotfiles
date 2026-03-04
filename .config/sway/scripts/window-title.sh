@@ -11,6 +11,7 @@
 CACHE_FILE="/tmp/waybar-window-title-$USER.json"
 CACHE_TMP="${CACHE_FILE}.tmp"
 LOC_CACHE_DIR="/tmp/waybar-window-locations-$USER"
+NAMES_DIR="/tmp/waybar-window-names-$USER"
 
 # --- JSON output and signaling ---
 # Uses printf with manual escaping to avoid spawning jq per event
@@ -248,6 +249,22 @@ cleanup_old_cache() {
 process_window() {
     local window_id="$1" title="$2" app_id="$3" wclass="$4" wpid="$5"
 
+    # Custom name override (set via right-click rename)
+    if [ -f "$NAMES_DIR/$window_id.name" ]; then
+        local custom
+        custom=$(cat "$NAMES_DIR/$window_id.name" 2>/dev/null)
+        if [ -n "$custom" ]; then
+            get_css_class "$app_id"
+            json_escape "$custom"; local jtext="$_escaped"
+            json_escape "${app_id:-window}"; local jtooltip="$_escaped"
+            printf '{"text":"%s","tooltip":"%s","class":"%s"}\n' \
+                "$jtext" "$jtooltip" "${_css_class} custom-named" \
+                > "$CACHE_TMP" && mv "$CACHE_TMP" "$CACHE_FILE"
+            pkill -RTMIN+10 waybar 2>/dev/null || true
+            return
+        fi
+    fi
+
     if [ -z "$title" ] || [ "$title" = "null" ]; then
         output_and_signal "" "No focused window" "empty"
         return
@@ -384,6 +401,7 @@ bootstrap() {
 # Single persistent jq process parses all events (no per-event jq spawning)
 
 bootstrap
+trap 'bootstrap' USR1
 
 while read -r line; do
     case "$line" in
