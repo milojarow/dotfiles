@@ -1,6 +1,16 @@
 #!/usr/bin/env sh
-# Thin reader for waybar custom/window-title module
-# The actual processing is done by window-title.sh which caches results here
+# ── Window Title ─────────────────────────────────────────────────────────────
+# Role:     Thin reader invoked by waybar on each RTMIN+10 signal — checks
+#           click-override expiry, then outputs the JSON cache written by
+#           window-title.sh
+# Files:    window-title.sh · window-title-output.sh · window-title-click.sh
+#           window-title-rename.sh
+#           ~/.config/waybar/config.jsonc               (custom/window-title, signal 10)
+#           ~/.config/sway/config.d/99-autostart-applications.conf
+# Programs: swaymsg  jq  pgrep  pstree  pkill
+# Callers:  waybar exec (config.jsonc custom/window-title)
+# Man:      man window-title
+# ─────────────────────────────────────────────────────────────────────────────
 
 OVERRIDE_FILE="/tmp/waybar-window-title-override-$USER"
 

@@ -144,7 +144,7 @@
         "on-scroll-down": "swaymsg exec \\$brightness_down"
     },
     "custom/audio": {
-        "exec": "waybar-audio",
+        "exec": "/home/milo/.local/bin/waybar-audio",
         "return-type": "json",
         "interval": 1,
         "signal": 3,
@@ -317,6 +317,7 @@
         "on-click-right": "waybar-signal weather",
         "signal": 16
     },
+    // [Window Title]
     "custom/window-title": {
         "interval": "once",
         "return-type": "json",

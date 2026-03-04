@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
-# Window title watcher and processor for waybar
-# Subscribes to sway IPC events, extracts window info directly from events,
-# processes titles using shell builtins, and caches results for waybar.
-#
-# Architecture:
-#   Sway events → persistent jq process → shell builtin processing → atomic cache write → signal waybar
-#   Zero redundant swaymsg queries. One persistent jq process for the script lifetime.
-#   All string extraction uses case/parameter expansion (no grep/sed).
+# ── Window Title ─────────────────────────────────────────────────────────────
+# Role:     Sway IPC event daemon — subscribes to window/workspace events,
+#           extracts location + context (zero-subprocess for most apps via
+#           shell builtins), writes an atomic JSON cache, and signals waybar.
+#           Uses a single persistent jq process for the script lifetime.
+# Files:    window-title.sh · window-title-output.sh · window-title-click.sh
+#           window-title-rename.sh
+#           ~/.config/waybar/config.jsonc               (custom/window-title, signal 10)
+#           ~/.config/sway/config.d/99-autostart-applications.conf
+# Programs: swaymsg  jq  pgrep  pstree  pkill
+# Daemon:   exec_always in 99-autostart-applications.conf
+#           (single-instance via PID file; restarts automatically on sway reload)
+# Signals:  SIGRTMIN+10 → sent to waybar after each title update
+#           SIGUSR1     → triggers re-bootstrap (sent by rename.sh on label clear)
+# Storage:  /tmp/waybar-window-title-$USER.json      (JSON output, read by output.sh)
+#           /tmp/waybar-window-title-$USER.pid        (PID file, single-instance guard)
+#           /tmp/waybar-window-locations-$USER/       (per-window CWD cache, 1-day TTL)
+#           /tmp/waybar-window-names-$USER/           (per-window custom labels)
+# Man:      man window-title
+# ─────────────────────────────────────────────────────────────────────────────
 
 CACHE_FILE="/tmp/waybar-window-title-$USER.json"
 CACHE_TMP="${CACHE_FILE}.tmp"

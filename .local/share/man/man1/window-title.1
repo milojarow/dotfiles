@@ -1,0 +1,245 @@
+.TH WINDOW\-TITLE 1 "2026\-03\-03" "dotfiles" "Window Title Manual"
+.SH NAME
+window\-title \- smart window title display for sway/waybar
+.SH DESCRIPTION
+The window title functionality displays the focused window's
+.I location
+and
+.I context
+as a formatted string in a waybar module, updating automatically on every
+window focus or title change.
+.PP
+For terminal windows, the display format is:
+.PP
+.RS
+.I location\fR:\fI context
+.RE
+.PP
+where
+.I location
+is the working directory (e.g.\&
+.BR ~ ,
+.BR ~/projects/foo )
+and
+.I context
+is the foreground command or application description
+(e.g.\&
+.BR nvim ,
+.BR "Claude Code" ).
+For non-terminal windows the full window title is shown.
+.PP
+A persistent background daemon
+.RB ( window\-title.sh )
+subscribes to sway IPC events via a single long-lived
+.BR jq (1)
+process.
+On each window focus or title event it extracts location and context using
+shell builtins only (no
+.BR grep / sed
+per event), writes an atomic JSON cache to
+.IR /tmp ,
+and signals waybar to refresh.
+.SH DISPLAY FORMAT
+.TP
+.B Terminal windows (footclient)
+Location is extracted from the title (set by foot as
+.IR "path [PID]" )
+or resolved via
+.BR pstree (1)
+process traversal as a fallback.
+Context is the foreground command or the description after the
+.B ✳\
+prefix (e.g.\& Claude Code).
+The last known location is cached per window ID so it survives a foreground
+process overriding the terminal title.
+.TP
+.B Other terminal emulators
+Similar location resolution, using process CWD via
+.B /proc
+as the primary source.
+.TP
+.B Non-terminal windows
+The full window title is displayed as-is.
+.TP
+.B Truncation
+Titles longer than 60 characters are truncated.
+For
+.IR "path: context"
+format the path is preserved and the context is truncated with
+.BR ... .
+.SH INTERACTIONS
+.TP
+.B Waybar left\-click
+Flashes the human-readable app name (e.g.\&
+.BR "Foot terminal" ,
+.BR "Brave Browser" )
+for 3 seconds, then restores the title automatically.
+A second left-click dismisses the flash immediately.
+.TP
+.B Waybar right\-click
+Opens a rofi text input to assign a custom context label to the focused
+window.
+The input is pre-filled with the current context so edits are incremental.
+See
+.B CUSTOM LABELS
+below.
+.TP
+.B Waybar hover (tooltip)
+Shows the application
+.B app_id
+on the first line and the raw window title on the second line.
+.SH CUSTOM LABELS
+Right-clicking the waybar module opens a rofi prompt positioned just below
+the bar (centered, north anchor).
+.PP
+.TP
+.B Assign a label
+Type the desired context label (e.g.\&
+.BR "eww widgets" ,
+.BR "func-doc session" )
+and press
+.BR Enter .
+The display becomes
+.IR "location: your\-label" ,
+preserving the current location prefix.
+.TP
+.B Clear a label
+Open the prompt and submit an empty string (delete all text, then
+.BR Enter ).
+The module reverts to the automatically computed title.
+.TP
+.B Cancel
+Press
+.B Escape
+or close rofi — no change is made.
+.PP
+Custom labels are keyed by sway window ID and persist for the lifetime of
+that window (session only; cleared on window close or sway restart).
+.SH FILES
+.TP
+.I ~/.config/sway/scripts/window\-title.sh
+Main daemon.
+Subscribes to sway IPC, processes every window/workspace event, writes the
+JSON cache, and signals waybar.
+.TP
+.I ~/.config/sway/scripts/window\-title\-output.sh
+Thin reader invoked by waybar on each signal refresh.
+Checks click-override expiry and outputs the cached JSON.
+.TP
+.I ~/.config/sway/scripts/window\-title\-click.sh
+Left-click handler.
+Writes a timed override file and signals waybar to show the app name for
+3 seconds.
+.TP
+.I ~/.config/sway/scripts/window\-title\-rename.sh
+Right-click handler.
+Opens rofi, reads or clears the custom label for the focused window,
+and updates the JSON cache immediately.
+.TP
+.I ~/.config/waybar/config.jsonc
+Waybar module definition
+.RI ( custom/window\-title ,
+signal\ 10).
+Binds
+.B on\-click
+and
+.BR on\-click\-right .
+.TP
+.I ~/.config/sway/config.d/99\-autostart\-applications.conf
+Launches
+.B window\-title.sh
+at sway startup via
+.BR exec_always .
+.SH SIGNALS
+.TP
+.B SIGRTMIN+10
+Sent to
+.B waybar
+after every title update to trigger a module refresh.
+.TP
+.B SIGUSR1
+Sent to
+.B window\-title.sh
+by
+.B window\-title\-rename.sh
+when a custom label is cleared.
+Triggers
+.B bootstrap()
+to re-read the current focused window and restore the computed title.
+.SH PROGRAMS
+.TP
+.B swaymsg
+Sway IPC client.
+Used to subscribe to events and query the window tree.
+.TP
+.B jq
+JSON processor.
+One persistent process parses all incoming IPC events for the daemon lifetime.
+.TP
+.B pstree
+Process tree inspection.
+Used as a fallback to resolve terminal working directory from the process
+hierarchy when the title does not contain a path.
+.TP
+.B pgrep / pkill
+Process search and signaling.
+Used for the single-instance guard (PID file) and for sending RTMIN+10 to
+waybar.
+.TP
+.B rofi
+Launcher used as the text-input UI for the rename prompt.
+.SH DAEMON
+.B window\-title.sh
+is started by sway via
+.B exec_always
+in
+.IR 99\-autostart\-applications.conf ,
+meaning it is automatically restarted on every
+.BR "swaymsg reload" .
+.PP
+A PID file at
+.I /tmp/waybar\-window\-title\-$USER.pid
+ensures only one instance runs at a time: on startup the script kills any
+previous instance recorded in the PID file before writing its own PID.
+.PP
+The event loop uses a single persistent
+.B jq
+subprocess to parse sway IPC output.
+All string extraction (path, context, CSS class) uses shell parameter
+expansion, spawning no external processes per event for the common case.
+.SH STORAGE
+All runtime files are in
+.I /tmp
+and are not persisted across reboots.
+.TP
+.I /tmp/waybar\-window\-title\-$USER.json
+JSON cache read by
+.B window\-title\-output.sh
+on every waybar refresh.
+Written atomically via a
+.I .tmp
+rename.
+.TP
+.I /tmp/waybar\-window\-title\-$USER.pid
+PID file for the single-instance guard.
+.TP
+.I /tmp/waybar\-window\-locations\-$USER/<id>.cache
+Per-window working directory cache, keyed by sway window ID.
+Files older than 1 day are pruned periodically.
+.TP
+.I /tmp/waybar\-window\-names\-$USER/<id>.name
+Per-window custom context labels set via right-click rename.
+Cleared automatically when the window closes (file is simply absent for
+uncustomized windows).
+.TP
+.I /tmp/waybar\-window\-title\-override\-$USER
+Timed override written by
+.B window\-title\-click.sh
+to flash the app name.
+Contains the display text on line 1 and the Unix expiry timestamp on line 2.
+.SH SEE ALSO
+.BR swaymsg (1),
+.BR jq (1),
+.BR rofi (1),
+.BR pstree (1),
+.BR waybar (5)

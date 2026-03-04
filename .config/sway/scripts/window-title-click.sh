@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
-# Show app name for 3 seconds when window-title bar is clicked
+# ── Window Title ─────────────────────────────────────────────────────────────
+# Role:     Left-click handler — flashes the app name for 3 seconds in the
+#           waybar module; a second click dismisses it immediately
+# Files:    window-title.sh · window-title-output.sh · window-title-click.sh
+#           window-title-rename.sh
+#           ~/.config/waybar/config.jsonc               (custom/window-title, signal 10)
+#           ~/.config/sway/config.d/99-autostart-applications.conf
+# Programs: swaymsg  jq  pgrep  pstree  pkill
+# Callers:  waybar on-click (config.jsonc custom/window-title)
+# Man:      man window-title
+# ─────────────────────────────────────────────────────────────────────────────
 
 OVERRIDE_FILE="/tmp/waybar-window-title-override-$USER"
 

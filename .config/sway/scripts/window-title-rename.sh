@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
-# Assign a custom display name to the currently focused sway window.
-# Called via right-click on the waybar window-title module.
-# Names persist in /tmp/waybar-window-names-$USER/ for the sway session lifetime.
+# ── Window Title ─────────────────────────────────────────────────────────────
+# Role:     Right-click handler — opens a rofi text input to assign a custom
+#           context label to the focused window; empty submit clears the label;
+#           preserves the location prefix, replaces only the context part
+# Files:    window-title.sh · window-title-output.sh · window-title-click.sh
+#           window-title-rename.sh
+#           ~/.config/waybar/config.jsonc               (custom/window-title, signal 10)
+#           ~/.config/sway/config.d/99-autostart-applications.conf
+# Programs: swaymsg  jq  pgrep  pstree  pkill  rofi
+# Callers:  waybar on-click-right (config.jsonc custom/window-title)
+# Man:      man window-title
+# ─────────────────────────────────────────────────────────────────────────────
 
 NAMES_DIR="/tmp/waybar-window-names-$USER"
 CACHE_FILE="/tmp/waybar-window-title-$USER.json"
