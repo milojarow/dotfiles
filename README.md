@@ -92,14 +92,15 @@ mandb --user-db
 │   ├── mako/                   # Notification daemon config
 │   ├── swaylock/               # Lock screen config
 │   ├── swayidle/               # Idle behavior config
-│   └── nwg-wrapper/            # Cheatsheet overlay
+│   ├── eww/                    # Elkowar's Wacky Widgets (cheatsheet overlay, activate-linux, etc.)
+│   └── nwg-wrapper/            # Cheatsheet pango content files (left/right columns)
 ├── .scripts/                   # Personal scripts
 └── .local/bin/                 # User binaries
 ```
 
 ## Cheatsheet
 
-Press **`Mod + /`** to toggle the on-screen cheatsheet.
+Press **`Mod + /`** to toggle the on-screen cheatsheet (fullscreen overlay powered by eww).
 
 ### Essential Keybindings
 
@@ -252,6 +253,56 @@ If you have a different device (or no such device), either delete the file or up
 bluetoothctl devices
 # Example output: Device 44:1D:B1:4B:0B:A0 DEA700
 # → device.name = "~bluez_card.44_1D_B1_4B_0B_A0"  (colons replaced by underscores)
+```
+
+## Pacman Hooks
+
+These hooks live in `/etc/pacman.d/hooks/` and are **not** tracked in the dotfiles repo — create them manually on a fresh install.
+
+### `waybar-pacman.hook`
+Refreshes the waybar pacman module after any pacman operation.
+```ini
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Refreshing waybar pacman module...
+When = PostTransaction
+Exec = /usr/bin/pkill -RTMIN+14 waybar
+```
+
+### `python-rebuild-nwg-wrapper.hook`
+Rebuilds nwg-wrapper when Python is upgraded to avoid metadata breakage.
+```ini
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = python
+
+[Action]
+Description = Rebuilding nwg-wrapper for new Python version...
+When = PostTransaction
+Exec = /usr/bin/sudo -u milo /usr/bin/paru -S --rebuild nwg-wrapper --noconfirm
+NeedsTargets
+```
+
+### `cargo-update.hook`
+Updates all cargo-installed binaries (eww, cargo-update, etc.) after every upgrade.
+Requires `cargo-update` crate: `cargo install cargo-update`
+```ini
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Updating cargo-installed binaries...
+When = PostTransaction
+Exec = /usr/bin/sudo -u milo /home/milo/.cargo/bin/cargo install-update -a
 ```
 
 ## Troubleshooting
