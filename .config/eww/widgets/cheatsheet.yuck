@@ -5,7 +5,7 @@
   (box :class "cs-container" :orientation "v" :space-evenly false
     (box :class "cs-header" :orientation "h" :space-evenly false
       (label :class "cs-title" :text "󰖬  Sway Cheatsheet")
-      (label :class "cs-hint"  :text "Super+/  ·  scroll con rueda o ↑↓"))
+      (label :class "cs-hint"  :text "Super+/  ·  scroll con rueda del mouse"))
     (box :orientation "h" :space-evenly true :vexpand true
       (scroll :vscroll true :hscroll false :vexpand true
         (label :class "cs-col" :markup cs-left :xalign 0 :valign "start"))
