@@ -73,7 +73,7 @@ window#waybar {
 #memory,
 #mode,
 #network,
-#pulseaudio,
+#custom-audio,
 #temperature,
 #backlight,
 #custom-keyboard-layout,
@@ -181,7 +181,7 @@ window#waybar {
     color: @warning_color;
 }
 
-#pulseaudio.muted {
+#custom-audio.muted {
     color: @warning_color;
 }
 

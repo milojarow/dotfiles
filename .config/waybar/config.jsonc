@@ -43,7 +43,7 @@
         "custom/playerctl",
         "idle_inhibitor",
         "custom/dnd",
-        "pulseaudio",
+        "custom/audio",
         "backlight",
         // system
         "custom/theme",
@@ -143,22 +143,11 @@
         "on-scroll-up": "swaymsg exec \\$brightness_up",
         "on-scroll-down": "swaymsg exec \\$brightness_down"
     },
-    "pulseaudio": {
-        "scroll-step": 5,
-        "format": "{icon} {volume}%{format_source}",
-        "format-muted": "󰖁 {format_source}",
-        "format-source": "",
-        "format-source-muted": " 󰍭",
-        "format-icons": {
-            "headphone": "󰋋",
-            "headset": "󰋎",
-            "default": [
-                "󰕿",
-                "󰖀",
-                "󰕾"
-            ]
-        },
-        "tooltip-format": "{icon}  {volume}% {format_source}",
+    "custom/audio": {
+        "exec": "waybar-audio",
+        "return-type": "json",
+        "interval": 1,
+        "signal": 3,
         "on-click": "swaymsg exec \\$pulseaudio",
         "on-click-middle": "swaymsg exec \\$volume_mute",
         "on-scroll-up": "swaymsg exec \\$volume_up",
