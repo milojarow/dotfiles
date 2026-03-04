@@ -21,8 +21,18 @@ if ! flock -n 200; then
     exit 0
 fi
 
+# Pre-compute screenshot+blur synchronously so swaylock renders immediately on launch
+SCREENSHOT="/tmp/swaylock-blur.png"
+if grim "$SCREENSHOT" 2>/dev/null; then
+    if command -v magick &>/dev/null; then
+        magick "$SCREENSHOT" -blur 0x8 "$SCREENSHOT" 2>/dev/null
+    else
+        convert "$SCREENSHOT" -blur 0x8 "$SCREENSHOT" 2>/dev/null
+    fi
+fi
+
 # Lock screen FIRST so grim captures before lid might close
-~/.config/sway/scripts/lock.sh &
+SECURE_SUSPEND_PREBLURRED=1 ~/.config/sway/scripts/lock.sh &
 
 # Wait for swaylock process to start (screenshot captured, swaylock launched)
 for i in $(seq 1 50); do

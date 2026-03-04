@@ -48,25 +48,28 @@ fi
 # Use consistent filename to overwrite previous image
 SCREENSHOT="/tmp/swaylock-blur.png"
 
-# Capture the screen (fallback to solid color lock if grim fails)
-if ! grim "$SCREENSHOT" 2>/dev/null; then
-    SWAYLOCK_RAN=true
-    swaylock -c 282a36
-    exit 0
-fi
+# If called from secure-suspend.sh with pre-blurred image, skip capture and blur
+if [[ "${SECURE_SUSPEND_PREBLURRED:-0}" != "1" ]] || [[ ! -f "$SCREENSHOT" ]]; then
+    # Capture the screen (fallback to solid color lock if grim fails)
+    if ! grim "$SCREENSHOT" 2>/dev/null; then
+        SWAYLOCK_RAN=true
+        swaylock -c 282a36
+        exit 0
+    fi
 
-# Apply blur - reduced from 0x15 to 0x8 to stay within InhibitDelayMaxSec
-if command -v magick &> /dev/null; then
-    magick "$SCREENSHOT" -blur 0x8 "$SCREENSHOT" 2>/dev/null
-else
-    convert "$SCREENSHOT" -blur 0x8 "$SCREENSHOT" 2>/dev/null
-fi
+    # Apply blur - reduced from 0x15 to 0x8 to stay within InhibitDelayMaxSec
+    if command -v magick &> /dev/null; then
+        magick "$SCREENSHOT" -blur 0x8 "$SCREENSHOT" 2>/dev/null
+    else
+        convert "$SCREENSHOT" -blur 0x8 "$SCREENSHOT" 2>/dev/null
+    fi
 
-# Fallback to solid color if blur failed
-if [ ! -f "$SCREENSHOT" ]; then
-    SWAYLOCK_RAN=true
-    swaylock -c 282a36
-    exit 0
+    # Fallback to solid color if blur failed
+    if [ ! -f "$SCREENSHOT" ]; then
+        SWAYLOCK_RAN=true
+        swaylock -c 282a36
+        exit 0
+    fi
 fi
 
 # Lock screen with blurred background
