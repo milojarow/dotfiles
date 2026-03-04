@@ -45,6 +45,26 @@ Storage middleware.
 Converts UTF\-16 LE clipboard data (e.g. URLs copied from Brave) to UTF\-8
 before handing off to cliphist store.
 .TP
+.I ~/.config/sway/scripts/clipboard\-store\-daemon.sh
+Daemon launcher for the storage pipeline.
+Kills any existing
+.B wl\-paste \-\-watch clipboard\-utf16\-filter.py
+instance then starts a fresh one.
+Called by
+.B exec_always $cliphist_store
+in
+.IR 99\-autostart\-applications.conf .
+.TP
+.I ~/.config/sway/scripts/clipboard\-watch\-daemon.sh
+Daemon launcher for the waybar refresh signal.
+Kills any existing
+.B wl\-paste \-\-watch waybar\-signal clipboard
+instance then starts a fresh one.
+Called by
+.B exec_always $cliphist_watch
+in
+.IR 99\-autostart\-applications.conf .
+.TP
 .I ~/.config/rofi/themes/coffee\-metal
 Rofi theme for the clipboard picker and deletion dialogs.
 .TP
