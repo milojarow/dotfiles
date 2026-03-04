@@ -1,0 +1,10 @@
+.cheatsheet {
+  &.background { background-color: rgba(15, 15, 20, 0.92); }
+}
+
+.cs-container  { padding: 32px 40px; }
+.cs-header     { margin-bottom: 20px; }
+.cs-title      { font-size: 20px; font-weight: bold; color: #50fa7b; margin-right: 30px; }
+.cs-hint       { font-size: 12px; color: rgba(248, 248, 242, 0.4); }
+.cs-col        { font-size: 13px; color: #f8f8f2; padding-right: 40px; }
+.cs-divider    { min-width: 1px; background-color: rgba(255, 255, 255, 0.1); margin: 0 20px; }

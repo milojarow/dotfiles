@@ -1,0 +1,21 @@
+(defpoll cs-left  :interval "999h" :initial "" "cat ~/.config/nwg-wrapper/cheatsheet-left.pango")
+(defpoll cs-right :interval "999h" :initial "" "cat ~/.config/nwg-wrapper/cheatsheet-right.pango")
+
+(defwidget cheatsheet-widget []
+  (box :class "cs-container" :orientation "v" :space-evenly false
+    (box :class "cs-header" :orientation "h" :space-evenly false
+      (label :class "cs-title" :text "󰖬  Sway Cheatsheet")
+      (label :class "cs-hint"  :text "Super+/  ·  scroll con rueda o ↑↓"))
+    (box :orientation "h" :space-evenly true :vexpand true
+      (scroll :vscroll true :hscroll false :vexpand true
+        (label :class "cs-col" :markup cs-left :xalign 0 :valign "start"))
+      (box :class "cs-divider")
+      (scroll :vscroll true :hscroll false :vexpand true
+        (label :class "cs-col" :markup cs-right :xalign 0 :valign "start")))))
+
+(defwindow cheatsheet
+  :monitor 0
+  :stacking "overlay"
+  :focusable true
+  :geometry (geometry :x "0" :y "0" :width "100%" :height "100%" :anchor "top left")
+  (cheatsheet-widget))

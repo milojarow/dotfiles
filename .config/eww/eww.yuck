@@ -1,0 +1,4 @@
+(include "./widgets/cpu-gauge.yuck")
+(include "./widgets/cpu-temp.yuck")
+(include "./widgets/activate-linux.yuck")
+(include "./widgets/cheatsheet.yuck")
