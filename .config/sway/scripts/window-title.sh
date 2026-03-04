@@ -378,7 +378,7 @@ process_window() {
     # Tooltip
     local tooltip
     if [ -n "$app_name" ] && [ "$app_name" != "null" ]; then
-        tooltip="${app_name}\\n${title}"
+        tooltip="${app_name}"$'\n'"${title}"
     else
         tooltip="$title"
     fi
