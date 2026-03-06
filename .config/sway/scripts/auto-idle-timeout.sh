@@ -1,4 +1,8 @@
 #!/bin/bash
+# Use a lock file to ensure only one instance runs at a time
+LOCKFILE="/tmp/auto-idle-timeout.lock"
+exec 9>"$LOCKFILE"
+flock -n 9 || exit 0
 # ── Lock Screen & Idle ────────────────────────────────────────────────────────
 # Role:     Non-interactive startup init; generates swayidle config with 5-min default
 # Files:    lock.sh · idle-timeout.sh · auto-idle-timeout.sh · secure-suspend.sh
