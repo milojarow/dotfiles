@@ -1,19 +1,13 @@
 # Sway configuration – user custom behavior
 # Minimal and validated.  No duplicate bindings, English comments only.
 
-### Variables
-set $mod Mod4
-set $term  foot
-set $menu rofi -show combi -combi-modi "drun" -terminal "$term" -ssh-command "{terminal} {ssh-client} {host} [-p {port}]" -run-shell-command "{terminal} {cmd}" -show-icons -font "$gui-font" -lines 10
-
 ### Output
 # output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 
 ### Other settings --------------------------------------------------------
-# Nota: floating_modifier eliminado de aquí, ya que está definido en el modo default
+# Note: floating_modifier is defined in modes/default, not here
 
-# Nota: los keybindings para teclas multimedia se eliminaron de aquí
-# para evitar conflictos con los definidos en el archivo modes/default
+# Note: multimedia keybindings are defined in modes/default to avoid conflicts
 
 include ~/.config/sway/themes/dracula/theme.conf
 include ~/.config/sway/config.d/*
@@ -24,21 +18,14 @@ exec_always ~/.config/sway/scripts/random-wallpaper.sh
 
 exec_always --no-startup-id ~/.config/sway/scripts/keyboard.sh
 
-# screenshot implementation
-# Start systemd target
-exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
-exec hash dbus-update-activation-environment 2>/dev/null && \
-     dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
+# Start systemd graphical session target
 exec systemctl --user start graphical-session.target
-exec systemctl --user start sway-session.target
-# Forzar tema oscuro para GTK
+
+# Force dark theme for GTK applications
 exec_always {
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
     gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
 }
 
-# Exportar variables de entorno
-exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
 exec --no-startup-id /usr/bin/gnome-keyring-daemon --start --components=secrets
-exec_always ~/.config/eww/scripts/start-eww.sh
 

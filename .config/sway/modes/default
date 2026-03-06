@@ -123,7 +123,9 @@ $bindsym $mod+8 workspace $ws8
 $bindsym $mod+9 workspace $ws9
 $bindsym $mod+0 workspace $ws10
 
-set $focus_ws [ "$focus_after_move" == 'true' ] && swaymsg workspace
+# Focus-follows-move: set $focus_after_move 'true' in 01-definitions.conf to enable.
+# set $focus_ws [ "$focus_after_move" == 'true' ] && swaymsg workspace
+set $focus_ws true
 
 ## Action // Move focused window to workspace // $mod + Shift + [number] ##
 $bindsym $mod+Shift+1 move container to workspace $ws1, exec $focus_ws $ws1
@@ -195,7 +197,8 @@ $bindsym $mod+question exec $help
 $bindsym $mod+Shift+s exec xdg-open https://github.com/Manjaro-Sway/manjaro-sway/blob/main/SUPPORT.md
 
 ## Launch // Inhibit Idle ##
-$bindsym $mod+Shift+i exec inhibit-idle interactive
+# inhibit-idle is not installed; idle is managed via the waybar module instead.
+# $bindsym $mod+Shift+i exec inhibit-idle interactive
 
 default_border pixel 1
 hide_edge_borders smart

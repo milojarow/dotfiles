@@ -8,23 +8,25 @@ set $mode_shutdown "\
 <span foreground='$color10'>(<b>s</b>)</span>shutdown \
 </span>"
 
-set $purge_cliphist [ $purge_cliphist_logout == 'true' ] && rm -f $HOME/.cache/cliphist/db || exit 0  # [Clipboard Functionality] purge history on logout/shutdown/reboot
+# Clipboard history is kept on logout/shutdown intentionally.
+# To enable auto-purge, uncomment the line below and set $purge_cliphist_logout 'true' in 01-definitions.conf.
+# set $purge_cliphist [ $purge_cliphist_logout == 'true' ] && rm -f $HOME/.cache/cliphist/db || exit 0
 
 mode --pango_markup $mode_shutdown {
     # lock
     $bindsym l mode "default", exec $locking  # [Lock Screen & Idle]
 
     # logout
-    $bindsym e exec $purge_cliphist; exec swaymsg exit
+    $bindsym e exec swaymsg exit
 
     # suspend (secure version - lock first, then suspend)
     $bindsym u mode "default", exec ~/.config/sway/scripts/secure-suspend.sh  # [Lock Screen & Idle]
 
     # shutdown
-    $bindsym s exec $purge_cliphist; exec systemctl poweroff
+    $bindsym s exec systemctl poweroff
 
     # reboot
-    $bindsym r exec $purge_cliphist; exec systemctl reboot
+    $bindsym r exec systemctl reboot
 
     # Return to default mode.
     $bindsym Escape mode "default"
