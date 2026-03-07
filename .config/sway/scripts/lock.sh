@@ -24,9 +24,11 @@ SWAYLOCK_RAN=false
 
 _on_exit() {
     if $SWAYLOCK_RAN; then
-        # Reset swayidle idle timer after unlock to prevent immediate re-lock
+        # Kill and immediately restart swayidle to reset idle timer after unlock.
+        # Do NOT wait for swayidle to die — waiting creates a deadlock because
+        # swayidle blocks waiting for lock.sh to exit while lock.sh waits for
+        # swayidle to die.
         pkill -x swayidle 2>/dev/null
-        while pgrep -x swayidle > /dev/null 2>&1; do sleep 0.05; done
         swayidle -w -S seat0 200>&- &
         disown
     fi
@@ -41,6 +43,8 @@ if ! flock -n 200; then
 fi
 
 # Prevent multiple lock instances - if swaylock is already running, exit
+LOCK_LOG="$HOME/.cache/secure-suspend.log"
+echo "lock.sh: started (PREBLURRED=${SECURE_SUSPEND_PREBLURRED:-0}, swaylock_already=$(pgrep -x swaylock > /dev/null && echo yes || echo no))" >> "$LOCK_LOG"
 if pgrep -x swaylock > /dev/null; then
     exit 0
 fi
@@ -74,7 +78,10 @@ fi
 
 # Lock screen with blurred background
 SWAYLOCK_RAN=true
-swaylock -i "$SCREENSHOT"
+LOCK_LOG="$HOME/.cache/secure-suspend.log"
+echo "lock.sh: launching swaylock -i $SCREENSHOT (PREBLURRED=${SECURE_SUSPEND_PREBLURRED:-0})" >> "$LOCK_LOG"
+swaylock -i "$SCREENSHOT" 2>> "$LOCK_LOG"
+echo "lock.sh: swaylock exited with code $?" >> "$LOCK_LOG"
 
 # Cleanup after unlock
 rm -f "$SCREENSHOT"
