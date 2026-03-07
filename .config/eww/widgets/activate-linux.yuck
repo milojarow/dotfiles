@@ -9,7 +9,7 @@
 
 (defwindow activate-linux
   :monitor 0
-  :stacking "bg"
+  :stacking "bottom"
   :focusable false
   :geometry (geometry :x "8px"
                       :y "101px"
