@@ -1,5 +1,5 @@
 [Unit]
-Description=eww daemon
+Description=eww widgets daemon
 PartOf=graphical-session.target
 After=graphical-session.target
 
@@ -7,9 +7,10 @@ After=graphical-session.target
 Type=simple
 Environment="PATH=/home/milo/.cargo/bin:/usr/local/bin:/usr/bin:/bin"
 ExecStart=/home/milo/.cargo/bin/eww daemon --no-daemonize
+ExecStartPost=/bin/sh -c 'elapsed=0; until /home/milo/.cargo/bin/eww ping 2>/dev/null; do sleep 0.1; elapsed=$((elapsed+1)); [ $elapsed -ge 100 ] && exit 1; done; /home/milo/.config/eww/scripts/open-windows.sh'
 ExecStop=/home/milo/.cargo/bin/eww kill
-Restart=on-failure
-RestartSec=2
+Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=graphical-session.target
