@@ -38,6 +38,10 @@ before-sleep 'pgrep -x swaylock > /dev/null || /home/milo/.config/sway/scripts/l
 
 # Make sure there's only one lock when the lock command is used
 lock 'pgrep -x swaylock > /dev/null || /home/milo/.config/sway/scripts/lock.sh'
+
+# Restore display and keyboard backlight after system wake from suspend
+after-resume 'swaymsg "output * power on"'
+after-resume '/home/milo/.config/sway/scripts/resume-handler.sh'
 EOF
 
 # Restart swayidle cleanly - minimize gap without sleep inhibitor
