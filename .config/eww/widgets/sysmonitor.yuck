@@ -53,23 +53,34 @@
   :focusable false
   (sysmonitor))
 
-(defwidget gauge-controls []
-  (box :class "gauge-controls"
+(defwidget widget-mover []
+  (box :class "widget-mover"
        :orientation "v"
        :space-evenly false
-       :spacing 6
-    (button :class "gauge-btn"
-            :onclick "eww update gauge-offset=$(awk 'BEGIN{print ${gauge-offset} - 0.5}')"
+       :spacing 4
+    (button :class "mover-btn"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/move-temps.sh y 10"
             "↑")
-    (button :class "gauge-btn"
-            :onclick "eww update gauge-offset=$(awk 'BEGIN{print ${gauge-offset} + 0.5}')"
+    (box :orientation "h"
+         :space-evenly false
+         :spacing 4
+      (button :class "mover-btn"
+              :onclick "~/.config/eww/scripts/move-temps.sh x -10"
+              "←")
+      (button :class "mover-btn"
+              :onclick "~/.config/eww/scripts/move-temps.sh x 10"
+              "→"))
+    (button :class "mover-btn"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/move-temps.sh y -10"
             "↓")))
 
-(defwindow sysmonitor-controls
+(defwindow widget-mover
   :monitor 0
   :geometry (geometry :x "898px"
                       :y "540px"
                       :anchor "bottom left")
   :stacking "fg"
   :focusable false
-  (gauge-controls))
+  (widget-mover))
