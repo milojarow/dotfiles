@@ -2,3 +2,5 @@
 (include "./widgets/cpu-temp.yuck")
 (include "./widgets/activate-linux.yuck")
 (include "./widgets/cheatsheet.yuck")
+(include "./widgets/sysmonitor.yuck")
+(include "./widgets/experiment.yuck")
