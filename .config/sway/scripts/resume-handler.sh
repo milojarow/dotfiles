@@ -7,6 +7,9 @@
 # Note:     swaymsg "output * power on" is called before this script via after-resume
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Reopen eww windows lost during suspend
+/home/milo/.config/eww/scripts/open-windows.sh
+
 # Restore keyboard backlight to pre-suspend level, or default to 2
 if [[ -f /tmp/kbd-suspend-brightness ]]; then
     SAVED=$(cat /tmp/kbd-suspend-brightness)
