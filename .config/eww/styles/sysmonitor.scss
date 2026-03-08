@@ -47,3 +47,26 @@ window {
     }
   }
 }
+
+.gauge-controls {
+  padding: 4px 2px;
+
+  .gauge-btn {
+    background: rgba(46, 52, 64, 0.9);
+    border: 1px solid rgba(208, 135, 112, 0.5);
+    border-radius: 6px;
+    color: #D8DEE9;
+    font-size: 13px;
+    min-width: 28px;
+    min-height: 28px;
+
+    &:hover {
+      background: rgba(208, 135, 112, 0.2);
+      border-color: #D08770;
+    }
+
+    &:active {
+      background: rgba(208, 135, 112, 0.4);
+    }
+  }
+}

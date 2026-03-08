@@ -1,6 +1,8 @@
 (deflisten sysmon-brightness :initial "50"
   "~/.config/eww/scripts/watch-brightness.sh")
 
+(defvar gauge-offset -0.5)
+
 (defwidget stat-item [icon color value]
   (box :class "stat-row"
        :orientation "h"
@@ -8,12 +10,14 @@
        :space-evenly false
        :valign "center"
     (label :class "stat-icon"
+           :valign "center"
            :style "color: ${color};"
            :text icon)
     (progress :class "bar-track"
               :hexpand true
+              :valign "center"
               :value value
-              :style "color: ${color};")))
+              :style "color: ${color}; margin-top: ${gauge-offset}px;")))
 
 (defwidget sysmonitor []
   (box :class "sysmonitor"
@@ -48,3 +52,24 @@
   :stacking "bg"
   :focusable false
   (sysmonitor))
+
+(defwidget gauge-controls []
+  (box :class "gauge-controls"
+       :orientation "v"
+       :space-evenly false
+       :spacing 6
+    (button :class "gauge-btn"
+            :onclick "eww update gauge-offset=$(awk 'BEGIN{print ${gauge-offset} - 0.5}')"
+            "↑")
+    (button :class "gauge-btn"
+            :onclick "eww update gauge-offset=$(awk 'BEGIN{print ${gauge-offset} + 0.5}')"
+            "↓")))
+
+(defwindow sysmonitor-controls
+  :monitor 0
+  :geometry (geometry :x "898px"
+                      :y "540px"
+                      :anchor "bottom left")
+  :stacking "fg"
+  :focusable false
+  (gauge-controls))
