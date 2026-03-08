@@ -4,3 +4,4 @@
 (include "./widgets/cheatsheet.yuck")
 (include "./widgets/sysmonitor.yuck")
 (include "./widgets/experiment.yuck")
+(include "./widgets/temps.yuck")

@@ -1,0 +1,26 @@
+(defpoll cpu-gauge-path :interval "3s" :initial ""
+  "~/.config/eww/scripts/cpu-gauge.sh")
+
+(defpoll gpu-gauge-path :interval "3s" :initial ""
+  "~/.config/eww/scripts/gpu-gauge.sh")
+
+(defpoll ram-gauge-path :interval "3s" :initial ""
+  "~/.config/eww/scripts/ram-gauge.sh")
+
+(defwidget temps []
+  (box :class "temps"
+       :orientation "h"
+       :space-evenly true
+       :spacing 0
+    (image :path cpu-gauge-path :image-width 200 :image-height 210)
+    (image :path gpu-gauge-path :image-width 200 :image-height 210)
+    (image :path ram-gauge-path :image-width 200 :image-height 210)))
+
+(defwindow temps-window
+  :monitor 0
+  :geometry (geometry :x "540px"
+                      :y "300px"
+                      :anchor "bottom left")
+  :stacking "bg"
+  :focusable false
+  (temps))
