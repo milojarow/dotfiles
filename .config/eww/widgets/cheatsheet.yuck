@@ -1,5 +1,5 @@
-(defpoll cs-left  :interval "999h" :initial "" "cat ~/.config/nwg-wrapper/cheatsheet-left.pango")
-(defpoll cs-right :interval "999h" :initial "" "cat ~/.config/nwg-wrapper/cheatsheet-right.pango")
+(defpoll cs-left  :interval "999h" :initial "" "cat ~/.config/eww/cheatsheet/cheatsheet-left.pango")
+(defpoll cs-right :interval "999h" :initial "" "cat ~/.config/eww/cheatsheet/cheatsheet-right.pango")
 
 (defwidget cheatsheet-widget []
   (box :class "cs-container" :orientation "v" :space-evenly false
