@@ -3,3 +3,4 @@
 # Add or remove windows here as your eww config grows.
 
 eww open activate-linux
+eww open sysmonitor-window
