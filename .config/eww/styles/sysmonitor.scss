@@ -1,0 +1,49 @@
+window {
+  background: transparent;
+}
+
+.sysmonitor {
+  background: #2E3440;
+  border-radius: 14px;
+  border: 1px solid #D08770;
+  padding: 0;
+
+  .sysmon-header {
+    background: #D08770;
+    min-height: 36px;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .sysmon-body {
+    padding: 24px;
+  }
+
+  .stat-icon {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 20px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .bar-track {
+    margin-left: 18px;
+    border: none;
+    background: transparent;
+
+    trough {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      min-height: 14px;
+      border: none;
+      padding: 0;
+    }
+
+    progress {
+      background-color: currentColor;
+      border-radius: 4px;
+      min-height: 14px;
+      border: none;
+      padding: 0;
+    }
+  }
+}
