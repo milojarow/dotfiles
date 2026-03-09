@@ -14,7 +14,7 @@ $bindsym $mod+Shift+Return exec $term_float_persistent
 $bindsym $mod+Shift+q kill
 
 ## Action // Kill focused app (all windows) ##
-$bindsym $mod+Ctrl+Shift+q exec pkill -x "$(swaymsg -t get_tree | jq -r '.. | select(.focused? == true) | .app_id // .window_properties.class' | head -1)"
+$bindsym $mod+Ctrl+Shift+q exec kill $(swaymsg -t get_tree | jq -r '.. | select(.focused? == true) | .pid // empty' | head -1)
 
 ## Launch // Open launcher ##
 $bindsym $mod+d exec $menu
