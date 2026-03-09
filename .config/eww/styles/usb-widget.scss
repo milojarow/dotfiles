@@ -1,0 +1,28 @@
+.usb-widget {
+  .panel-trigger {
+    background: #2E3440;
+    border: 1px solid #D08770;
+    border-radius: 14px;
+    min-width: 60px;
+    min-height: 200px;
+
+    &.open {
+      border-radius: 14px 0 0 14px;
+    }
+
+    .panel-icon {
+      font-family: "JetBrainsMono Nerd Font";
+      font-size: 34px;
+      color: #D8DEE9;
+    }
+  }
+
+  .panel-content {
+    background: #1A1F2A;
+    border: 1px solid #D08770;
+    border-left: none;
+    border-radius: 0 14px 14px 0;
+    min-width: 220px;
+    min-height: 200px;
+  }
+}

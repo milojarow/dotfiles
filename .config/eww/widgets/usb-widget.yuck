@@ -1,0 +1,24 @@
+(defvar panel-open 0)
+
+(defwidget usb-widget []
+  (box :class "usb-widget"
+       :orientation "h"
+       :space-evenly false
+    (button :class {panel-open == 1 ? "panel-trigger open" : "panel-trigger"}
+            :onclick "eww update panel-open=$((1 - ${panel-open}))"
+      (label :class "panel-icon"
+             :text "󱊟"))
+    (revealer :transition "slideright"
+              :reveal {panel-open == 1}
+              :duration "250ms"
+      (box :class "panel-content"
+        ))))
+
+(defwindow usb-widget
+  :monitor 0
+  :geometry (geometry :x "10px"
+                      :y "300px"
+                      :anchor "bottom left")
+  :stacking "fg"
+  :focusable false
+  (usb-widget))
