@@ -87,6 +87,38 @@
   :geometry (geometry :x "10px"
                       :y "300px"
                       :anchor "bottom left")
-  :stacking "fg"
+  :stacking "bg"
   :focusable false
   (usb-widget))
+
+(defwidget tool-to-move-widgets []
+  (box :class "widget-mover"
+       :orientation "v"
+       :space-evenly false
+       :spacing 4
+    (button :class "mover-btn"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/move-usb.sh y 10"
+            "↑")
+    (box :orientation "h"
+         :space-evenly false
+         :spacing 4
+      (button :class "mover-btn"
+              :onclick "~/.config/eww/scripts/move-usb.sh x -10"
+              "←")
+      (button :class "mover-btn"
+              :onclick "~/.config/eww/scripts/move-usb.sh x 10"
+              "→"))
+    (button :class "mover-btn"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/move-usb.sh y -10"
+            "↓")))
+
+(defwindow tool-to-move-widgets
+  :monitor 0
+  :geometry (geometry :x "100px"
+                      :y "300px"
+                      :anchor "bottom left")
+  :stacking "fg"
+  :focusable false
+  (tool-to-move-widgets))
