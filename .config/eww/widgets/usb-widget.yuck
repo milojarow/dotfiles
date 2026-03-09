@@ -84,7 +84,7 @@
 
 (defwindow usb-widget
   :monitor 0
-  :geometry (geometry :x "10px"
+  :geometry (geometry :x "1170px"
                       :y "300px"
                       :anchor "bottom left")
   :stacking "bg"
