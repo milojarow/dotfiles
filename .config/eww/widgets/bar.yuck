@@ -163,6 +163,7 @@
 (defwidget bar-tray []
   (systray :spacing 4
            :icon-size 18
+           :prepend-new true
            :class "bar-tray"))
 
 ; ── Bar layout ────────────────────────────────────────────────────────────────
