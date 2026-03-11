@@ -1,47 +1,109 @@
-; ── Wifi popup window ─────────────────────────────────────────────────────────
+; ── Wifi manager data ─────────────────────────────────────────────────────────
+(defpoll wifi-networks :interval "30s"
+  `~/.config/eww/scripts/wifi-scan.py`)
+
+; ── Wifi manager widget ────────────────────────────────────────────────────────
+(defwidget wifi-manager-widget []
+  (box :orientation "v"
+       :class "wifi-manager"
+       :space-evenly false
+    ; ── Header: icon + title + ssid + rescan button ───────────────────────────
+    (box :orientation "h"
+         :class "wifi-manager-header"
+         :space-evenly false
+         :spacing 10
+         :valign "center"
+      (label :class "wifi-manager-icon ${wifi.class}"
+             :valign "center"
+             :text {wifi.icon})
+      (box :orientation "v"
+           :space-evenly false
+           :hexpand true
+           :valign "center"
+        (label :class "wifi-manager-title"
+               :halign "start"
+               :text "Wi-Fi")
+        (label :class "wifi-manager-ssid"
+               :halign "start"
+               :truncate true
+               :text {wifi.connected ? wifi.ssid : "Not connected"}))
+      (button :class "wifi-manager-rescan"
+              :valign "center"
+              :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-rescan.sh'"
+              :tooltip "Rescan networks"
+        (label :text "↻")))
+    ; ── Current connection details (only when connected) ──────────────────────
+    (box :orientation "v"
+         :class "wifi-manager-details"
+         :space-evenly false
+         :spacing 4
+         :visible {wifi.connected}
+      (box :orientation "h" :space-evenly false :spacing 6
+        (label :class "wifi-detail-label" :xalign 0.0 :text "Signal")
+        (label :class "wifi-detail-value" :text "${wifi.signal}%"))
+      (box :orientation "h" :space-evenly false :spacing 6
+        (label :class "wifi-detail-label" :xalign 0.0 :text "IP")
+        (label :class "wifi-detail-value" :text {wifi.ip}))
+      (box :orientation "h" :space-evenly false :spacing 6
+        (label :class "wifi-detail-label" :xalign 0.0 :text "Freq")
+        (label :class "wifi-detail-value" :text {wifi.freq}))
+      (box :orientation "h" :space-evenly false :spacing 6
+        (label :class "wifi-detail-label" :xalign 0.0 :text "Security")
+        (label :class "wifi-detail-value" :text {wifi.security})))
+    ; ── Network list section ──────────────────────────────────────────────────
+    (label :class "wifi-section-label"
+           :halign "start"
+           :text "Networks")
+    (scroll :vscroll true
+            :hscroll false
+            :class "wifi-net-scroll"
+            :height 320
+      (box :orientation "v"
+           :space-evenly false
+        (for net in {wifi-networks.networks}
+          (box :orientation "h"
+               :class {net.in_use ? "wifi-net-row active" : "wifi-net-row"}
+               :space-evenly false
+               :spacing 8
+               :valign "center"
+            ; Signal / saved icon
+            (label :class {net.available ? "wifi-net-icon" : "wifi-net-icon saved"}
+                   :valign "center"
+                   :text {net.icon})
+            ; SSID + security
+            (box :orientation "v"
+                 :space-evenly false
+                 :hexpand true
+                 :valign "center"
+              (label :class "wifi-net-ssid"
+                     :halign "start"
+                     :truncate true
+                     :text {net.ssid})
+              (label :class "wifi-net-security"
+                     :halign "start"
+                     :visible {strlength(net.security) > 0}
+                     :text {net.security}))
+            ; Action buttons
+            (button :class "wifi-action-btn connect-btn"
+                    :visible {!net.in_use}
+                    :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-connect.sh \"${net.ssid}\" ${net.known} \"${net.security}\"'"
+              (label :text "connect"))
+            (button :class "wifi-action-btn disconnect-btn"
+                    :visible {net.in_use}
+                    :onclick "~/.config/eww/scripts/wifi-disconnect.sh"
+              (label :text "disconnect"))
+            (button :class "wifi-action-btn forget-btn"
+                    :visible {net.known}
+                    :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-forget.sh \"${net.ssid}\"'"
+              (label :text "forget"))))))))
+
+; ── Wifi manager window ────────────────────────────────────────────────────────
 (defwindow eww-wifi-popup
   :monitor 0
   :geometry (geometry :x "-8px"
-                      :y "68px"
-                      :width "280px"
+                      :y "38px"
+                      :width "380px"
                       :anchor "top right")
   :stacking "fg"
   :focusable false
-  (wifi-popup-widget))
-
-; ── Wifi popup content ────────────────────────────────────────────────────────
-(defwidget wifi-popup-widget []
-  (box :orientation "v"
-       :class "wifi-popup"
-       :space-evenly false
-    ; Header: big icon + SSID
-    (box :orientation "h"
-         :class "wifi-popup-header"
-         :space-evenly false
-         :spacing 12
-         :valign "center"
-      (label :class "wifi-popup-icon ${wifi.class}"
-             :valign "center"
-             :text {wifi.icon})
-      (label :class "wifi-popup-ssid"
-             :valign "center"
-             :truncate true
-             :text {wifi.connected ? wifi.ssid : "Not connected"}))
-    ; Details — only when connected
-    (box :orientation "v"
-         :class "wifi-popup-details"
-         :space-evenly false
-         :spacing 6
-         :visible {wifi.connected}
-      (box :orientation "h" :space-evenly false :spacing 6
-        (label :class "wifi-popup-label" :xalign 0.0 :text "Signal")
-        (label :class "wifi-popup-value" :text "${wifi.signal}%"))
-      (box :orientation "h" :space-evenly false :spacing 6
-        (label :class "wifi-popup-label" :xalign 0.0 :text "IP")
-        (label :class "wifi-popup-value" :text {wifi.ip}))
-      (box :orientation "h" :space-evenly false :spacing 6
-        (label :class "wifi-popup-label" :xalign 0.0 :text "Freq")
-        (label :class "wifi-popup-value" :text {wifi.freq}))
-      (box :orientation "h" :space-evenly false :spacing 6
-        (label :class "wifi-popup-label" :xalign 0.0 :text "Security")
-        (label :class "wifi-popup-value" :text {wifi.security})))))
+  (wifi-manager-widget))
