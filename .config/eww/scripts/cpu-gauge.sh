@@ -10,5 +10,6 @@ N=$(( ($(cat /tmp/eww-cpu-gauge-n 2>/dev/null || echo 0) + 1) % 2 ))
 echo "$N" > /tmp/eww-cpu-gauge-n
 
 OUT="/tmp/eww-cpu-gauge-${N}.png"
-python3 ~/.config/eww/scripts/gauge-render.py "$TEMP" 0 100 "CPU" "$OUT" 2>/dev/null
+ICON=$(python3 -c "import sys; sys.stdout.write('\uf4bc')")
+python3 ~/.config/eww/scripts/gauge-render.py "$TEMP" 0 100 "CPU" "$OUT" "°C" "$ICON" 2>/dev/null
 echo "$OUT"
