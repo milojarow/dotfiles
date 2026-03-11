@@ -29,7 +29,7 @@ configuration {
 
 window {
     width: 35%;
-    transparency: "real";
+
     border: 2px;
     border-color: @accent-color;
     border-radius: 8px;
