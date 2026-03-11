@@ -1,6 +1,7 @@
 # Alacritty configuration
 
 # Terminal colors — auto-generated from active palette theme
+[general]
 import = ["~/.config/alacritty/colors.toml"]
 
 [font]
