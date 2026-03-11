@@ -21,17 +21,18 @@
 }
 
 .bar-ws {
-  padding: 2px 9px;
+  padding: 2px 5px;
   border-radius: 6px;
-  font-size: 18px;
+  font-size: 16px;
+  min-width: 26px;
   transition: background-color 150ms ease;
-  margin: 0 1px;
+  margin: 0;
 }
 
 // Empty workspaces — just the number, muted/neutral
 .bar-ws--empty {
   color: mix($theme-fg, $theme-bg, 30%);
-  font-size: 15px;
+  // no font-size override — keeps the same size as all other states
 }
 
 .bar-ws--empty:hover {
