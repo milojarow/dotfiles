@@ -60,11 +60,22 @@ apply_theme() {
         ~/.config/sway/scripts/apply-theme-terminals.sh "$foot_theme_file" || true
     fi
     
+    # Update Papirus folder colors for catppuccin themes
+    if [[ "$theme" =~ ^catppuccin- ]]; then
+        local flavor="${theme#catppuccin-}"
+        if is_light_theme "$theme"; then
+            papirus-folders --color "cat-${flavor}-blue" --theme Papirus-Light 2>/dev/null || true
+        else
+            papirus-folders --color "cat-${flavor}-blue" --theme Papirus-Dark 2>/dev/null || true
+        fi
+    fi
+
     # Reload Sway to apply the new theme
     swaymsg reload
     # Regenerate per-app theme files
     ~/.config/sway/scripts/theme-waybar.sh
     ~/.config/sway/scripts/theme-rofi.sh
+    ~/.config/sway/scripts/theme-eww.sh
     pkill -SIGUSR2 waybar
 
     # Signal Waybar to update the theme icon
