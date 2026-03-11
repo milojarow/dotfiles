@@ -82,6 +82,7 @@ apply_theme() {
     # Regenerate per-app theme files
     ~/.config/sway/scripts/theme-waybar.sh
     ~/.config/sway/scripts/theme-rofi.sh
+    ~/.config/sway/scripts/theme-wofi.sh
     ~/.config/sway/scripts/theme-eww.sh
     pkill -SIGUSR2 waybar
 

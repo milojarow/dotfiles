@@ -3,14 +3,12 @@
 palette-theming \- live color palette theming system for sway
 .SH DESCRIPTION
 The Palette Theming system provides coordinated color palette switching
-across sway window borders, the foot terminal, waybar, and the rofi
-application launcher. It does
-.B NOT
-manage GTK, Qt, or Kvantum visual theming; those are handled separately
-by
+across sway window borders, the foot terminal, waybar, rofi, wofi, and
+the eww widget toolkit. GTK, Qt/Kvantum, icon, and cursor themes are
+applied simultaneously via
 .IR 90-enable-theme.conf .
 .PP
-The system consists of four scripts and twelve palette theme definitions
+The system consists of seven scripts and twelve palette theme definitions
 under
 .IR ~/.config/sway/themes/ .
 Each theme carries two files: a sway
@@ -29,8 +27,12 @@ as the active sway theme, (2) copies the
 .I foot-theme.ini
 to the runtime location read by foot, (3) pushes the new palette to all
 running terminal instances via OSC escape sequences (no restart needed),
-(4) reloads sway so window decorations update, and (5) regenerates the
-waybar CSS, signals waybar, and (6) regenerates the rofi color variables.
+(4) syncs the icon theme to
+.IR qt6ct.conf ,
+(5) updates Papirus folder colors for catppuccin themes,
+(6) reloads sway so window decorations and GTK/Qt/Kvantum themes update,
+and (7) regenerates the waybar CSS, rofi color variables, wofi stylesheet,
+and eww SCSS, then signals waybar.
 .PP
 A secondary script
 .BR theme-toggle.sh
@@ -77,14 +79,6 @@ and
 (one level of variable indirection supported), and generates
 .IR ~/.config/waybar/theme.css .
 .TP
-.I ~/.config/sway/scripts/theme-toggle.sh
-Light/dark palette toggle based on solar time. Uses geoip.sh for
-sunrise/sunset. Stashes the inactive variant as
-.I theme.dark.conf_
-/
-.I theme.light.conf_
-and swaps on request or automatically.
-.TP
 .I ~/.config/sway/scripts/theme-rofi.sh
 Reads the active
 .I theme.conf
@@ -101,6 +95,60 @@ Called by
 on every theme switch and by
 .I $update_rofi_theme
 on every sway reload.
+.TP
+.I ~/.config/sway/scripts/theme-wofi.sh
+Reads the active
+.I theme.conf
+symlink, resolves
+.BR $background-color ,
+.BR $text-color ,
+.BR $accent-color ,
+and
+.B $selection-color
+(one level of variable indirection supported), and generates
+.IR ~/.config/wofi/style.css .
+Called by
+.I theme-selector.sh
+on every theme switch.
+.TP
+.I ~/.config/sway/scripts/theme-eww.sh
+Reads the active
+.I theme.conf
+symlink, resolves
+.BR $background-color ,
+.BR $text-color ,
+.BR $accent-color ,
+and
+.B $selection-color
+(one level of variable indirection supported), and generates
+.IR ~/.config/eww/styles/theme.scss .
+eww watches its SCSS files and reloads automatically \[em] no eww
+restart is needed. Called by
+.I theme-selector.sh
+on every theme switch.
+.TP
+.I ~/.config/sway/scripts/theme-toggle.sh
+Light/dark palette toggle based on solar time. Uses geoip.sh for
+sunrise/sunset. Stashes the inactive variant as
+.I theme.dark.conf_
+/
+.I theme.light.conf_
+and swaps on request or automatically.
+.TP
+.I ~/.config/sway/scripts/wob.sh
+Wrapper script for the
+.BR wob (1)
+on-screen bar (volume/brightness indicator). Receives the active
+.B $accent-color
+and
+.B $background-color
+as arguments (injected by sway via
+.IR $onscreen_bar )
+and writes
+.IR ~/.config/wob.ini ,
+then spawns or reuses a running wob instance. Colors are therefore
+always in sync with the active palette without an explicit theme-switch
+step.
 .SS Theme picker
 .TP
 .I ~/.config/wofi/config
@@ -113,7 +161,11 @@ filtering, and icon display.
 .I ~/.config/wofi/style.css
 GTK CSS stylesheet for the theme picker window rendered by
 .BR wofi (1).
-Styles the border, background, entry list, and selection highlight.
+.B Auto-generated
+by
+.I theme-wofi.sh
+on every theme switch. Styles the border, background, entry list, and
+selection highlight using the active palette colors.
 .SS Theme data (one pair per theme)
 .TP
 .I ~/.config/sway/themes/<name>/theme.conf
@@ -121,10 +173,20 @@ Color variable definitions (
 .B $color0
 \[en]
 .BR $color15 ,
+or Catppuccin-named variables),
 .BR $background-color ,
 .BR $text-color ,
-.BR $accent-color )
-and sway
+.BR $accent-color ,
+.BR $selection-color ,
+.BR $gtk-theme ,
+.BR $icon-theme ,
+.BR $cursor-theme ,
+.BR $kvantum-theme ,
+.BR $gui-font ,
+.BR $term-font ,
+and
+.B $gtk-color-scheme
+) and sway
 .B client.*
 window decoration rules.
 .TP
@@ -132,6 +194,11 @@ window decoration rules.
 Terminal palette in foot config format. Includes
 .I ~/.config/sway/templates/foot.ini
 for shared non-color settings.
+.TP
+.I ~/.config/sway/themes/<name>/packages
+Plain-text list of AUR/pacman packages required by this theme (GTK
+theme, icon theme, cursor theme, Kvantum theme, fonts). Used as
+documentation; not parsed by any script.
 .PP
 Available themes:
 catppuccin-frappe, catppuccin-latte, catppuccin-macchiato, catppuccin-mocha,
@@ -177,6 +244,28 @@ via
 Overwritten by
 .I theme-rofi.sh
 on each switch.
+.TP
+.I ~/.config/wofi/style.css
+Auto-generated GTK CSS for the wofi theme picker. Overwritten by
+.I theme-wofi.sh
+on each switch.
+.TP
+.I ~/.config/eww/styles/theme.scss
+Auto-generated SCSS defining
+.BR $theme-bg ,
+.BR $theme-fg ,
+.BR $theme-accent ,
+and
+.B $theme-selection
+variables. Overwritten by
+.I theme-eww.sh
+on each switch. eww reloads it automatically via filesystem watch.
+.TP
+.I ~/.config/wob.ini
+Auto-generated wob configuration. Written by
+.I wob.sh
+each time wob is launched or refreshed, using colors passed via
+.IR $onscreen_bar .
 .SS Templates
 .TP
 .I ~/.config/sway/templates/foot.ini
@@ -197,6 +286,32 @@ Binds
 .B $mod+t
 to
 .IR theme-selector.sh\ menu .
+.TP
+.I ~/.config/sway/config.d/90-enable-theme.conf
+Applied on every sway reload. Calls
+.I enable-gtk-theme.sh
+to apply the GTK theme to GTK3/4 apps, sets
+.BR gsettings (1)
+for icon theme, cursor theme, fonts, and color scheme, and calls
+.B "kvantummanager --set"
+to activate the Kvantum theme for Qt apps.
+.TP
+.I ~/.config/sway/config.d/01-definitions.conf
+Defines the
+.B $onscreen_bar
+sway variable as
+.IR "wob.sh \(dq$accent-color\(dq \(dq$background-color\(dq" ,
+so every keybinding that pipes a value to wob automatically uses
+the active palette.
+.TP
+.I ~/.config/qt6ct/qt6ct.conf
+Qt6 platform theme configuration. The
+.B icon_theme
+key is updated on every theme switch by
+.I theme-selector.sh
+to match
+.B $icon-theme
+from the active theme, so Qt6 apps use the correct icon set.
 .TP
 .I ~/.config/foot/foot.ini
 Includes
@@ -224,9 +339,14 @@ for status, click, and right-click actions.
 .BR pkill (1),
 .BR awk (1),
 .BR grep (1),
+.BR sed (1),
 .BR foot (1),
 .BR jq (1),
-.BR mv (1)
+.BR mv (1),
+.BR gsettings (1),
+.BR kvantummanager (1),
+.BR papirus-folders (1),
+.BR wob (1)
 .SH FLOW
 .SS Theme switch (super+t)
 .nr step 1 1
@@ -255,16 +375,34 @@ writes OSC payloads to all
 .I /dev/pts/*
 \[->] running foot instances change colors instantly
 .IP \n+[step].
+.B $icon-theme
+is read from
+.I theme.conf
+and written to
+.B icon_theme
+in
+.I ~/.config/qt6ct/qt6ct.conf
+\[->] Qt6 apps use the correct icon set on next launch
+.IP \n+[step].
+For catppuccin themes:
+.B papirus-folders
+is called with the matching
+.I cat-<flavor>-blue
+color and Papirus-Dark or Papirus-Light \[->] Papirus folder icons
+update immediately
+.IP \n+[step].
 .BR "swaymsg reload"
-\[->] sway re-reads theme.conf \[->] window borders and title bars update
+\[->] sway re-reads theme.conf \[->] window borders update and
+.I 90-enable-theme.conf
+applies GTK theme, icon theme, cursor theme, fonts, color scheme,
+and Kvantum theme
 .IP \n+[step].
-.I theme-waybar.sh
-generates
-.I ~/.config/waybar/theme.css
-.IP \n+[step].
-.I theme-rofi.sh
-generates
-.I ~/.config/rofi/cachyos.rasi
+.IR theme-waybar.sh ,
+.IR theme-rofi.sh ,
+.IR theme-wofi.sh ,
+and
+.I theme-eww.sh
+regenerate their respective output files
 .IP \n+[step].
 .B "pkill -SIGUSR2 waybar"
 reloads waybar CSS \[->]
@@ -278,6 +416,19 @@ Foot reads
 \[->] loads
 .B [colors-dark]
 \[->] opens with the palette that was active when the last theme switch happened.
+.SS Wob on-screen bar (volume/brightness)
+Any keybinding that triggers wob calls
+.I $onscreen_bar
+(defined in
+.IR 01-definitions.conf )
+which expands to
+.IR "wob.sh \(dq$accent-color\(dq \(dq$background-color\(dq <value>" .
+.I wob.sh
+generates
+.I ~/.config/wob.ini
+with the current accent/background colors, then pipes the value to the
+running wob instance (or spawns a new one). No explicit theme-switch
+step is needed \[em] wob always inherits the live sway variables.
 .SH SIGNALS
 .TP
 .B SIGUSR2
@@ -326,9 +477,22 @@ Foot does not support a
 config reload (the developer explicitly rejected it), so the OSC
 mechanism is the only way to recolor running instances.
 .IP \[bu]
-GTK, Qt, and Kvantum theme application is
-.B separate
-and is performed by
+GTK apps pick up theme changes instantly via the
+.BR gsettings (1)
+bus (GSettings notification). GTK4/libadwaita apps may require a
+restart in some cases.
+.IP \[bu]
+Qt/Kvantum apps require a restart to pick up Kvantum theme changes.
+.B kvantummanager --set
+updates the active theme on disk; running Qt processes do not reload it.
+Qt6 icon theme changes (via
+.IR qt6ct.conf )
+also require a restart.
+.IP \[bu]
+Cursor theme changes apply to newly launched apps immediately.
+Existing windows may not update until restarted.
+.IP \[bu]
+GTK, Qt, and Kvantum theme application is performed by
 .I 90-enable-theme.conf
 (via
 .IR enable-gtk-theme.sh )
@@ -340,12 +504,25 @@ and
 .B $kvantum-theme
 variables from
 .I theme.conf
-but its operation is independent of the palette system documented here.
+but its operation is independent of the palette scripts documented here.
 .IP \[bu]
 The matcha-* themes and dracula share the same Base16 Seti UI base
 palette. Their distinction comes from the accent color and, for dracula,
 the Dracula purple (#bd93f9) in the ANSI blue slot (regular4/bright4).
+.IP \[bu]
+Catppuccin themes use named palette variables (rosewater, flamingo,
+base, surface1, etc.) instead of $color0\[en]$color15. The four
+catppuccin flavors (frappe, latte, macchiato, mocha) share the same
+GTK, cursor, and Kvantum package families, differing only in palette
+values. Latte is the only light theme; it uses
+.B prefer-light
+and
+.IR Papirus-Light .
 .SH SEE ALSO
 .BR foot (1),
 .BR sway (5),
-.BR wofi (1)
+.BR wofi (1),
+.BR wob (1),
+.BR kvantummanager (1),
+.BR papirus-folders (1),
+.BR gsettings (1)

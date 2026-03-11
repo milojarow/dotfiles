@@ -1,8 +1,8 @@
 /* Auto-generated rofi color variables — do not edit */
-/* Theme: matcha-blue — see man palette-theming */
+/* Theme: dracula — see man palette-theming */
 * {
-    background-color: #14161b;
-    text-color: #eeeeee;
-    accent-color: #3498db;
+    background-color: #141a1b;
+    text-color: #f8f8f2;
+    accent-color: #bd93f9;
     selected-bg: #282a2b;
 }
