@@ -1,0 +1,31 @@
+; Disk usage data — refreshes every 10 minutes
+(defpoll disk-data :interval "10m"
+  :initial `{"documents":0,"pictures":0,"downloads":0,"videos":0,"other":0,"root":0}`
+  `~/.config/eww/scripts/disk-usage.sh`)
+
+; Single row: [folder-icon] [name] ... [chart-icon] [pct%]
+(defwidget disk-row [label path pct]
+  (button :class "disk-row"
+          :onclick "xdg-open '${path}'"
+    (box :orientation "h" :space-evenly false :valign "center"
+      (label :class "disk-folder-icon" :text "")
+      (label :class "disk-name" :text "${label}" :hexpand true :halign "start")
+      (label :class "disk-chart-icon" :text "")
+      (label :class "disk-pct" :text "${pct}%"))))
+
+; Full list widget
+(defwidget disk-widget []
+  (box :class "disk-widget" :orientation "v" :space-evenly false
+    (disk-row :label "Documents" :path "/home/milo/Documents" :pct {jq(disk-data, ".documents")})
+    (disk-row :label "Pictures"  :path "/home/milo/Pictures"  :pct {jq(disk-data, ".pictures")})
+    (disk-row :label "Downloads" :path "/home/milo/Downloads" :pct {jq(disk-data, ".downloads")})
+    (disk-row :label "Videos"    :path "/home/milo/Videos"    :pct {jq(disk-data, ".videos")})
+    (disk-row :label "Other"     :path "/home/milo"           :pct {jq(disk-data, ".other")})
+    (disk-row :label "Root"      :path "/root"                :pct {jq(disk-data, ".root")})))
+
+(defwindow disk-widget
+  :monitor 0
+  :geometry (geometry :x "1120px" :y "530px" :width "260px" :anchor "top right")
+  :stacking "bg"
+  :focusable false
+  (disk-widget))
