@@ -86,12 +86,16 @@ and swaps on request or automatically.
 .SS Theme picker
 .TP
 .I ~/.config/wofi/config
-Wofi instance configuration for the theme picker: geometry (35%\[tmu]45%,
-centered), dmenu mode, case-insensitive filtering, and icon display.
+Configures the wofi dmenu instance that renders the theme selection list
+on
+.BR $mod+t .
+Sets geometry (35\[tmu]45%, centered), dmenu mode, case-insensitive
+filtering, and icon display.
 .TP
 .I ~/.config/wofi/style.css
-GTK CSS stylesheet for the theme picker window. Defines border, background,
-text, and selection colors. Colors are static (not palette-driven).
+GTK CSS stylesheet for the theme picker window rendered by
+.BR wofi (1).
+Styles the border, background, entry list, and selection highlight.
 .SS Theme data (one pair per theme)
 .TP
 .I ~/.config/sway/themes/<name>/theme.conf
