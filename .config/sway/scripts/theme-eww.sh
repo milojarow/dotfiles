@@ -45,12 +45,14 @@ generate_theme_scss() {
     accent=$(resolve_var "$theme_path" "accent-color")
     selection=$(resolve_var "$theme_path" "selection-color")
     color2=$(resolve_var "$theme_path" "color2")
+    color11=$(resolve_var "$theme_path" "color11")
 
     bg="${bg:-#1c1c1c}"
     fg="${fg:-#ffffff}"
     accent="${accent:-#1a5fb4}"
     selection="${selection:-#282828}"
     color2="${color2:-#3B758C}"
+    color11="${color11:-#98971a}"
 
     cat > "$EWW_THEME_SCSS" << EOF
 // Auto-generated — do not edit manually.
@@ -62,6 +64,7 @@ generate_theme_scss() {
 \$theme-accent:    $accent;
 \$theme-selection: $selection;
 \$color2:          $color2;
+\$color11:         $color11;
 EOF
 
     echo "Generated eww theme SCSS for theme: $theme_name"
