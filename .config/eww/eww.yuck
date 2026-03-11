@@ -6,3 +6,5 @@
 (include "./widgets/experiment.yuck")
 (include "./widgets/temps.yuck")
 (include "./widgets/usb-widget.yuck")
+(include "./widgets/widget-de-las-flechas.yuck")
+(include "./widgets/clock.yuck")

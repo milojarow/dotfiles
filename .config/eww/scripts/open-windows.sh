@@ -4,3 +4,6 @@
 
 eww open activate-linux
 eww open sysmonitor-window
+eww open temps-window
+eww open usb-widget
+eww open clock
