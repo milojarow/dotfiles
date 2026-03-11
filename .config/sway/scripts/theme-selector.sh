@@ -7,13 +7,14 @@
 #           waybar CSS, and signals waybar.
 #           mode=status: outputs a JSON icon for the waybar theme module.
 # Files:    theme-selector.sh · theme-apply-foot.sh · theme-waybar.sh
-#           theme-toggle.sh
+#           theme-toggle.sh · theme-rofi.sh
 #           ~/.config/sway/themes/<name>/theme.conf      (palette source)
 #           ~/.config/sway/themes/<name>/foot-theme.ini  (terminal palette)
 #           ~/.config/sway/definitions.d/theme.conf      (active sway theme, symlink)
 #           ~/.config/foot/foot-theme.ini                (active foot theme, cp)
 #           ~/.config/sway/templates/foot.ini            (shared foot template)
 #           ~/.config/waybar/theme.css                   (auto-generated CSS)
+#           ~/.config/rofi/Manjaro.rasi                  (auto-generated rofi colors)
 # Programs: wofi  swaymsg  pkill
 # Signals:  SIGUSR2     → waybar (CSS reload)
 #           SIGRTMIN+17 → waybar (theme icon refresh)
@@ -60,8 +61,9 @@ apply_theme() {
     
     # Reload Sway to apply the new theme
     swaymsg reload
-    # Generate Waybar theme CSS and reload it
+    # Regenerate per-app theme files
     ~/.config/sway/scripts/theme-waybar.sh
+    ~/.config/sway/scripts/theme-rofi.sh
     pkill -SIGUSR2 waybar
 
     # Signal Waybar to update the theme icon

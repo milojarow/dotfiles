@@ -3,7 +3,8 @@
 palette-theming \- live color palette theming system for sway
 .SH DESCRIPTION
 The Palette Theming system provides coordinated color palette switching
-across sway window borders, the foot terminal, and waybar. It does
+across sway window borders, the foot terminal, waybar, and the rofi
+application launcher. It does
 .B NOT
 manage GTK, Qt, or Kvantum visual theming; those are handled separately
 by
@@ -29,7 +30,7 @@ as the active sway theme, (2) copies the
 to the runtime location read by foot, (3) pushes the new palette to all
 running terminal instances via OSC escape sequences (no restart needed),
 (4) reloads sway so window decorations update, and (5) regenerates the
-waybar CSS and signals waybar.
+waybar CSS, signals waybar, and (6) regenerates the rofi color variables.
 .PP
 A secondary script
 .BR theme-toggle.sh
@@ -83,6 +84,23 @@ sunrise/sunset. Stashes the inactive variant as
 /
 .I theme.light.conf_
 and swaps on request or automatically.
+.TP
+.I ~/.config/sway/scripts/theme-rofi.sh
+Reads the active
+.I theme.conf
+symlink, resolves
+.BR $background-color ,
+.BR $text-color ,
+.BR $accent-color ,
+and
+.B $selection-color
+(one level of variable indirection supported), and generates
+.IR ~/.config/rofi/Manjaro.rasi .
+Called by
+.I theme-selector.sh
+on every theme switch and by
+.I $update_rofi_theme
+on every sway reload.
 .SS Theme picker
 .TP
 .I ~/.config/wofi/config
@@ -143,6 +161,21 @@ Auto-generated CSS with
 .B @define-color
 rules. Overwritten by
 .I theme-waybar.sh
+on each switch.
+.TP
+.I ~/.config/rofi/Manjaro.rasi
+Auto-generated rofi color variables. Defines
+.BR background-color ,
+.BR text-color ,
+.BR accent-color ,
+and
+.B selected-bg
+for rofi. Imported by
+.I ~/.config/rofi/config.rasi
+via
+.BR "@import \(dqManjaro\(dq" .
+Overwritten by
+.I theme-rofi.sh
 on each switch.
 .SS Templates
 .TP
@@ -228,6 +261,10 @@ writes OSC payloads to all
 .I theme-waybar.sh
 generates
 .I ~/.config/waybar/theme.css
+.IP \n+[step].
+.I theme-rofi.sh
+generates
+.I ~/.config/rofi/Manjaro.rasi
 .IP \n+[step].
 .B "pkill -SIGUSR2 waybar"
 reloads waybar CSS \[->]
