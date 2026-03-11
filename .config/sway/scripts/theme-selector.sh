@@ -60,6 +60,13 @@ apply_theme() {
         ~/.config/sway/scripts/apply-theme-terminals.sh "$foot_theme_file" || true
     fi
     
+    # Sync icon theme to qt6ct so Qt6 apps follow the active theme
+    local icon_theme
+    icon_theme=$(grep '^set \$icon-theme' "$theme_file" | awk '{print $3}')
+    if [[ -n "$icon_theme" && -f "$HOME/.config/qt6ct/qt6ct.conf" ]]; then
+        sed -i "s/^icon_theme=.*/icon_theme=${icon_theme}/" "$HOME/.config/qt6ct/qt6ct.conf"
+    fi
+
     # Update Papirus folder colors for catppuccin themes
     if [[ "$theme" =~ ^catppuccin- ]]; then
         local flavor="${theme#catppuccin-}"
