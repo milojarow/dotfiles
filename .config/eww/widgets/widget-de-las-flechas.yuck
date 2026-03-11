@@ -33,5 +33,5 @@
                       :anchor "bottom left")
   :stacking "fg"
   :focusable false
-  (widget-de-las-flechas :window "activate-linux"
-                          :yuck "~/.config/eww/widgets/activate-linux.yuck"))
+  (widget-de-las-flechas :window "disk-widget"
+                          :yuck "~/.config/eww/widgets/disk-widget.yuck"))

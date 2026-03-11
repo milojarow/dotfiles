@@ -27,10 +27,13 @@ if not m:
 old_block = m.group(1)
 
 # Invert x delta for right-anchored windows so arrow directions match visual movement
-if axis == 'x':
-    anchor_match = re.search(r':anchor\s+"([^"]+)"', old_block)
-    if anchor_match and 'right' in anchor_match.group(1):
-        delta = -delta
+# Invert y delta for top-anchored windows (positive y moves down from top, so up arrow must subtract)
+anchor_match = re.search(r':anchor\s+"([^"]+)"', old_block)
+anchor = anchor_match.group(1) if anchor_match else ''
+if axis == 'x' and 'right' in anchor:
+    delta = -delta
+if axis == 'y' and 'top' in anchor:
+    delta = -delta
 
 val_match = re.search(rf':{axis} "(-?\d+)px"', old_block)
 if not val_match:
@@ -45,4 +48,5 @@ with open(path, 'w') as f:
     f.write(content[:m.start()] + new_block + content[m.end():])
 PYEOF
 
-~/.cargo/bin/eww reload
+~/.cargo/bin/eww close "$WINDOW" 2>/dev/null
+~/.cargo/bin/eww open "$WINDOW"
