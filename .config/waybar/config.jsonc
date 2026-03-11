@@ -129,6 +129,21 @@
         "tooltip-format-disabled": "{icon} disabled",
         "on-click": "swaymsg exec \\$once \\$term_float nmtui connect"
     },
+    "sway/workspaces": {
+        // Show workspaces 1-9 persistently (even when empty).
+        // Workspace 10 is intentionally excluded — stays hidden when not in use.
+        "persistent-workspaces": {
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": [],
+            "6": [],
+            "7": [],
+            "8": [],
+            "9": []
+        }
+    },
     "sway/mode": {
         "format": "<span style=\"italic\">{}</span>",
         "tooltip": false
