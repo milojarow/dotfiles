@@ -5,6 +5,7 @@
 
 # Window Manager & Core Components
 sway
+swayr
 waybar
 rofi
 foot
@@ -13,6 +14,7 @@ swaylock
 swayidle
 swaybg
 xdg-desktop-portal-wlr
+wob
 
 # Screenshot & Recording
 grim
@@ -26,6 +28,7 @@ wl-clipboard
 cliphist
 
 # System Utilities
+unzip
 brightnessctl
 playerctl
 pulseaudio
