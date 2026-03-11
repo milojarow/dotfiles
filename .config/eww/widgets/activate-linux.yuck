@@ -11,8 +11,8 @@
   :monitor 0
   :stacking "bottom"
   :focusable false
-  :geometry (geometry :x "8px"
-                      :y "101px"
+  :geometry (geometry :x "-122px"
+                      :y "71px"
                       :width "787px"
                       :anchor "bottom right")
   (activate-linux))
