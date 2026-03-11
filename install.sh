@@ -9,7 +9,7 @@ DOTFILES_REPO="https://github.com/milojarow/dotfiles.git"
 DOTFILES_DIR="$HOME/.dotfiles"
 CHECKPOINT_FILE="$HOME/.dotfiles-install.checkpoint"
 BACKUP_DIR=""   # Set once in main() with a timestamp
-TOTAL_STEPS=18
+TOTAL_STEPS=19
 
 # ── COLORS & SYMBOLS ──────────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -333,6 +333,16 @@ _run_eww_step() {
 }
 
 # ── SYSTEM INTEGRATION ────────────────────────────────────────────────────────
+step_create_dirs() {
+    # ~/unzipper: inotifywait crashes if the directory doesn't exist at service start
+    mkdir -p "$HOME/unzipper"
+    info "Created: ~/unzipper"
+
+    # ~/.local/share/man/man1: may not exist on a fresh Arch install
+    mkdir -p "$HOME/.local/share/man/man1"
+    info "Created: ~/.local/share/man/man1"
+}
+
 step_systemd_reload() {
     systemctl --user daemon-reload
 }
@@ -610,12 +620,13 @@ main() {
     _run_eww_step                   # Custom checkpoint: marks done only if binary appears
 
     print_section "SYSTEM INTEGRATION"
-    run_step systemd_reload      13 "systemd daemon-reload"    step_systemd_reload
-    run_step systemd_enable_start 14 "Enable + start services" step_systemd_enable_start
-    run_step systemd_enable_only 15 "Enable Wayland services"  step_systemd_enable_only
-    run_step create_pacman_hooks 16 "Pacman hooks"             step_create_pacman_hooks
-    run_step set_default_shell   17 "Default shell → fish"     step_set_default_shell
-    run_step mandb_user          18 "Man page index"           step_mandb_user
+    run_step create_dirs          13 "Required directories"     step_create_dirs
+    run_step systemd_reload       14 "systemd daemon-reload"    step_systemd_reload
+    run_step systemd_enable_start 15 "Enable + start services"  step_systemd_enable_start
+    run_step systemd_enable_only  16 "Enable Wayland services"  step_systemd_enable_only
+    run_step create_pacman_hooks  17 "Pacman hooks"             step_create_pacman_hooks
+    run_step set_default_shell    18 "Default shell → fish"     step_set_default_shell
+    run_step mandb_user           19 "Man page index"           step_mandb_user
 
     _run_bluetooth               # Bonus step: not numbered, non-fatal
 

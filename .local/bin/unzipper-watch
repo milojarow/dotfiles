@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+WATCH_DIR="$HOME/unzipper"
+
+process_zip() {
+    local zip_path="$1"
+
+    # Guard: zip may have already been handled by a previous event (double-fire)
+    [ -f "$zip_path" ] || return
+
+    local zip_name
+    zip_name="$(basename "$zip_path" .zip)"
+    local dest_dir="$WATCH_DIR/$zip_name"
+
+    # If the base name already exists, find the next available numeric suffix
+    if [ -e "$dest_dir" ]; then
+        local counter=2
+        while [ -e "${dest_dir}_${counter}" ]; do
+            (( counter++ ))
+        done
+        dest_dir="${dest_dir}_${counter}"
+    fi
+
+    mkdir -p "$dest_dir"
+    if unzip "$zip_path" -d "$dest_dir"; then
+        rm "$zip_path"
+    else
+        rm -rf "$dest_dir"
+    fi
+}
+
+# Process any zips already present at startup
+for zip in "$WATCH_DIR"/*.zip; do
+    [ -f "$zip" ] && process_zip "$zip"
+done
+
+# Watch for new zip files
+inotifywait -m -e close_write -e moved_to --format '%f' "$WATCH_DIR" | \
+while read -r filename; do
+    if [[ "$filename" == *.zip ]]; then
+        process_zip "$WATCH_DIR/$filename"
+    fi
+done

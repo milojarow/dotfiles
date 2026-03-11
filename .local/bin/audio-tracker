@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# audio-tracker: monitors PipeWire/PulseAudio for new audio streams and
+# records which apps played sound, keeping the last 3 unique app names.
+
+STATE_FILE="$HOME/.cache/audio-tracker"
+mkdir -p "$(dirname "$STATE_FILE")"
+: > "$STATE_FILE"
+
+record_app() {
+    local input_id="$1"
+    local app_name
+
+    # Brief wait for the sink-input to be fully registered
+    sleep 0.15
+
+    app_name=$(pactl list sink-inputs 2>/dev/null | awk \
+        '/^Sink Input #'"$input_id"'$/{found=1}
+         found && /application\.name/{gsub(/.*= "|"/, ""); print; exit}')
+
+    [[ -z "$app_name" || "$app_name" == "pactl" ]] && return
+
+    # Prepend new entry, deduplicate, keep last 3
+    {
+        echo "$app_name"
+        cat "$STATE_FILE" 2>/dev/null
+    } | awk '!seen[$0]++' | head -3 > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+
+    # Signal waybar to refresh the custom/audio module
+    pkill -SIGRTMIN+3 waybar 2>/dev/null
+}
+
+pactl subscribe 2>/dev/null | while IFS= read -r line; do
+    if [[ "$line" =~ "Event 'new' on sink-input #"([0-9]+) ]]; then
+        record_app "${BASH_REMATCH[1]}" &
+    fi
+done
