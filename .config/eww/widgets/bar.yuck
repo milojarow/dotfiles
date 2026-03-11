@@ -94,6 +94,7 @@
 (defwidget bar-idle-inhibitor []
   (button :class "bar-module bar-idle-inhibitor ${idle-inhibitor.active ? 'active' : ''}"
           :onclick "echo t > /tmp/eww-idle-inhibitor"
+          :onrightclick "swaymsg -q exec '~/.config/sway/scripts/idle-timeout.sh'"
           :tooltip {idle-inhibitor.active ? "Idle inhibitor active — system will not sleep" : "Idle inhibitor inactive — system will sleep normally"}
     (label :text {idle-inhibitor.icon})))
 
