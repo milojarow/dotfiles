@@ -18,6 +18,7 @@ import sys
 
 HOME = os.path.expanduser("~")
 SHELLS = frozenset(("fish", "bash", "zsh", "sh"))
+NAMES_DIR = f"/tmp/eww-window-names-{os.getenv('USER', 'user')}"
 
 
 # ── CSS class detection ───────────────────────────────────────────────────────
@@ -180,9 +181,28 @@ def get_terminal_cwd(wpid_str, shell_pid_str=""):
 
 # ── Main window-title logic ───────────────────────────────────────────────────
 
-def process_window(title, app_id, wpid=""):
+def process_window(title, app_id, wpid="", win_id=""):
     if not title or title == "null":
         return {"text": "", "css_class": "empty"}
+
+    # Custom rename takes priority over derived title
+    if win_id:
+        try:
+            with open(os.path.join(NAMES_DIR, f"{win_id}.name")) as f:
+                custom = f.read().strip()
+            if custom:
+                # For terminal windows, preserve the location prefix
+                app_low = (app_id or "").lower()
+                if any(k in app_low for k in _TERMINAL_KEYS):
+                    clean, shell_pid = parse_title_pid(title)
+                    location = extract_path(clean)
+                    if not location:
+                        location = get_terminal_cwd(wpid, shell_pid)
+                    if location:
+                        return {"text": truncate_display(f"{location}: {custom}"), "css_class": get_css_class(app_id)}
+                return {"text": custom, "css_class": get_css_class(app_id)}
+        except OSError:
+            pass
 
     css     = get_css_class(app_id)
     app_low = (app_id or "").lower()
@@ -240,18 +260,23 @@ def bootstrap():
         title  = node.get("name") or ""
         app_id = node.get("app_id") or (node.get("window_properties") or {}).get("class", "")
         wpid   = str(node.get("pid") or "")
-        emit(process_window(title, app_id, wpid))
+        win_id = str(node.get("id") or "")
+        _last["title"]  = title
+        _last["app_id"] = app_id
+        _last["wpid"]   = wpid
+        _last["win_id"] = win_id
+        emit(process_window(title, app_id, wpid, win_id))
     else:
         emit({"text": "", "css_class": "empty"})
 
 
 # ── Main event loop ───────────────────────────────────────────────────────────
 
-# Tab-separated: title \t app_id \t pid
+# Tab-separated: win_id \t title \t app_id \t pid
 JQ_FILTER = r"""
 if .container then
   if (.change == "focus" or (.change == "title" and .container.focused)) then
-    "WINDOW\t" + (.container.name // "") + "\t" + (.container.app_id // (.container.window_properties.class // "")) + "\t" + (.container.pid | tostring)
+    "WINDOW\t" + (.container.id|tostring) + "\t" + (.container.name // "") + "\t" + (.container.app_id // (.container.window_properties.class // "")) + "\t" + (.container.pid | tostring)
   elif (.change == "close" and .container.focused) then "EMPTY"
   else "SKIP" end
 elif .current then
@@ -263,6 +288,28 @@ else "SKIP" end
 
 
 def main():
+    import signal
+
+    # Stores last focused window so SIGUSR1 can re-emit with updated custom name
+    global _last
+    _last = {"title": "", "app_id": "", "wpid": "", "win_id": ""}
+
+    def handle_usr1(signum, frame):
+        # Re-query sway directly so we always get the current focused window,
+        # regardless of any stale _last state from rofi focus events.
+        tree = swaymsg(["-t", "get_tree"])
+        node = find_focused(tree)
+        if node:
+            title  = node.get("name") or ""
+            app_id = node.get("app_id") or (node.get("window_properties") or {}).get("class", "")
+            wpid   = str(node.get("pid") or "")
+            win_id = str(node.get("id") or "")
+            emit(process_window(title, app_id, wpid, win_id))
+        else:
+            emit({"text": "", "css_class": "empty"})
+
+    signal.signal(signal.SIGUSR1, handle_usr1)
+
     bootstrap()
 
     swaymsg_proc = subprocess.Popen(
@@ -287,11 +334,16 @@ def main():
             emit({"text": "", "css_class": "empty"})
             continue
         if line.startswith("WINDOW\t"):
-            parts = line[7:].split("\t")
-            title  = parts[0] if len(parts) > 0 else ""
-            app_id = parts[1] if len(parts) > 1 else ""
-            wpid   = parts[2] if len(parts) > 2 else ""
-            emit(process_window(title, app_id, wpid))
+            parts  = line[7:].split("\t")
+            win_id = parts[0] if len(parts) > 0 else ""
+            title  = parts[1] if len(parts) > 1 else ""
+            app_id = parts[2] if len(parts) > 2 else ""
+            wpid   = parts[3] if len(parts) > 3 else ""
+            _last["title"]  = title
+            _last["app_id"] = app_id
+            _last["wpid"]   = wpid
+            _last["win_id"] = win_id
+            emit(process_window(title, app_id, wpid, win_id))
 
 
 if __name__ == "__main__":

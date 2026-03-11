@@ -64,6 +64,11 @@
   :initial "{\"text\": \"\", \"css_class\": \"empty\"}"
   `~/.config/eww/scripts/window-title-subscribe.py`)
 
+; Flash override — polled every 500ms from file written by window-title-click-eww.sh.
+; Auto-expires via timestamp check in the reader; no background process needed.
+(defpoll wt-flash :interval "500ms"
+  `~/.config/eww/scripts/window-title-flash-read.sh`)
+
 ; ── Sway mode data ────────────────────────────────────────────────────────────
 (deflisten sway-mode
   :initial "{\"name\": \"\", \"active\": false}"
@@ -75,12 +80,15 @@
     (label :class "bar-mode"
            :markup {sway-mode.name}
            :visible {sway-mode.active})
-    (label :class "bar-wintitle ${window-title.css_class}"
-           :halign "center"
-           :xalign 0.5
-           :truncate true
-           :visible {!sway-mode.active}
-           :text {window-title.text})))
+    (button :class "bar-wintitle-btn"
+            :visible {!sway-mode.active}
+            :onclick "~/.config/eww/scripts/window-title-click-eww.sh"
+            :onrightclick "swaymsg -q exec '~/.config/eww/scripts/window-title-rename-eww.sh'"
+      (label :class "bar-wintitle ${strlength(wt-flash) > 0 ? 'app-flash' : window-title.css_class}"
+             :halign "center"
+             :xalign 0.5
+             :truncate true
+             :text {strlength(wt-flash) > 0 ? wt-flash : window-title.text}))))
 
 ; ── Idle inhibitor button (inside module groups) ─────────────────────────────
 (defwidget bar-idle-inhibitor []
