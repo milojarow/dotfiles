@@ -21,11 +21,6 @@ exec_always --no-startup-id ~/.config/sway/scripts/keyboard.sh
 # Start systemd graphical session target
 exec systemctl --user start graphical-session.target
 
-# Force dark theme for GTK applications
-exec_always {
-    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
-}
 
 exec --no-startup-id /usr/bin/gnome-keyring-daemon --start --components=secrets
 
