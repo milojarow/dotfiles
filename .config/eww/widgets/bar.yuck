@@ -171,7 +171,7 @@
          :halign "end"
       (bar-module-groups)
       (bar-tray)
-      (box :width 32)
+      (box :width 8)
       (bar-date))))
 
 ; ── Bar window ────────────────────────────────────────────────────────────────

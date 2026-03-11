@@ -6,6 +6,9 @@
   padding-left: 8px;
 }
 
+// Gap between [module groups] and [tray]
+.bar-tray { margin-left: 14px; }
+
 // Extra horizontal gaps inside [module groups]
 // clipboard→wifi, wifi→idle-inhibitor, idle-inhibitor→dnd get more space
 // dnd→volume and volume→gamma stay at the default :spacing 2
