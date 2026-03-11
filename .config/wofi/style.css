@@ -1,0 +1,59 @@
+/* Wofi style file - based on Manjaro Sway */
+
+window {
+    margin: 0px;
+    border: 2px solid #88ad62;
+    background-color: #222222;
+    border-radius: 5px;
+}
+
+#input {
+    margin: 5px;
+    border: 2px solid #88ad62;
+    border-radius: 5px;
+    background-color: #303030;
+    color: #eeeeee;
+    font-size: 18px;
+}
+
+#inner-box {
+    margin: 5px;
+    border: none;
+    background-color: transparent;
+}
+
+#outer-box {
+    margin: 5px;
+    border: none;
+    background-color: transparent;
+}
+
+#scroll {
+    margin: 0px;
+    border: none;
+}
+
+#text {
+    margin: 5px;
+    color: #eeeeee;
+    font-size: 16px;
+}
+
+#entry {
+    padding: 5px;
+    border-radius: 5px;
+}
+
+#entry:selected {
+    background-color: #404040;
+    border-radius: 5px;
+}
+
+#entry:selected #text {
+    color: #88ad62;
+    font-weight: bold;
+}
+
+#img {
+    margin-right: 10px;
+}
