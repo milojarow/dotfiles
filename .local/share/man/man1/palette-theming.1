@@ -95,7 +95,7 @@ symlink, resolves
 and
 .B $selection-color
 (one level of variable indirection supported), and generates
-.IR ~/.config/rofi/Manjaro.rasi .
+.IR ~/.config/rofi/cachyos.rasi .
 Called by
 .I theme-selector.sh
 on every theme switch and by
@@ -163,7 +163,7 @@ rules. Overwritten by
 .I theme-waybar.sh
 on each switch.
 .TP
-.I ~/.config/rofi/Manjaro.rasi
+.I ~/.config/rofi/cachyos.rasi
 Auto-generated rofi color variables. Defines
 .BR background-color ,
 .BR text-color ,
@@ -173,7 +173,7 @@ and
 for rofi. Imported by
 .I ~/.config/rofi/config.rasi
 via
-.BR "@import \(dqManjaro\(dq" .
+.BR "@import \(dqcachyos\(dq" .
 Overwritten by
 .I theme-rofi.sh
 on each switch.
@@ -264,7 +264,7 @@ generates
 .IP \n+[step].
 .I theme-rofi.sh
 generates
-.I ~/.config/rofi/Manjaro.rasi
+.I ~/.config/rofi/cachyos.rasi
 .IP \n+[step].
 .B "pkill -SIGUSR2 waybar"
 reloads waybar CSS \[->]

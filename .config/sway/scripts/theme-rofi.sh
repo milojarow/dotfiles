@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 # ── Palette Theming ───────────────────────────────────────────────────────────
-# Role:     Generates ~/.config/rofi/Manjaro.rasi from the active sway theme.
+# Role:     Generates ~/.config/rofi/cachyos.rasi from the active sway theme.
 #           Reads ~/.config/sway/definitions.d/theme.conf, resolves
 #           $background-color, $text-color, $accent-color, and $selection-color
 #           (supports one level of variable indirection), and writes rofi
-#           color variable definitions used by config.rasi via @import "Manjaro".
+#           color variable definitions used by config.rasi via @import "cachyos".
 #           Called by theme-selector.sh on every theme switch, and by
 #           $update_rofi_theme (autostart) on every sway reload.
 # Files:    theme-rofi.sh
 #           ~/.config/sway/definitions.d/theme.conf  (active theme symlink, input)
-#           ~/.config/rofi/Manjaro.rasi               (auto-generated rasi vars, output)
+#           ~/.config/rofi/cachyos.rasi               (auto-generated rasi vars, output)
 # Programs: grep
-# Storage:  ~/.config/rofi/Manjaro.rasi — overwritten on every theme switch
+# Storage:  ~/.config/rofi/cachyos.rasi — overwritten on every theme switch
 # Man:      man palette-theming
 # ─────────────────────────────────────────────────────────────────────────────
 set -u
 
 CURRENT_THEME_LINK="$HOME/.config/sway/definitions.d/theme.conf"
-ROFI_THEME_FILE="$HOME/.config/rofi/Manjaro.rasi"
+ROFI_THEME_FILE="$HOME/.config/rofi/cachyos.rasi"
 
 generate_rofi_theme() {
     if [ ! -L "$CURRENT_THEME_LINK" ]; then

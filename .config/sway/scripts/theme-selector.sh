@@ -14,7 +14,7 @@
 #           ~/.config/foot/foot-theme.ini                (active foot theme, cp)
 #           ~/.config/sway/templates/foot.ini            (shared foot template)
 #           ~/.config/waybar/theme.css                   (auto-generated CSS)
-#           ~/.config/rofi/Manjaro.rasi                  (auto-generated rofi colors)
+#           ~/.config/rofi/cachyos.rasi                  (auto-generated rofi colors)
 # Programs: wofi  swaymsg  pkill
 # Signals:  SIGUSR2     → waybar (CSS reload)
 #           SIGRTMIN+17 → waybar (theme icon refresh)
