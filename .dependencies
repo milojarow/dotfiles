@@ -54,6 +54,10 @@ python-i3ipc
 python-requests
 python-dbus
 
+# Emoji picker
+bemoji
+wl-ime-type
+
 # Additional tools
 nwg-wrapper
 swaycwd
