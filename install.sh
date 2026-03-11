@@ -546,11 +546,21 @@ step_select_theme() {
 
 # ── CLAUDE CODE SKILLS ────────────────────────────────────────────────────────
 step_claude_skills() {
-    local skills_dir="$HOME/.claude/skills"
+    # Install Claude Code CLI if not present
+    if command -v claude &>/dev/null || [[ -f "$HOME/.npm-global/bin/claude" ]]; then
+        info "Claude Code already installed"
+    elif command -v npm &>/dev/null; then
+        info "Installing Claude Code CLI..."
+        npm install -g @anthropic-ai/claude-code
+    else
+        warn "npm not found — install Claude Code manually after setup:"
+        warn "  npm install -g @anthropic-ai/claude-code"
+    fi
 
+    # Verify skills deployed from dotfiles (step 8)
+    local skills_dir="$HOME/.claude/skills"
     if [[ ! -d "$skills_dir" ]]; then
-        warn "~/.claude/skills/ not found — should have been deployed in step 8"
-        warn "Check dotfiles checkout and try again"
+        warn "~/.claude/skills/ not found — check dotfiles checkout (step 8)"
         return 0   # Non-fatal
     fi
 
@@ -561,14 +571,13 @@ step_claude_skills() {
         "$skills_dir"/swayr "$skills_dir"/swayimg 2>/dev/null | wc -l)
 
     if (( eww_count + sway_count == 0 )); then
-        warn "No eww/sway skills found in $skills_dir"
-        warn "They should have been deployed from dotfiles (step 8)"
+        warn "No eww/sway skills found — check dotfiles checkout (step 8)"
         return 0
     fi
 
-    info "eww skills:  $eww_count skill directories"
-    info "sway skills: $sway_count skill directories"
-    info "Skills are read by Claude Code automatically — no further action needed"
+    info "eww skills:  $eww_count directories"
+    info "sway skills: $sway_count directories"
+    info "Skills load automatically on the next Claude Code session"
 }
 
 # ── POST-INSTALL SUMMARY ──────────────────────────────────────────────────────
