@@ -6,6 +6,13 @@
   padding-left: 8px;
 }
 
+// Extra horizontal gaps inside [module groups]
+// clipboard→wifi, wifi→idle-inhibitor, idle-inhibitor→dnd get more space
+// dnd→volume and volume→gamma stay at the default :spacing 2
+.bar-wifi           { margin-left: 10px; }
+.bar-idle-inhibitor { margin-left: 10px; }
+.bar-dnd            { margin-left: 10px; }
+
 .bar-workspaces {
   margin-left: 48px;
 }
