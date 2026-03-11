@@ -9,7 +9,7 @@ DOTFILES_REPO="https://github.com/milojarow/dotfiles.git"
 DOTFILES_DIR="$HOME/.dotfiles"
 CHECKPOINT_FILE="$HOME/.dotfiles-install.checkpoint"
 BACKUP_DIR=""   # Set once in main() with a timestamp
-TOTAL_STEPS=19
+TOTAL_STEPS=20
 
 # ── COLORS & SYMBOLS ──────────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -544,6 +544,33 @@ step_select_theme() {
     fi
 }
 
+# ── CLAUDE CODE SKILLS ────────────────────────────────────────────────────────
+step_claude_skills() {
+    local skills_dir="$HOME/.claude/skills"
+
+    if [[ ! -d "$skills_dir" ]]; then
+        warn "~/.claude/skills/ not found — should have been deployed in step 8"
+        warn "Check dotfiles checkout and try again"
+        return 0   # Non-fatal
+    fi
+
+    local eww_count sway_count
+    eww_count=$(ls -d "$skills_dir"/eww-* 2>/dev/null | wc -l)
+    sway_count=$(ls -d "$skills_dir"/sway-* "$skills_dir"/swaylock \
+        "$skills_dir"/swayidle "$skills_dir"/swaybg \
+        "$skills_dir"/swayr "$skills_dir"/swayimg 2>/dev/null | wc -l)
+
+    if (( eww_count + sway_count == 0 )); then
+        warn "No eww/sway skills found in $skills_dir"
+        warn "They should have been deployed from dotfiles (step 8)"
+        return 0
+    fi
+
+    info "eww skills:  $eww_count skill directories"
+    info "sway skills: $sway_count skill directories"
+    info "Skills are read by Claude Code automatically — no further action needed"
+}
+
 # ── POST-INSTALL SUMMARY ──────────────────────────────────────────────────────
 show_post_install() {
     echo ""
@@ -627,6 +654,7 @@ main() {
     run_step create_pacman_hooks  17 "Pacman hooks"             step_create_pacman_hooks
     run_step set_default_shell    18 "Default shell → fish"     step_set_default_shell
     run_step mandb_user           19 "Man page index"           step_mandb_user
+    run_step claude_skills        20 "Claude Code skills"       step_claude_skills
 
     _run_bluetooth               # Bonus step: not numbered, non-fatal
 

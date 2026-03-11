@@ -1,0 +1,406 @@
+# eww Common Errors Catalog
+
+---
+
+## Error: Window not appearing ("No windows opened")
+
+**Symptom:** `eww open bar` runs without error but no window appears on screen.
+
+**Cause:** One of several silent failures — name mismatch, parse error in config, daemon not running, wrong monitor index, or missing Wayland stacking.
+
+**Fix:**
+```bash
+# 1. Verify the daemon is running
+eww daemon   # if not running, start it
+
+# 2. Check for parse errors
+eww logs     # look for "Failed to parse" or "ERROR"
+
+# 3. Verify the window name matches exactly
+#    If your defwindow uses "topbar", you must run "eww open topbar"
+eww list-windows
+
+# 4. For Wayland: add :stacking to defwindow
+# ❌ WRONG — window exists but may not be visible on Wayland
+(defwindow bar
+  :geometry (geometry :width "100%" :height "30px"))
+
+# ✅ CORRECT
+(defwindow bar
+  :geometry (geometry :width "100%" :height "30px")
+  :stacking "fg")
+```
+
+---
+
+## Error: Config not loading (parse error in yuck)
+
+**Symptom:** `eww logs` shows a parse error, or all `eww open` commands fail silently.
+
+**Cause:** `eww.yuck` contains a syntax error. eww cannot load any windows until the config parses cleanly.
+
+**Fix:**
+```bash
+# Find the error
+eww logs   # shows "parse error at line X" or "unexpected token"
+```
+
+Common yuck parse errors:
+
+```yuck
+; ❌ WRONG — unmatched parentheses
+(defwindow bar
+  :geometry (geometry :width "100%"
+  (box))   ; missing closing ) for geometry
+
+; ✅ CORRECT
+(defwindow bar
+  :geometry (geometry :width "100%")
+  (box))
+
+; ❌ WRONG — typo in property name
+(defwindow bar :exclusve true)
+
+; ✅ CORRECT
+(defwindow bar :exclusive true)
+
+; ❌ WRONG — comma between children (yuck uses spaces)
+(box child1, child2)
+
+; ✅ CORRECT
+(box child1 child2)
+```
+
+---
+
+## Error: CSS/styles not applying
+
+**Symptom:** Widget renders but has no custom styling, or only some styles apply.
+
+**Cause:** Missing `all: unset`, wrong CSS selector, or a parse error earlier in `eww.scss` stopping all rules below it from loading.
+
+**Fix:**
+
+```scss
+// ❌ WRONG — GTK defaults override custom styles
+label.time {
+  color: #cdd6f4;
+}
+
+// ✅ CORRECT — reset GTK defaults first (at top of eww.scss)
+* {
+  all: unset;
+}
+
+label.time {
+  color: #cdd6f4;
+}
+```
+
+For wrong selector — use `eww inspector` to find the exact GTK type:
+```bash
+eww inspector   # crosshair → click widget → CSS Nodes tab
+```
+
+For CSS parse error:
+```bash
+# Eww stops parsing CSS at first error — comment out sections to bisect
+# Check eww logs for CSS-related warnings
+eww logs | grep -i css
+```
+
+GTK CSS does not support `width`/`height` directly:
+```scss
+/* ❌ WRONG */
+.my-widget { width: 100px; }
+
+/* ✅ CORRECT */
+.my-widget { min-width: 100px; }
+```
+
+---
+
+## Error: Variable not updating
+
+**Symptom:** `defpoll` value stays at its initial value; `eww state` shows a stale value.
+
+**Cause:** Window is closed (polls only run while window is open by default), script fails, wrong interval format, or `:run-while` not set.
+
+**Fix:**
+
+```yuck
+; ❌ WRONG — poll stops when window closes
+(defpoll time :interval "5s"
+  `date +%H:%M`)
+
+; ✅ CORRECT — poll runs even when window is closed
+(defpoll time :interval "5s" :run-while true
+  `date +%H:%M`)
+```
+
+For wrong interval format:
+```yuck
+; ❌ WRONG — not valid interval syntax
+(defpoll time :interval 5)
+(defpoll time :interval "5sec")
+(defpoll time :interval "5 s")
+
+; ✅ CORRECT
+(defpoll time :interval "5s")
+(defpoll time :interval "500ms")
+(defpoll time :interval "1m")
+```
+
+Test the script manually:
+```bash
+bash -c 'date +%H:%M'   # must print a value and exit 0
+```
+
+---
+
+## Error: `${var}` showing literal text
+
+**Symptom:** Widget displays the literal string `${variable}` or `{variable}` instead of the variable's value. Or a boolean property receives a string "true" instead of a boolean.
+
+**Cause:** Wrong expression context. In eww, `{expr}` is an expression (evaluated), `"${expr}"` is a string interpolation. Using `"${expr}"` where a plain value is expected passes a string, not a boolean or number.
+
+**Fix:**
+```yuck
+; ❌ WRONG — passes string "true", not boolean
+(button :active "${count > 0}")
+
+; ✅ CORRECT — expression returns actual boolean
+(button :active {count > 0})
+
+; ❌ WRONG — {name} in a text attribute loses the surrounding string context
+(label :text {name})   ; works only if name is a complete value
+
+; ✅ CORRECT — string interpolation embeds the value
+(label :text "Hello, ${name}!")
+
+; ❌ WRONG — unquoted words in ternary are treated as variable references
+:class {active ? active : inactive}
+
+; ✅ CORRECT — quote string literals
+:class {active ? "active" : "inactive"}
+```
+
+---
+
+## Error: deflisten not receiving data
+
+**Symptom:** A `deflisten` variable never updates; the variable stays at the `defvar` initial value.
+
+**Cause:** Script is buffering output (writing to stdout but not flushing), script is not outputting to stdout at all, or script exits immediately instead of running continuously.
+
+**Fix:**
+
+Test the script manually first:
+```bash
+# Script should print lines continuously as events occur
+/home/milo/.config/eww/scripts/swayspaces
+```
+
+For Python buffering:
+```python
+# ❌ WRONG — output is buffered, eww gets nothing until buffer fills
+print(json.dumps(data))
+
+# ✅ CORRECT
+print(json.dumps(data), flush=True)
+
+# Alternative: run Python with -u flag in defvar
+```
+
+```yuck
+; ✅ CORRECT — force Python unbuffered mode
+(deflisten workspaces `python3 -u /home/milo/.config/eww/scripts/swayspaces.py`)
+```
+
+If the script outputs to stderr instead of stdout, redirect it:
+```bash
+# In the script, use stdout not stderr
+echo "data"          # ✅ stdout
+echo "data" >&2      # ❌ stderr — eww does not read this
+```
+
+---
+
+## Error: Wayland window not appearing
+
+**Symptom:** On Wayland, `eww open bar` runs but window is not visible. Window does appear on X11.
+
+**Cause:** Missing `:stacking`, wrong anchor for `:exclusive`, or eww was built with X11 features instead of Wayland features.
+
+**Fix:**
+
+```yuck
+; ❌ WRONG — no stacking set on Wayland
+(defwindow bar
+  :geometry (geometry :width "100%" :height "30px" :anchor "top center"))
+
+; ✅ CORRECT
+(defwindow bar
+  :geometry (geometry :width "100%" :height "30px" :anchor "top center")
+  :stacking "fg"
+  :exclusive true)
+```
+
+For `:exclusive true`, the anchor must include `center`:
+```yuck
+; ❌ WRONG — exclusive with non-center anchor
+:geometry (geometry :anchor "top left")
+:exclusive true
+
+; ✅ CORRECT
+:geometry (geometry :anchor "top center")
+:exclusive true
+```
+
+Verify Wayland build:
+```bash
+eww --version   # should mention wayland features
+# If wrong, rebuild: cargo build --no-default-features --features=wayland
+```
+
+For windows that need keyboard input (like launchers):
+```yuck
+(defwindow launcher
+  :focusable "ondemand"
+  :stacking "overlay")
+```
+
+---
+
+## Error: X11 window not reserving space
+
+**Symptom:** On X11, a bar window does not push other windows down — maximized windows overlap the bar.
+
+**Cause:** On X11, `:exclusive true` (a Wayland mechanism) does not work. X11 requires explicit struts.
+
+**Fix:**
+```yuck
+; ❌ WRONG on X11 — :exclusive is a Wayland-only property
+(defwindow bar
+  :exclusive true
+  :geometry (geometry :width "100%" :height "30px" :anchor "top center"))
+
+; ✅ CORRECT for X11
+(defwindow bar
+  :reserve (struts :distance "30px" :side "top")
+  :geometry (geometry :width "100%" :height "30px" :anchor "top center"))
+```
+
+---
+
+## Error: Multiple daemon instances / stale state
+
+**Symptom:** Opening windows behaves unexpectedly; `eww state` shows values from a previous session; commands seem to apply to a different window than expected.
+
+**Cause:** More than one eww daemon is running. This can happen when eww crashes or when the daemon is started multiple times.
+
+**Fix:**
+```bash
+# Kill all eww daemon processes
+pkill -f "eww daemon"
+
+# Verify no eww processes remain
+pgrep -a eww
+
+# Start a clean daemon
+eww daemon
+
+# Open your windows
+eww open bar
+```
+
+---
+
+## Error: Script not found from eww
+
+**Symptom:** `defpoll` or `:onclick` command fails with "command not found" or "No such file or directory" even though the command works fine in terminal.
+
+**Cause:** eww (when launched from a compositor or systemd service) inherits a minimal environment without the user's shell PATH. Directories like `~/.local/bin`, `~/.cargo/bin`, and `~/.npm-global/bin` are not present.
+
+**Fix:**
+```yuck
+; ❌ WRONG — "waybar-audio" not found because ~/.local/bin is not in PATH
+(defpoll vol :interval "1s"
+  `waybar-audio`)
+
+; ✅ CORRECT — absolute path always resolves regardless of PATH
+(defpoll vol :interval "1s"
+  `/home/milo/.local/bin/waybar-audio`)
+```
+
+Or export PATH at the top of the called script:
+```bash
+#!/bin/bash
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/usr/bin:/bin"
+# ... rest of script
+```
+
+This is documented in MEMORY.md as a confirmed issue for eww launched from Sway/systemd.
+
+---
+
+## Error: Compilation errors (eww won't build)
+
+**Symptom:** `cargo build` fails with Rust compiler errors.
+
+**Cause:** Rust version is too old, or required system dependencies are missing.
+
+**Fix:**
+```bash
+# Update Rust to latest stable
+rustup update
+
+# Verify version
+rustc --version   # should be recent stable
+
+# For Wayland build, ensure correct feature flags
+cargo build --release --no-default-features --features=wayland
+
+# For X11 build
+cargo build --release --no-default-features --features=x11
+```
+
+If the compiler reports a missing system library, install it via pacman:
+```bash
+# Read the compiler output — it names the missing library
+# Example for GTK3
+sudo pacman -S gtk3
+```
+
+---
+
+## Error: `eww reload` not working
+
+**Symptom:** `eww reload` runs but config does not update, or logs show "Failed to reload".
+
+**Cause:** A syntax error in the updated config prevents eww from accepting it. eww will not apply a config that fails to parse, even partially.
+
+**Fix:**
+```bash
+# Check what went wrong
+eww logs | tail -20
+
+# Look for parse errors after "Reloading config"
+# Fix the syntax error in eww.yuck, then reload again
+eww reload
+
+# If reload keeps failing: hard reset
+eww kill && eww daemon && eww open bar
+```
+
+If a previously-open window was renamed or removed from config:
+```bash
+# ❌ WRONG — reload fails if "old-bar" no longer exists in config
+eww reload && eww open new-bar
+
+# ✅ CORRECT — semicolon continues even if reload fails
+eww reload ; eww open new-bar
+
+# ✅ MOST RELIABLE — full reset
+eww kill && eww daemon && eww open new-bar
+```
