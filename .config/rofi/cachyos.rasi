@@ -1,8 +1,0 @@
-/* Auto-generated rofi color variables — do not edit */
-/* Theme: matcha-red — see man palette-theming */
-* {
-    background-color: #222222;
-    text-color: #eeeeee;
-    accent-color: #e44138;
-    selected-bg: #282a2b;
-}
