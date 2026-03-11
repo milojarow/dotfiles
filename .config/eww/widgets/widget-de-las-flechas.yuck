@@ -26,6 +26,33 @@
             :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y -10"
             "↓")))
 
+(defwidget widget-de-las-flechas-icon [xvar yvar yuck]
+  (box :class "widget-mover"
+       :orientation "v"
+       :space-evenly false
+       :spacing 4
+    (button :class "mover-btn"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/update-eww-var.sh ${yvar} -4"
+            "↑")
+    (box :orientation "h"
+         :space-evenly false
+         :spacing 4
+      (button :class "mover-btn"
+              :onclick "~/.config/eww/scripts/update-eww-var.sh ${xvar} -4"
+              "←")
+      (button :class "mover-btn"
+              :onclick "~/.config/eww/scripts/update-eww-var.sh ${xvar} 4"
+              "→"))
+    (button :class "mover-btn"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/update-eww-var.sh ${yvar} 4"
+            "↓")
+    (button :class "mover-btn mover-btn--save"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/save-eww-var.sh ${yuck} ${xvar} && ~/.config/eww/scripts/save-eww-var.sh ${yuck} ${yvar}"
+            "save")))
+
 (defwindow widget-de-las-flechas
   :monitor 0
   :geometry (geometry :x "100px"
@@ -33,5 +60,6 @@
                       :anchor "bottom left")
   :stacking "fg"
   :focusable false
-  (widget-de-las-flechas :window "disk-widget"
-                          :yuck "~/.config/eww/widgets/disk-widget.yuck"))
+  (widget-de-las-flechas-icon :xvar "arch-icon-x"
+                               :yvar "arch-icon-y"
+                               :yuck "~/.config/eww/widgets/arch-logo.yuck"))
