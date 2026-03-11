@@ -23,17 +23,42 @@ chmod +x install.sh
 ./install.sh
 ```
 
-> **Important:** Run the script as your normal user, NOT with sudo. The script will prompt for your password when it needs elevated privileges (package installation). Running with sudo would deploy dotfiles to `/root/` instead of your home directory.
+> **Important:** Run as your normal user, NOT with sudo. The script calls sudo internally when needed. Running with sudo would deploy dotfiles to `/root/` instead of your home directory.
 
-The installer will:
-1. Check system compatibility
-2. Install `paru` (AUR helper) if needed
-3. Install core dependencies
-4. Clone dotfiles as a bare repository
-5. Deploy files to `$HOME`
-6. Backup any conflicting files
-7. Set correct permissions
-8. Let you choose a theme
+The installer runs **19 steps** and covers the full setup automatically:
+
+| # | Step |
+|---|------|
+| 1 | System compatibility check (Arch/CachyOS) |
+| 2 | Internet connectivity check (retries automatically) |
+| 3 | Disk space check (≥ 5 GB) |
+| 4 | Install `paru` AUR helper |
+| 5 | Fetch dependency list from repository |
+| 6 | Install core packages from `.dependencies` |
+| 7 | Clone dotfiles bare repo (HTTPS) |
+| 8 | Deploy all config files to `$HOME` (backs up conflicts) |
+| 9 | Configure git bare repo |
+| 10 | Set executable permissions on all scripts |
+| 11 | Install Rust toolchain via rustup |
+| 12 | Build and install `eww` widget daemon |
+| 13 | Create required runtime directories (`~/unzipper`, etc.) |
+| 14 | Reload systemd user daemon |
+| 15 | Enable and start non-Wayland services |
+| 16 | Enable Wayland session services (waybar, eww, etc.) |
+| 17 | Create pacman hooks |
+| 18 | Set default shell to fish |
+| 19 | Index user man pages |
+
+**If the installer is interrupted**, just re-run it — it resumes from the last completed step automatically.
+
+#### After the installer finishes
+
+```bash
+# Switch dotfiles remote back to SSH (required for pushing)
+git --git-dir=~/.dotfiles remote set-url origin git@github.com:milojarow/dotfiles.git
+
+# Log out and select 'Sway' as your session
+```
 
 ### Manual Installation
 
@@ -43,8 +68,8 @@ sudo pacman -S --needed base-devel git
 git clone https://aur.archlinux.org/paru.git
 cd paru && makepkg -si
 
-# 2. Clone as bare repository
-git clone --bare git@github.com:milojarow/dotfiles.git ~/.dotfiles
+# 2. Clone as bare repository (HTTPS — no SSH keys required)
+git clone --bare https://github.com/milojarow/dotfiles.git ~/.dotfiles
 
 # 3. Define alias (add to .bashrc or .zshrc for persistence)
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
@@ -59,9 +84,22 @@ dots config status.showUntrackedFiles no
 paru -S --needed $(grep -v '^#' ~/.dependencies | grep -v '^\s*$' | tr '\n' ' ')
 
 # 7. Make scripts executable
-chmod +x ~/.config/sway/scripts/*.sh ~/.config/sway/scripts/*.py ~/.scripts/*
+chmod +x ~/.config/sway/scripts/*.sh ~/.config/sway/scripts/*.py \
+         ~/.config/eww/scripts/*.sh ~/.scripts/* ~/.local/bin/*
 
-# 8. Index user man pages
+# 8. Create required directories
+mkdir -p ~/unzipper ~/.local/share/man/man1
+
+# 9. Enable systemd services
+systemctl --user daemon-reload
+systemctl --user enable --now bt-audio-watchdog.service audio-tracker.service unzipper.service
+systemctl --user enable eww.service eww-resume.service waybar.service \
+          screenshot-notify.service screenshot-clipboard-notify.service
+
+# 10. Set default shell to fish
+chsh -s /usr/bin/fish
+
+# 11. Index user man pages
 mandb --user-db
 ```
 
