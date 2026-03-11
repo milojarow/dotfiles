@@ -133,15 +133,45 @@
         // Show workspaces 1-9 persistently (even when empty).
         // Workspace 10 is intentionally excluded — stays hidden when not in use.
         "persistent-workspaces": {
-            "1": [],
-            "2": [],
-            "3": [],
-            "4": [],
-            "5": [],
-            "6": [],
-            "7": [],
-            "8": [],
-            "9": []
+            "1": [], "2": [], "3": [], "4": [], "5": [],
+            "6": [], "7": [], "8": [], "9": []
+        },
+        // {windows} renders the app icons of every window in the workspace.
+        // Empty workspaces show a blank button (styled via .empty CSS class).
+        // Note: shows ALL windows' icons, not only the focused one.
+        "format": "{windows}",
+        // Fallback icon for apps not in window-rewrite (matches eww ICON_UNKNOWN U+EBF2).
+        "window-rewrite-default": "\uebf2",
+        // Regex keys use class<> prefix to match app_id (Wayland) / WM_CLASS (X11).
+        // Dots in reverse-DNS names are escaped (\. = literal dot in regex).
+        // Multiple apps sharing an icon are grouped with | alternation.
+        "window-rewrite": {
+            // Terminals
+            "class<foot>":                                          "\ue285",
+            "class<kitty|alacritty|wezterm>":                      "\uea85",
+            "class<com\\.mitchellh\\.ghostty|ghostty>":            "\ue007",
+            // Browsers
+            "class<firefox|librewolf>":                            "\ue745",
+            "class<brave-browser|brave>":                          "\ue639",
+            // Messaging
+            "class<altus>":                                        "\uf232",
+            "class<org\\.telegram\\.desktop|telegramdesktop>":     "\uf2c6",
+            // File managers
+            "class<nemo|nautilus|thunar|pcmanfm>":                 "\uf4d3",
+            // Email
+            "class<betterbird|thunderbird>":                       "\uf370",
+            // Editors / IDEs  (U+F1A7C — surrogate pair)
+            "class<code|vscodium|vscodium-url-handler|gedit|kate>": "\uDB86\uDE7C",
+            // PDF viewers  (U+F0226 — surrogate pair)
+            "class<org\\.pwmt\\.zathura|evince|okular>":           "\uDB80\uDE26",
+            // Obsidian
+            "class<obsidian>":                                     "\ue2a6",
+            // Claude desktop  (U+F09D1 — surrogate pair)
+            "class<claude>":                                       "\uDB82\uDDD1",
+            // VLC  (U+F057C — surrogate pair)
+            "class<vlc>":                                          "\uDB81\uDD7C",
+            // s45-panel  (U+F0B5F — surrogate pair)
+            "class<s45-panel>":                                    "\uDB82\uDF5F"
         }
     },
     "sway/mode": {
