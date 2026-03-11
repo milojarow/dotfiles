@@ -16,10 +16,10 @@
 
 // Active: accent color — warm light is on
 .bar-gamma.active {
-  color: $theme-accent;
+  color: $color2;
 }
 
 .bar-gamma.active:hover {
   background-color: $theme-selection;
-  color: $theme-accent;
+  color: $color2;
 }
