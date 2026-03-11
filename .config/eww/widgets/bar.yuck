@@ -1,3 +1,33 @@
+; ── Clipboard data ───────────────────────────────────────────────────────────
+(deflisten clipboard
+  :initial "{\"icon\": \"\", \"count\": 0}"
+  `~/.config/eww/scripts/clipboard-subscribe.sh`)
+
+; ── Wifi data ─────────────────────────────────────────────────────────────────
+(deflisten wifi
+  :initial "{\"icon\": \"\", \"ssid\": \"\", \"signal\": 0, \"ip\": \"\", \"freq\": \"\", \"security\": \"\", \"class\": \"disconnected\", \"connected\": false}"
+  `~/.config/eww/scripts/wifi-subscribe.py`)
+
+; ── Do-not-disturb data ──────────────────────────────────────────────────────
+(deflisten dnd
+  :initial "{\"active\": false, \"icon\": \"\"}"
+  `~/.config/eww/scripts/dnd-subscribe.sh`)
+
+; ── Gamma correction data ────────────────────────────────────────────────────
+(deflisten gamma
+  :initial "{\"active\": false, \"icon\": \"\"}"
+  `~/.config/eww/scripts/gamma-subscribe.sh`)
+
+; ── Idle inhibitor data ──────────────────────────────────────────────────────
+(deflisten idle-inhibitor
+  :initial "{\"active\": false, \"icon\": \"\"}"
+  `~/.config/eww/scripts/idle-inhibitor-subscribe.sh`)
+
+; ── Volume data ──────────────────────────────────────────────────────────────
+(deflisten volume
+  :initial "{\"text\": \"\", \"class\": \"\", \"volume\": 0, \"muted\": false, \"mic_muted\": false}"
+  `~/.config/eww/scripts/volume-subscribe.py`)
+
 ; ── Workspace data ───────────────────────────────────────────────────────────
 (deflisten workspaces
   :initial "[]"
@@ -19,13 +49,128 @@
         :onclick "${ws.cmd}"
         (label :text "${ws.icon}")))))
 
+; ── Date widget ──────────────────────────────────────────────────────────────
+(defwidget bar-date []
+  (box :width 170
+       :class "bar-date-bg"
+    (label :class "bar-date"
+           :hexpand true
+           :valign "center"
+           :xalign 0.5
+           :text {formattime(EWW_TIME, "%a, %-d, %b, %Y")})))
+
+; ── Window title data ────────────────────────────────────────────────────────
+(deflisten window-title
+  :initial "{\"text\": \"\", \"css_class\": \"empty\"}"
+  `~/.config/eww/scripts/window-title-subscribe.py`)
+
+; ── Sway mode data ────────────────────────────────────────────────────────────
+(deflisten sway-mode
+  :initial "{\"name\": \"\", \"active\": false}"
+  `~/.config/eww/scripts/sway-mode-subscribe.py`)
+
+; ── Center zone: sway mode (when active) or window title ─────────────────────
+(defwidget bar-center []
+  (box :halign "center" :space-evenly false
+    (label :class "bar-mode"
+           :markup {sway-mode.name}
+           :visible {sway-mode.active})
+    (label :class "bar-wintitle ${window-title.css_class}"
+           :halign "center"
+           :xalign 0.5
+           :truncate true
+           :visible {!sway-mode.active}
+           :text {window-title.text})))
+
+; ── Idle inhibitor button (inside module groups) ─────────────────────────────
+(defwidget bar-idle-inhibitor []
+  (button :class "bar-module bar-idle-inhibitor ${idle-inhibitor.active ? 'active' : ''}"
+          :onclick "echo t > /tmp/eww-idle-inhibitor"
+          :tooltip {idle-inhibitor.active ? "Idle inhibitor active — system will not sleep" : "Idle inhibitor inactive — system will sleep normally"}
+    (label :text {idle-inhibitor.icon})))
+
+; ── Do-not-disturb button (inside module groups) ─────────────────────────────
+(defwidget bar-dnd []
+  (button :class "bar-module bar-dnd ${dnd.active ? 'active' : ''}"
+          :onclick "echo t > /tmp/eww-dnd"
+          :onrightclick "~/.config/sway/scripts/dnd.sh restore && echo t > /tmp/eww-dnd"
+          :tooltip {dnd.active ? "Do not disturb — notifications silenced" : "Notifications on"}
+    (label :text {dnd.icon})))
+
+; ── Gamma correction button (inside module groups) ───────────────────────────
+(defwidget bar-gamma []
+  (button :class "bar-module bar-gamma ${gamma.active ? 'active' : ''}"
+          :onclick "echo t > /tmp/eww-gamma"
+          :tooltip {gamma.active ? "Gamma correction on — warm display" : "Gamma correction off"}
+    (label :text {gamma.icon})))
+
+; ── Volume button (inside module groups) ─────────────────────────────────────
+(defwidget bar-volume []
+  (eventbox :onscroll "~/.config/eww/scripts/volume-scroll.sh {}"
+    (button :class "bar-module bar-volume ${volume.class}"
+            :onclick "pavucontrol"
+            :onmiddleclick "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+      (box :orientation "h"
+           :space-evenly false
+           :spacing 5
+           :valign "center"
+        (label :class "bar-volume-icon"
+               :valign "center"
+               :text {volume.icon})
+        (circular-progress :value {volume.volume}
+                           :class "bar-volume-gauge"
+                           :width 19
+                           :height 19
+                           :thickness 3
+                           :start-at 75)))))
+
+; ── Clipboard button (inside module groups) ──────────────────────────────────
+(defwidget bar-clipboard []
+  (button :class "bar-module bar-clipboard"
+          :onclick "swaymsg -q exec '~/.config/sway/scripts/clipboard-manager.sh \"Roboto 11\"'"
+          :onrightclick "swaymsg -q exec 'cliphist list | rofi -theme ~/.config/rofi/themes/coffee-metal -dmenu -font \"Roboto 11\" -p \"Delete item\" -lines 10 | cliphist delete'"
+          :onmiddleclick "rm -f ~/.cache/cliphist/db"
+          :tooltip "${clipboard.count} item(s) in clipboard"
+    (label :text {clipboard.icon})))
+
+; ── Wifi button (inside module groups) ───────────────────────────────────────
+(defwidget bar-wifi []
+  (button :class "bar-module bar-wifi ${wifi.class}"
+          :onclick "${EWW_CMD} open --toggle eww-wifi-popup"
+    (label :text {wifi.icon})))
+
+; ── Module groups ─────────────────────────────────────────────────────────────
+(defwidget bar-module-groups []
+  (box :orientation "h"
+       :space-evenly false
+       :spacing 2
+       :valign "center"
+    (bar-clipboard)
+    (bar-wifi)
+    (bar-idle-inhibitor)
+    (bar-dnd)
+    (bar-volume)
+    (bar-gamma)))
+
+(defwidget bar-tray []
+  (box))
+
 ; ── Bar layout ────────────────────────────────────────────────────────────────
 (defwidget eww-bar-widget []
   (centerbox :orientation "h"
              :class "bar"
+    ; Left zone
     (bar-workspaces)
-    (box)
-    (box)))
+    ; Center zone — truly centered in the bar
+    (bar-center)
+    ; Right zone
+    (box :orientation "h"
+         :space-evenly false
+         :halign "end"
+      (bar-module-groups)
+      (bar-tray)
+      (box :width 32)
+      (bar-date))))
 
 ; ── Bar window ────────────────────────────────────────────────────────────────
 (defwindow eww-bar

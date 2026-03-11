@@ -10,3 +10,4 @@
 (include "./widgets/clock.yuck")
 (include "./widgets/disk-widget.yuck")
 (include "./widgets/bar.yuck")
+(include "./widgets/wifi-popup.yuck")

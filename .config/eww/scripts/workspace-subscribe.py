@@ -14,7 +14,7 @@ import sys
 # Keys are lowercase app_id or window class (substring match as fallback).
 ICON_MAP = {
     # Terminals
-    "foot":                    "\uea85",
+    "foot":                    "\ue285",
     "kitty":                   "\uea85",
     "alacritty":               "\uea85",
     "wezterm":                 "\uea85",

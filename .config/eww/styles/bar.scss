@@ -3,7 +3,7 @@
 .bar {
   background-color: $theme-bg;
   color: $theme-fg;
-  padding: 0 8px;
+  padding-left: 8px;
 }
 
 .bar-workspaces {
@@ -47,6 +47,44 @@
 
 .bar-ws--focused:hover {
   background-color: $theme-accent;
+}
+
+// Date
+.bar-date-bg {
+  background-color: $theme-accent;
+}
+
+.bar-date {
+  color: $theme-bg;
+  font-family: "JetBrainsMono NF", "Roboto Mono", sans-serif;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 0 12px;
+}
+
+// Sway mode indicator
+.bar-mode {
+  font-family: "JetBrainsMono NF", "Roboto Mono", sans-serif;
+  font-size: 13px;
+  font-style: italic;
+  padding: 0 10px;
+}
+
+// Window title
+.bar-wintitle {
+  font-family: "JetBrainsMono NF", "Roboto Mono", sans-serif;
+  font-size: 13px;
+  font-weight: normal;
+  padding: 0 10px;
+  color: $theme-fg;
+}
+
+.bar-wintitle.terminal {
+  color: $theme-accent;
+}
+
+.bar-wintitle.empty {
+  opacity: 0.5;
 }
 
 // Urgent workspace — red
