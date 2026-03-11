@@ -57,6 +57,7 @@ apply_theme() {
         rm -f "$CURRENT_FOOT_THEME_LINK"
         cp "$foot_theme_file" "$CURRENT_FOOT_THEME_LINK"
         ~/.config/sway/scripts/theme-apply-foot.sh "$foot_theme_file" || true
+        ~/.config/sway/scripts/apply-theme-terminals.sh "$foot_theme_file" || true
     fi
     
     # Reload Sway to apply the new theme

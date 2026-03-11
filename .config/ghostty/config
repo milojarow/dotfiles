@@ -1,0 +1,19 @@
+# Ghostty terminal configuration
+
+# Terminal colors — auto-generated from active palette theme
+config-file = ~/.config/ghostty/colors
+
+# Font configuration
+font-family = JetBrainsMono NF
+font-size = 9
+
+# Window configuration
+window-padding-x = 4
+window-padding-y = 4
+background-opacity = 0.95
+
+# Clipboard configuration
+# copy-on-select = true copies to selection clipboard (primary) only
+# copy-on-select = clipboard copies to both selection and system clipboard
+copy-on-select = true
+
