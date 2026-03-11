@@ -6,7 +6,7 @@ After=graphical-session.target
 [Service]
 Type=simple
 Environment="PATH=/home/milo/.cargo/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStartPre=-/usr/bin/pkill -f "eww daemon"
+ExecStartPre=-/usr/bin/pkill -w -f "eww daemon"
 ExecStart=/home/milo/.cargo/bin/eww daemon --no-daemonize
 ExecStartPost=/bin/sh -c 'elapsed=0; until /home/milo/.cargo/bin/eww ping 2>/dev/null; do sleep 0.1; elapsed=$((elapsed+1)); [ $elapsed -ge 100 ] && exit 1; done; /home/milo/.config/eww/scripts/open-windows.sh'
 ExecStop=/home/milo/.cargo/bin/eww kill

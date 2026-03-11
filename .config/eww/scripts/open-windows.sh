@@ -1,12 +1,17 @@
 #!/bin/bash
 # Defines which eww windows to open on startup.
-# Add or remove windows here as your eww config grows.
+# Each window is closed before opening to guarantee exactly one instance.
 
-eww open eww-bar
-eww open arch-logo-window
-eww open disk-widget
-eww open activate-linux
-eww open sysmonitor-window
-eww open temps-window
-eww open usb-widget
-eww open clock
+open_window() {
+    eww close "$1" 2>/dev/null
+    eww open "$1"
+}
+
+open_window eww-bar
+open_window arch-logo-window
+open_window disk-widget
+open_window activate-linux
+open_window sysmonitor-window
+open_window temps-window
+open_window usb-widget
+open_window clock
