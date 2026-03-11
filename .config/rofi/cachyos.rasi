@@ -1,10 +1,8 @@
+/* Auto-generated rofi color variables — do not edit */
+/* Theme: matcha-blue — see man palette-theming */
 * {
-lightbg: #14161b;
-background: #14161b;
-lightfg: #3498db;
-foreground: #eeeeee;
+    background-color: #14161b;
+    text-color: #eeeeee;
+    accent-color: #3498db;
+    selected-bg: #282a2b;
 }
-window {
-width: 25em;
-}
-
