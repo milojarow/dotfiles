@@ -9,5 +9,6 @@
 (include "./widgets/widget-de-las-flechas.yuck")
 (include "./widgets/clock.yuck")
 (include "./widgets/disk-widget.yuck")
+(include "./widgets/arch-logo.yuck")
 (include "./widgets/bar.yuck")
 (include "./widgets/wifi-popup.yuck")
