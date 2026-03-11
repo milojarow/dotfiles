@@ -1,0 +1,37 @@
+;; Arrow widget for repositioning other eww windows.
+;; To target a different widget, edit the defwindow below:
+;;   :window — the defwindow name to move
+;;   :yuck   — path to the .yuck file that contains that defwindow
+
+(defwidget widget-de-las-flechas [window yuck]
+  (box :class "widget-mover"
+       :orientation "v"
+       :space-evenly false
+       :spacing 4
+    (button :class "mover-btn"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y 10"
+            "↑")
+    (box :orientation "h"
+         :space-evenly false
+         :spacing 4
+      (button :class "mover-btn"
+              :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} x -10"
+              "←")
+      (button :class "mover-btn"
+              :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} x 10"
+              "→"))
+    (button :class "mover-btn"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y -10"
+            "↓")))
+
+(defwindow widget-de-las-flechas
+  :monitor 0
+  :geometry (geometry :x "100px"
+                      :y "300px"
+                      :anchor "bottom left")
+  :stacking "fg"
+  :focusable false
+  (widget-de-las-flechas :window "activate-linux"
+                          :yuck "~/.config/eww/widgets/activate-linux.yuck"))

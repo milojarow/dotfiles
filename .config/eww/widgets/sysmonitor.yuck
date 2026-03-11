@@ -52,35 +52,3 @@
   :stacking "bg"
   :focusable false
   (sysmonitor))
-
-(defwidget widget-mover []
-  (box :class "widget-mover"
-       :orientation "v"
-       :space-evenly false
-       :spacing 4
-    (button :class "mover-btn"
-            :halign "center"
-            :onclick "~/.config/eww/scripts/move-temps.sh y 10"
-            "↑")
-    (box :orientation "h"
-         :space-evenly false
-         :spacing 4
-      (button :class "mover-btn"
-              :onclick "~/.config/eww/scripts/move-temps.sh x -10"
-              "←")
-      (button :class "mover-btn"
-              :onclick "~/.config/eww/scripts/move-temps.sh x 10"
-              "→"))
-    (button :class "mover-btn"
-            :halign "center"
-            :onclick "~/.config/eww/scripts/move-temps.sh y -10"
-            "↓")))
-
-(defwindow widget-mover
-  :monitor 0
-  :geometry (geometry :x "898px"
-                      :y "540px"
-                      :anchor "bottom left")
-  :stacking "fg"
-  :focusable false
-  (widget-mover))
