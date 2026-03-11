@@ -172,10 +172,7 @@ def build_output(last_focused, tree, ws_raw):
         has_windows = len(leaves) > 0
 
         if has_windows:
-            icon_app = last_focused.get(num, "")
-            if not icon_app and leaves:
-                icon_app = get_app_id(leaves[0])
-            icon = icon_for(icon_app)
+            icon = "".join(icon_for(get_app_id(leaf)) for leaf in leaves)
         else:
             icon = str(num)
 
@@ -200,14 +197,13 @@ def build_output(last_focused, tree, ws_raw):
         if ws_node:
             walk_leaves(ws_node, leaves)
         if leaves or raw.get("focused"):
-            icon_app = last_focused.get(10, get_app_id(leaves[0]) if leaves else "")
             result.append({
                 "num":         10,
                 "name":        ws_name,
                 "focused":     raw.get("focused", False),
                 "urgent":      raw.get("urgent", False),
                 "has_windows": len(leaves) > 0,
-                "icon":        icon_for(icon_app) if leaves else "10",
+                "icon":        "".join(icon_for(get_app_id(l)) for l in leaves) if leaves else "10",
                 "cmd":         "swaymsg workspace 10",
             })
 
