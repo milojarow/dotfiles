@@ -112,6 +112,10 @@ extract_context() {
         "✳ "*)
             _context="${t#✳ }"
             ;;
+        *" Claude Code")
+            # Braille spinner variants: ⠂ ⠐ ⠄ etc. followed by " Claude Code"
+            _context="Claude Code"
+            ;;
     esac
 }
 
@@ -338,17 +342,17 @@ process_window() {
                     ;;
             esac
 
-            # Determine context
+            # Determine context: prefer title-based extraction (consistent with
+            # footclient behavior), fall back to process inspection
             case "$location" in
                 "ssh "*)
                     context="$title"
                     ;;
                 *)
-                    if [ -n "$fg_cmd" ]; then
+                    extract_context "$_clean_title"
+                    context="$_context"
+                    if [ -z "$context" ] && [ -n "$fg_cmd" ]; then
                         context="$fg_cmd"
-                    else
-                        extract_context "$_clean_title"
-                        context="$_context"
                     fi
                     ;;
             esac
@@ -408,7 +412,14 @@ bootstrap() {
     ')
 
     if [ -n "$info" ]; then
-        IFS=$'\t' read -r wid wname wapp wclass wpid <<< "$info"
+        # Manual tab-split to avoid bash IFS whitespace-collapsing consecutive tabs
+        # (which causes wpid to be empty when window_properties.class is empty)
+        local _t="$info"
+        wid="${_t%%$'\t'*}";    _t="${_t#*$'\t'}"
+        wname="${_t%%$'\t'*}";  _t="${_t#*$'\t'}"
+        wapp="${_t%%$'\t'*}";   _t="${_t#*$'\t'}"
+        wclass="${_t%%$'\t'*}"; _t="${_t#*$'\t'}"
+        wpid="${_t%%$'\t'*}"
         process_window "$wid" "$wname" "$wapp" "$wclass" "$wpid"
     else
         output_and_signal "" "No focused window" "empty"
@@ -426,7 +437,13 @@ while read -r line; do
         SKIP) continue ;;
         EMPTY) output_and_signal "" "No focused window" "empty" ;;
         *)
-            IFS=$'\t' read -r wid wname wapp wclass wpid <<< "$line"
+            # Manual tab-split (avoids IFS whitespace-collapsing consecutive tabs)
+            _t="$line"
+            wid="${_t%%$'\t'*}";    _t="${_t#*$'\t'}"
+            wname="${_t%%$'\t'*}";  _t="${_t#*$'\t'}"
+            wapp="${_t%%$'\t'*}";   _t="${_t#*$'\t'}"
+            wclass="${_t%%$'\t'*}"; _t="${_t#*$'\t'}"
+            wpid="${_t%%$'\t'*}"
             process_window "$wid" "$wname" "$wapp" "$wclass" "$wpid"
             ;;
     esac
