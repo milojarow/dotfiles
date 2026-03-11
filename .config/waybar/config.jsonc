@@ -224,6 +224,7 @@
         "exec-if": "~/.config/sway/scripts/sunset.sh check",
         "signal": 6
     },
+    // custom/theme: palette light/dark toggle — see man palette-theming
     "custom/theme": {
         "format": "{icon}",
         "interval": 300,

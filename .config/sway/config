@@ -9,7 +9,7 @@
 
 # Note: multimedia keybindings are defined in modes/default to avoid conflicts
 
-include ~/.config/sway/themes/dracula/theme.conf
+include ~/.config/sway/definitions.d/theme.conf  # palette theme: color vars + client.* — see man palette-theming
 include ~/.config/sway/config.d/*
 include ~/.config/sway/modes/*
 include ~/.config/sway/inputs/*

@@ -1,4 +1,25 @@
 #!/usr/bin/env bash
+# ── Palette Theming ───────────────────────────────────────────────────────────
+# Role:     Light/dark palette switching based on solar time. Uses geoip.sh
+#           to get sunrise/sunset for the current location.
+#           mode=toggle:      manually swap light ↔ dark palette
+#           mode=auto-toggle: enable/disable automatic solar switching
+#                             (lockfile: ~/.local/auto-theme-toggle)
+#           mode=status:      output JSON for waybar (icon + next switch time)
+#           mode=check:       exit 0 if light/dark themes are configured
+#           Swaps theme.conf and foot-theme.ini between .dark.conf_ and
+#           .light.conf_ stashed copies, then calls swaymsg reload.
+# Files:    theme-toggle.sh · theme-selector.sh
+#           ~/.config/sway/definitions.d/theme.conf          (active symlink)
+#           ~/.config/sway/definitions.d/theme.dark.conf_    (stashed dark theme)
+#           ~/.config/sway/definitions.d/theme.light.conf_   (stashed light theme)
+#           ~/.config/foot/foot-theme.ini                    (active copy)
+#           ~/.config/foot/foot-theme.dark.ini_              (stashed dark)
+#           ~/.config/foot/foot-theme.light.ini_             (stashed light)
+# Programs: geoip.sh  jq  swaymsg  mv
+# Storage:  ~/.local/auto-theme-toggle — lockfile (presence = auto-toggle ON)
+# Man:      man palette-theming
+# ─────────────────────────────────────────────────────────────────────────────
 set -u
 
 LOCKFILE="$HOME/.local/auto-theme-toggle"

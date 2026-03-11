@@ -1,0 +1,301 @@
+.TH PALETTE-THEMING 1 "2026-03-11" "sway dotfiles" "User Commands"
+.SH NAME
+palette-theming \- live color palette theming system for sway
+.SH DESCRIPTION
+The Palette Theming system provides coordinated color palette switching
+across sway window borders, the foot terminal, and waybar. It does
+.B NOT
+manage GTK, Qt, or Kvantum visual theming; those are handled separately
+by
+.IR 90-enable-theme.conf .
+.PP
+The system consists of four scripts and twelve palette theme definitions
+under
+.IR ~/.config/sway/themes/ .
+Each theme carries two files: a sway
+.I theme.conf
+(color variables and
+.B client.*
+window decoration rules) and a
+.I foot-theme.ini
+(16-color terminal palette for the foot terminal emulator).
+.PP
+On every theme switch, the orchestrator
+.B theme-selector.sh
+(1) symlinks the chosen
+.I theme.conf
+as the active sway theme, (2) copies the
+.I foot-theme.ini
+to the runtime location read by foot, (3) pushes the new palette to all
+running terminal instances via OSC escape sequences (no restart needed),
+(4) reloads sway so window decorations update, and (5) regenerates the
+waybar CSS and signals waybar.
+.PP
+A secondary script
+.BR theme-toggle.sh
+provides automatic light/dark switching based on local sunrise and sunset
+times obtained from
+.BR geoip.sh .
+.SH KEYBINDINGS
+.TP
+.B $mod+t
+Open the theme picker (wofi dmenu). Calls
+.IR theme-selector.sh\ menu .
+.TP
+.B Waybar custom/theme (left-click)
+Manually toggle light \[<>] dark palette. Calls
+.IR theme-toggle.sh\ toggle .
+.TP
+.B Waybar custom/theme (right-click)
+Enable or disable automatic solar-time switching. Calls
+.IR theme-toggle.sh\ auto-toggle .
+.SH FILES
+.SS Core scripts
+.TP
+.I ~/.config/sway/scripts/theme-selector.sh
+Main orchestrator. Implements
+.B menu
+(wofi picker + apply) and
+.B status
+(waybar JSON icon) modes.
+.TP
+.I ~/.config/sway/scripts/theme-apply-foot.sh
+Parses a foot-theme.ini and writes OSC 10/11/4;N escape sequences to
+all writable
+.I /dev/pts/*
+PTY slave devices, applying colors to running terminals in real time.
+.TP
+.I ~/.config/sway/scripts/theme-waybar.sh
+Reads the active
+.I theme.conf
+symlink, resolves
+.BR $background-color ,
+.BR $text-color ,
+and
+.B $accent-color
+(one level of variable indirection supported), and generates
+.IR ~/.config/waybar/theme.css .
+.TP
+.I ~/.config/sway/scripts/theme-toggle.sh
+Light/dark palette toggle based on solar time. Uses geoip.sh for
+sunrise/sunset. Stashes the inactive variant as
+.I theme.dark.conf_
+/
+.I theme.light.conf_
+and swaps on request or automatically.
+.SS Theme data (one pair per theme)
+.TP
+.I ~/.config/sway/themes/<name>/theme.conf
+Color variable definitions (
+.B $color0
+\[en]
+.BR $color15 ,
+.BR $background-color ,
+.BR $text-color ,
+.BR $accent-color )
+and sway
+.B client.*
+window decoration rules.
+.TP
+.I ~/.config/sway/themes/<name>/foot-theme.ini
+Terminal palette in foot config format. Includes
+.I ~/.config/sway/templates/foot.ini
+for shared non-color settings.
+.PP
+Available themes:
+catppuccin-frappe, catppuccin-latte, catppuccin-macchiato, catppuccin-mocha,
+dracula, gruvbox-dark, matcha-blue, matcha-green, matcha-leaf, matcha-red,
+nordic-bluish-accent, tokyo-night.
+.SS Active theme (runtime \(em do not edit or track in git)
+.TP
+.I ~/.config/sway/definitions.d/theme.conf
+Symlink pointing to the selected theme's
+.IR theme.conf .
+Recreated by
+.I theme-selector.sh
+on each switch.
+.TP
+.I ~/.config/foot/foot-theme.ini
+File copy (not a symlink) of the selected theme's
+.IR foot-theme.ini .
+Must be a copy so that foot can
+.B include=
+it without runtime-vs-source ambiguity.
+Updated by
+.I theme-selector.sh
+on each switch.
+.TP
+.I ~/.config/waybar/theme.css
+Auto-generated CSS with
+.B @define-color
+rules. Overwritten by
+.I theme-waybar.sh
+on each switch.
+.SS Templates
+.TP
+.I ~/.config/sway/templates/foot.ini
+Shared foot settings (font, scrollback, key bindings, cursor, bell).
+Included by every
+.I foot-theme.ini
+via
+.BR include= .
+.SS Configuration references (files that use but do not belong to this system)
+.TP
+.I ~/.config/sway/config
+Includes
+.I ~/.config/sway/definitions.d/theme.conf
+to inject color variables into the sway config tree.
+.TP
+.I ~/.config/sway/modes/default
+Binds
+.B $mod+t
+to
+.IR theme-selector.sh\ menu .
+.TP
+.I ~/.config/foot/foot.ini
+Includes
+.I foot-theme.ini
+and sets
+.B initial-color-theme=dark
+so new windows open with
+.BR [colors-dark] .
+.TP
+.I ~/.config/waybar/style.css
+Imports
+.I theme.css
+via
+.BR "@import \(dqtheme.css\(dq;" .
+.TP
+.I ~/.config/waybar/config.jsonc
+Defines the
+.B custom/theme
+module which calls
+.I theme-toggle.sh
+for status, click, and right-click actions.
+.SH PROGRAMS
+.BR wofi (1),
+.BR swaymsg (1),
+.BR pkill (1),
+.BR awk (1),
+.BR grep (1),
+.BR foot (1),
+.BR jq (1),
+.BR mv (1)
+.SH FLOW
+.SS Theme switch (super+t)
+.nr step 1 1
+.IP \n[step]. 3
+User presses
+.B $mod+t
+\[->]
+.I theme-selector.sh menu
+launches a wofi dmenu listing all directories under
+.I ~/.config/sway/themes/
+.IP \n+[step].
+User selects a theme \[->]
+.I apply_theme()
+is called
+.IP \n+[step].
+.I theme.conf
+for the chosen theme is symlinked to
+.I ~/.config/sway/definitions.d/theme.conf
+.IP \n+[step].
+.I foot-theme.ini
+is copied (not symlinked) to
+.I ~/.config/foot/foot-theme.ini
+.IP \n+[step].
+.I theme-apply-foot.sh
+writes OSC payloads to all
+.I /dev/pts/*
+\[->] running foot instances change colors instantly
+.IP \n+[step].
+.BR "swaymsg reload"
+\[->] sway re-reads theme.conf \[->] window borders and title bars update
+.IP \n+[step].
+.I theme-waybar.sh
+generates
+.I ~/.config/waybar/theme.css
+.IP \n+[step].
+.B "pkill -SIGUSR2 waybar"
+reloads waybar CSS \[->]
+.B "pkill -RTMIN+17 waybar"
+refreshes the theme icon
+.SS New terminal window (any time)
+Foot reads
+.I ~/.config/foot/foot.ini
+\[->] includes
+.I foot-theme.ini
+\[->] loads
+.B [colors-dark]
+\[->] opens with the palette that was active when the last theme switch happened.
+.SH SIGNALS
+.TP
+.B SIGUSR2
+Sent to
+.BR waybar (1)
+to trigger a CSS stylesheet reload.
+.TP
+.B SIGRTMIN+17
+Sent to
+.BR waybar (1)
+to refresh the
+.B custom/theme
+module output (icon and tooltip).
+.SH WAYBAR INTEGRATION
+The
+.B custom/theme
+module in
+.I ~/.config/waybar/config.jsonc
+shows a moon/sun icon and the active theme name. It calls
+.IR theme-toggle.sh\ status
+periodically, and on left/right click calls
+.I toggle
+and
+.I auto-toggle
+respectively.
+.PP
+All waybar module colors derive from the CSS variables defined in
+.I ~/.config/waybar/theme.css
+(imported by
+.IR style.css ).
+The three primary variables are:
+.BR @theme_base_color ,
+.BR @theme_text_color ,
+and
+.BR @theme_selected_bg_color .
+.SH NOTES
+.IP \[bu] 2
+Live terminal recoloring works because writing to a
+.I /dev/pts/N
+slave device sends data to the terminal master's read buffer.
+Foot (the master) processes OSC sequences as program output and updates
+its palette without a restart.
+.IP \[bu]
+Foot does not support a
+.B SIGHUP
+config reload (the developer explicitly rejected it), so the OSC
+mechanism is the only way to recolor running instances.
+.IP \[bu]
+GTK, Qt, and Kvantum theme application is
+.B separate
+and is performed by
+.I 90-enable-theme.conf
+(via
+.IR enable-gtk-theme.sh )
+on every sway reload. That system reads
+.BR $gtk-theme ,
+.BR $icon-theme ,
+.BR $cursor-theme ,
+and
+.B $kvantum-theme
+variables from
+.I theme.conf
+but its operation is independent of the palette system documented here.
+.IP \[bu]
+The matcha-* themes and dracula share the same Base16 Seti UI base
+palette. Their distinction comes from the accent color and, for dracula,
+the Dracula purple (#bd93f9) in the ANSI blue slot (regular4/bright4).
+.SH SEE ALSO
+.BR foot (1),
+.BR sway (5),
+.BR wofi (1)

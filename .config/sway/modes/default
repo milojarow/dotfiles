@@ -214,3 +214,6 @@ $bindsym $mod+period exec $emoji_picker
 
 ## Launch // Toggle Cheatsheet ##
 $bindsym $mod+slash exec ~/.config/sway/scripts/toggle-cheatsheet.sh
+
+## Launch // Theme Selector ##
+$bindsym $mod+t exec ~/.config/sway/scripts/theme-selector.sh menu  # open palette theme picker
