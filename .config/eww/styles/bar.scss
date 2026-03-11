@@ -23,7 +23,7 @@
 .bar-ws {
   padding: 2px 9px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 18px;
   transition: background-color 150ms ease;
   margin: 0 1px;
 }
@@ -31,7 +31,7 @@
 // Empty workspaces — just the number, muted/neutral
 .bar-ws--empty {
   color: mix($theme-fg, $theme-bg, 30%);
-  font-size: 11px;
+  font-size: 15px;
 }
 
 .bar-ws--empty:hover {
