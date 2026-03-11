@@ -1,346 +1,630 @@
 #!/usr/bin/env bash
+# Re-exec in bash if running from another shell (fish, zsh, dash, etc.)
+[ -z "$BASH_VERSION" ] && exec bash "$0" "$@"
+
 set -euo pipefail
 
-# Prevent running as root
-if [[ $EUID -eq 0 ]]; then
-    echo "ERROR: Do not run this script as root or with sudo."
-    echo "The script will ask for sudo password when needed."
-    echo "Run as: ./install.sh"
-    exit 1
-fi
+# ── CONSTANTS ─────────────────────────────────────────────────────────────────
+DOTFILES_REPO="https://github.com/milojarow/dotfiles.git"
+DOTFILES_DIR="$HOME/.dotfiles"
+CHECKPOINT_FILE="$HOME/.dotfiles-install.checkpoint"
+BACKUP_DIR=""   # Set once in main() with a timestamp
+TOTAL_STEPS=18
 
-# Colors for output
+# ── COLORS & SYMBOLS ──────────────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
 
-# Configuration
-DOTFILES_REPO="git@github.com:milojarow/dotfiles.git"
-DOTFILES_DIR="$HOME/.dotfiles"
-BACKUP_DIR="$HOME/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
+SYM_OK='✓'
+SYM_RUN='→'
+SYM_SKIP='·'
+SYM_WARN='⚠'
+SYM_FAIL='✗'
 
-# Logging functions
-info() { echo -e "${BLUE}[INFO]${NC} $1"; }
-success() { echo -e "${GREEN}[OK]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
+# ── CURRENT STEP TRACKING (for ERR trap) ──────────────────────────────────────
+_STEP_NUM=""
+_STEP_DESC=""
 
-# Check if we're on Arch-based system
-check_system() {
-    info "Checking system compatibility..."
-
-    if [[ ! -f /etc/arch-release ]] && [[ ! -f /etc/cachyos-release ]]; then
-        error "This script is designed for Arch-based systems (Arch, CachyOS, Manjaro, etc.)"
-        exit 1
-    fi
-
-    if ! command -v pacman &> /dev/null; then
-        error "pacman not found. Are you sure this is Arch-based?"
-        exit 1
-    fi
-
-    success "System check passed"
+# ── OUTPUT FUNCTIONS ──────────────────────────────────────────────────────────
+print_banner() {
+    echo -e "${BLUE}${BOLD}"
+    echo "╔════════════════════════════════════════╗"
+    echo "║      Milo's Dotfiles Installer         ║"
+    echo "║         CachyOS / Arch Linux           ║"
+    echo "╚════════════════════════════════════════╝"
+    echo -e "${NC}"
 }
 
-# Install paru if not present
-ensure_paru() {
-    if command -v paru &> /dev/null; then
-        success "paru is already installed"
+print_section() {
+    echo ""
+    echo -e "${BOLD}── $1 ────────────────────────────────────────${NC}"
+}
+
+print_step_running() { echo -e "  ${CYAN}${SYM_RUN}${NC} [${1}/${TOTAL_STEPS}] ${2}..."; }
+print_step_ok()      { echo -e "  ${GREEN}${SYM_OK}${NC} [${1}/${TOTAL_STEPS}] ${2}"; }
+print_step_skip()    { echo -e "  ${BLUE}${SYM_SKIP}${NC} [${1}/${TOTAL_STEPS}] ${2} ${BLUE}(already done)${NC}"; }
+print_step_fail()    { echo -e "  ${RED}${SYM_FAIL}${NC} [${1}/${TOTAL_STEPS}] ${2} ${RED}(FAILED)${NC}"; }
+print_step_warn()    { echo -e "  ${YELLOW}${SYM_WARN}${NC} [${1}/${TOTAL_STEPS}] ${2} ${YELLOW}(warning — non-fatal)${NC}"; }
+info()  { echo -e "    ${BLUE}ℹ${NC}  $1"; }
+warn()  { echo -e "    ${YELLOW}${SYM_WARN}${NC}  $1"; }
+error() { echo -e "    ${RED}${SYM_FAIL}${NC}  $1" >&2; }
+
+# ── ERR TRAP ──────────────────────────────────────────────────────────────────
+_err_handler() {
+    local line="$1" cmd="$2"
+    echo ""
+    if [[ -n "$_STEP_NUM" ]]; then
+        print_step_fail "$_STEP_NUM" "$_STEP_DESC"
+    fi
+    error "Unexpected error on line ${line}: ${cmd}"
+    echo ""
+    echo "    Re-run install.sh to resume from the last completed step."
+    echo ""
+    exit 1
+}
+trap '_err_handler $LINENO "$BASH_COMMAND"' ERR
+
+# ── CHECKPOINT ENGINE ─────────────────────────────────────────────────────────
+step_done() { grep -qxF "$1" "$CHECKPOINT_FILE" 2>/dev/null; }
+mark_done() { echo "$1" >> "$CHECKPOINT_FILE"; }
+
+# run_step <id> <num> <description> <function>
+# Runs <function>, marks it done on success. ERR trap handles failures.
+run_step() {
+    local id="$1" num="$2" desc="$3" fn="$4"
+    if step_done "$id"; then
+        print_step_skip "$num" "$desc"
         return 0
     fi
-
-    info "Installing paru (AUR helper)..."
-
-    # Ensure base-devel and git are installed
-    sudo pacman -S --needed --noconfirm base-devel git
-
-    # Clone and build paru
-    local temp_dir
-    temp_dir=$(mktemp -d)
-    cd "$temp_dir"
-    git clone https://aur.archlinux.org/paru.git
-    cd paru
-    makepkg -si --noconfirm
-    cd "$HOME"
-    rm -rf "$temp_dir"
-
-    success "paru installed successfully"
+    _STEP_NUM="$num"
+    _STEP_DESC="$desc"
+    print_step_running "$num" "$desc"
+    "$fn"
+    mark_done "$id"
+    print_step_ok "$num" "$desc"
+    _STEP_NUM=""
+    _STEP_DESC=""
 }
 
-# Read dependencies from file, ignoring comments and empty lines
-read_dependencies() {
+# ── CHECKPOINT / RESUME PROMPT ────────────────────────────────────────────────
+handle_checkpoint() {
+    [[ ! -f "$CHECKPOINT_FILE" ]] && return 0
+
+    local completed last
+    completed=$(wc -l < "$CHECKPOINT_FILE")
+    last=$(tail -1 "$CHECKPOINT_FILE")
+
+    echo ""
+    echo -e "  ${YELLOW}Checkpoint found${NC}: ${completed} steps completed (last: ${YELLOW}${last}${NC})"
+    echo ""
+    read -rp "  [R]esume   [F]resh start   [Q]uit: " choice
+    case "${choice,,}" in
+        f)
+            rm -f "$CHECKPOINT_FILE"
+            info "Starting fresh..."
+            ;;
+        q)
+            echo "  Aborted."
+            exit 0
+            ;;
+        *)
+            info "Resuming..."
+            ;;
+    esac
+}
+
+# ── HELPERS ───────────────────────────────────────────────────────────────────
+
+# Strip comments and blank lines from a deps file, return space-separated list
+read_deps() {
     local file="$1"
-    if [[ -f "$file" ]]; then
-        grep -v '^\s*#' "$file" | grep -v '^\s*$' | tr '\n' ' '
+    [[ -f "$file" ]] && grep -v '^\s*#' "$file" | grep -v '^\s*$' | tr '\n' ' '
+}
+
+# ── PRE-FLIGHT ────────────────────────────────────────────────────────────────
+step_preflight_not_root() {
+    # Always-run — never checkpointed
+    if [[ $EUID -eq 0 ]]; then
+        error "Do not run as root. The script calls sudo internally when needed."
+        exit 1
     fi
 }
 
-# Install packages from .dependencies file
-install_core_dependencies() {
-    info "Installing core dependencies..."
+step_preflight_arch() {
+    if [[ ! -f /etc/arch-release ]] && [[ ! -f /etc/cachyos-release ]]; then
+        error "This installer is designed for Arch-based systems (Arch, CachyOS, Manjaro, etc.)"
+        return 1
+    fi
+    if ! command -v pacman &>/dev/null; then
+        error "pacman not found — are you sure this is Arch-based?"
+        return 1
+    fi
+}
 
-    # First check if .dependencies exists in the current directory (for fresh installs)
-    # If not, we'll clone the repo first and then install
-    local deps_file=""
+step_preflight_internet() {
+    local timeout=30 elapsed=0
+    info "Testing connection to archlinux.org..."
+    until curl -fsS --max-time 5 https://archlinux.org >/dev/null 2>&1; do
+        (( elapsed++ ))
+        if (( elapsed >= timeout )); then
+            error "No internet connection after ${timeout}s. Check your network and try again."
+            return 1
+        fi
+        warn "Not connected yet, retrying in 3s... (${elapsed}/${timeout})"
+        sleep 3
+    done
+}
 
+step_preflight_disk() {
+    local available_gb
+    available_gb=$(df -BG "$HOME" | awk 'NR==2 {gsub("G",""); print $4}')
+    if (( available_gb < 5 )); then
+        error "Less than 5 GB free on \$HOME partition (${available_gb} GB available)."
+        error "Free up space and try again."
+        return 1
+    fi
+    info "Disk space OK: ${available_gb} GB available"
+}
+
+# ── BASE TOOLS ────────────────────────────────────────────────────────────────
+step_install_paru() {
+    if command -v paru &>/dev/null; then
+        info "paru already installed"
+        return 0
+    fi
+    info "Installing paru AUR helper..."
+    sudo pacman -S --needed --noconfirm base-devel git
+    local tmpdir
+    tmpdir=$(mktemp -d)
+    git clone https://aur.archlinux.org/paru.git "$tmpdir/paru"
+    pushd "$tmpdir/paru" >/dev/null
+    makepkg -si --noconfirm
+    popd >/dev/null
+    rm -rf "$tmpdir"
+}
+
+step_fetch_deps_file() {
     if [[ -f "$HOME/.dependencies" ]]; then
-        deps_file="$HOME/.dependencies"
-    elif [[ -f "./.dependencies" ]]; then
-        deps_file="./.dependencies"
-    else
-        warn "No .dependencies file found. Skipping core package installation."
-        warn "After dotfiles are deployed, run: paru -S --needed \$(grep -v '^#' ~/.dependencies | grep -v '^\s*$' | tr '\\n' ' ')"
+        info ".dependencies already present"
+        return 0
+    fi
+    local url="https://raw.githubusercontent.com/milojarow/dotfiles/main/.dependencies"
+    info "Fetching dependency list from repository..."
+    if ! curl -fsSL "$url" -o "$HOME/.dependencies"; then
+        error "Could not fetch .dependencies from GitHub."
+        return 1
+    fi
+    info "Saved to ~/.dependencies"
+}
+
+step_install_core_deps() {
+    local packages
+    packages=$(read_deps "$HOME/.dependencies")
+    if [[ -z "$packages" ]]; then
+        warn "~/.dependencies is empty — skipping."
+        return 0
+    fi
+    info "Installing core packages (this may take several minutes)..."
+    # shellcheck disable=SC2086
+    paru -S --needed --noconfirm $packages || {
+        warn "Some packages may have failed. Check the output above — continuing."
+    }
+}
+
+# ── DOTFILES ──────────────────────────────────────────────────────────────────
+step_clone_bare_repo() {
+    if [[ -d "$DOTFILES_DIR" ]] && \
+       git --git-dir="$DOTFILES_DIR" rev-parse HEAD &>/dev/null; then
+        info "Bare repo already exists at $DOTFILES_DIR"
+        read -rp "    Pull latest changes? [y/N]: " pull_choice
+        if [[ "${pull_choice,,}" == "y" ]]; then
+            git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" fetch origin
+            git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" reset --hard origin/main
+            info "Updated from remote"
+        fi
+        return 0
+    fi
+    info "Cloning dotfiles (HTTPS)..."
+    git clone --bare "$DOTFILES_REPO" "$DOTFILES_DIR"
+}
+
+step_checkout_dotfiles() {
+    # Try a clean checkout first
+    if git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" checkout 2>/dev/null; then
         return 0
     fi
 
-    local packages
-    packages=$(read_dependencies "$deps_file")
+    # Backup conflicting files, then retry
+    info "Backing up conflicting files to $BACKUP_DIR ..."
+    mkdir -p "$BACKUP_DIR"
+    local conflicts
+    conflicts=$(git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" checkout 2>&1 \
+        | grep '^\s' | awk '{print $1}')
+    while IFS= read -r file; do
+        [[ -z "$file" ]] && continue
+        if [[ -e "$HOME/$file" ]]; then
+            local dest="$BACKUP_DIR/$file"
+            mkdir -p "$(dirname "$dest")"
+            mv "$HOME/$file" "$dest"
+        fi
+    done <<< "$conflicts"
+    info "Conflicts backed up to: $BACKUP_DIR"
 
-    if [[ -n "$packages" ]]; then
-        info "Installing packages: $packages"
-        # shellcheck disable=SC2086
-        paru -S --needed --noconfirm $packages || {
-            warn "Some packages may have failed to install. Check the output above."
-        }
-        success "Core dependencies installed"
+    git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" checkout
+}
+
+step_configure_bare_repo() {
+    git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" \
+        config status.showUntrackedFiles no
+}
+
+step_fix_permissions() {
+    local dirs=(
+        "$HOME/.config/sway/scripts"
+        "$HOME/.scripts"
+        "$HOME/.local/bin"
+        "$HOME/.config/eww/scripts"
+    )
+    for dir in "${dirs[@]}"; do
+        [[ -d "$dir" ]] || continue
+        find "$dir" -type f \
+            \( -name "*.sh" -o -name "*.py" -o ! -name "*.*" \) \
+            -exec chmod +x {} \;
+    done
+    [[ -f "$HOME/.scripts/clipardo" ]] && chmod +x "$HOME/.scripts/clipardo"
+}
+
+# ── BUILD TOOLS ───────────────────────────────────────────────────────────────
+step_install_rust() {
+    if command -v cargo &>/dev/null; then
+        info "Rust/cargo already installed"
+        return 0
+    fi
+    info "Installing Rust via rustup..."
+    sudo pacman -S --needed --noconfirm rustup
+    rustup toolchain install stable
+    # Source cargo env for the remainder of this session
+    # shellcheck source=/dev/null
+    [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+}
+
+step_install_eww() {
+    if [[ -f "$HOME/.cargo/bin/eww" ]]; then
+        info "eww already installed at ~/.cargo/bin/eww"
+        return 0
+    fi
+    info "Building eww from AUR (5–15 minutes — go grab a coffee)..."
+    info "Watch build progress: journalctl --user -f"
+    # Non-fatal: paru failure is caught and downgraded to a warning
+    if ! paru -S --needed --noconfirm eww 2>&1 | tee /tmp/eww-build.log; then
+        warn "eww build failed. Build log: /tmp/eww-build.log"
+        warn "Install manually later: paru -S eww"
+        return 0   # Non-fatal — do NOT propagate failure
+    fi
+    if [[ ! -f "$HOME/.cargo/bin/eww" ]]; then
+        warn "paru succeeded but eww binary not found at ~/.cargo/bin/eww"
+        warn "Install manually: paru -S eww"
     fi
 }
 
-# Install theme-specific packages
-install_theme_packages() {
-    local theme_dir="$HOME/.config/sway/themes"
-
-    if [[ ! -d "$theme_dir" ]]; then
-        warn "Theme directory not found. Skipping theme package installation."
+# eww uses a custom checkpoint: only mark done if the binary actually exists
+_run_eww_step() {
+    if step_done "install_eww"; then
+        print_step_skip 12 "eww widget daemon"
         return 0
     fi
+    _STEP_NUM=12
+    _STEP_DESC="eww widget daemon"
+    print_step_running 12 "eww widget daemon"
+    step_install_eww
+    _STEP_NUM=""
+    _STEP_DESC=""
+    if [[ -f "$HOME/.cargo/bin/eww" ]]; then
+        mark_done "install_eww"
+        print_step_ok 12 "eww widget daemon"
+    else
+        print_step_warn 12 "eww widget daemon"
+    fi
+}
 
-    info "Available themes:"
-    local themes=()
-    local i=1
-    for theme in "$theme_dir"/*/; do
-        if [[ -d "$theme" ]]; then
-            theme_name=$(basename "$theme")
-            themes+=("$theme_name")
-            echo "  $i) $theme_name"
-            ((i++))
+# ── SYSTEM INTEGRATION ────────────────────────────────────────────────────────
+step_systemd_reload() {
+    systemctl --user daemon-reload
+}
+
+step_systemd_enable_start() {
+    # Services that do NOT need a Wayland display — enable and start now
+    local services=(
+        bt-audio-watchdog.service
+        audio-tracker.service
+        unzipper.service
+    )
+    for svc in "${services[@]}"; do
+        if [[ ! -f "$HOME/.config/systemd/user/$svc" ]]; then
+            warn "Service file not found, skipping: $svc"
+            continue
+        fi
+        if systemctl --user enable --now "$svc" 2>/dev/null; then
+            info "Enabled and started: $svc"
+        else
+            warn "Could not enable+start $svc (non-fatal)"
         fi
     done
+}
 
-    echo "  0) Skip theme installation"
+step_systemd_enable_only() {
+    # Services that need a Wayland session — enable only; sway starts them
+    local services=(
+        eww.service
+        eww-resume.service
+        waybar.service
+        screenshot-notify.service
+        screenshot-clipboard-notify.service
+        s45-panel.service        # ExecStartPre polls kubectl — enable-only is safe
+        etesync-web.service      # Needs ~/.local/lib/etesync-web built first
+    )
+    for svc in "${services[@]}"; do
+        if [[ ! -f "$HOME/.config/systemd/user/$svc" ]]; then
+            warn "Service file not found, skipping: $svc"
+            continue
+        fi
+        if systemctl --user enable "$svc" 2>/dev/null; then
+            info "Enabled (starts with Wayland session): $svc"
+        else
+            warn "Could not enable $svc (non-fatal)"
+        fi
+    done
+}
+
+step_create_pacman_hooks() {
+    sudo mkdir -p /etc/pacman.d/hooks
+
+    local hook
+
+    # waybar-pacman.hook — refresh waybar pacman module after any transaction
+    hook=/etc/pacman.d/hooks/waybar-pacman.hook
+    if [[ ! -f "$hook" ]]; then
+        sudo tee "$hook" > /dev/null << 'EOF'
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Refreshing waybar pacman module...
+When = PostTransaction
+Exec = /usr/bin/pkill -RTMIN+14 waybar
+EOF
+        info "Created: waybar-pacman.hook"
+    else
+        info "Already exists: waybar-pacman.hook"
+    fi
+
+    # cargo-update.hook — keep cargo-installed binaries current after upgrades
+    hook=/etc/pacman.d/hooks/cargo-update.hook
+    if [[ ! -f "$hook" ]]; then
+        sudo tee "$hook" > /dev/null << EOF
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Updating cargo-installed binaries...
+When = PostTransaction
+Exec = /usr/bin/sudo -u ${USER} ${HOME}/.cargo/bin/cargo install-update -a
+EOF
+        info "Created: cargo-update.hook"
+    else
+        info "Already exists: cargo-update.hook"
+    fi
+
+    # python-rebuild-nwg-wrapper.hook — rebuild nwg-wrapper on Python upgrades
+    hook=/etc/pacman.d/hooks/python-rebuild-nwg-wrapper.hook
+    if [[ ! -f "$hook" ]]; then
+        sudo tee "$hook" > /dev/null << EOF
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = python
+
+[Action]
+Description = Rebuilding nwg-wrapper for new Python version...
+When = PostTransaction
+Exec = /usr/bin/sudo -u ${USER} /usr/bin/paru -S --rebuild nwg-wrapper --noconfirm
+NeedsTargets
+EOF
+        info "Created: python-rebuild-nwg-wrapper.hook"
+    else
+        info "Already exists: python-rebuild-nwg-wrapper.hook"
+    fi
+}
+
+step_set_default_shell() {
+    local fish_path="/usr/bin/fish"
+    local current_shell
+    current_shell=$(getent passwd "$USER" | cut -d: -f7)
+
+    if [[ "$current_shell" == "$fish_path" ]] || [[ "$current_shell" == "/bin/fish" ]]; then
+        info "Default shell is already fish"
+        return 0
+    fi
+
+    if ! grep -qx "$fish_path" /etc/shells 2>/dev/null; then
+        warn "fish not found in /etc/shells yet."
+        warn "Run 'chsh -s /usr/bin/fish' manually after installation."
+        return 0   # Non-fatal
+    fi
+
+    chsh -s "$fish_path"
+    info "Default shell set to fish (takes effect on next login)"
+}
+
+step_mandb_user() {
+    mandb --user-db 2>/dev/null || warn "mandb --user-db failed (non-fatal)"
+}
+
+_run_bluetooth() {
+    # Bonus step — not numbered, non-fatal
     echo ""
-    read -rp "Select theme to install packages for (0-$((i-1))): " choice
+    info "Enabling Bluetooth service..."
+    if sudo systemctl enable --now bluetooth.service 2>/dev/null; then
+        echo -e "  ${GREEN}${SYM_OK}${NC}  bluetooth.service enabled and started"
+    else
+        warn "Could not enable bluetooth.service (no hardware, or already enabled)"
+    fi
+}
+
+# ── CUSTOMIZATION: THEME SELECTION ────────────────────────────────────────────
+# Not checkpointed — always offered so the user can change themes anytime
+step_select_theme() {
+    local theme_dir="$HOME/.config/sway/themes"
+    if [[ ! -d "$theme_dir" ]]; then
+        warn "Theme directory not found — skipping theme selection."
+        return 0
+    fi
+
+    print_section "CUSTOMIZATION"
+    echo ""
+    local themes=() i=1
+    for theme in "$theme_dir"/*/; do
+        [[ -d "$theme" ]] || continue
+        themes+=("$(basename "$theme")")
+        echo "    $i) $(basename "$theme")"
+        (( i++ ))
+    done
+    echo "    0) Skip"
+    echo ""
+    read -rp "  Select theme (0-$((i-1))): " choice
 
     if [[ "$choice" == "0" ]] || [[ -z "$choice" ]]; then
         info "Skipping theme installation"
         return 0
     fi
 
-    if [[ "$choice" -ge 1 ]] && [[ "$choice" -lt "$i" ]]; then
-        local selected_theme="${themes[$((choice-1))]}"
-        local packages_file="$theme_dir/$selected_theme/packages"
-
-        if [[ -f "$packages_file" ]]; then
-            info "Installing packages for $selected_theme theme..."
-            local theme_packages
-            theme_packages=$(read_dependencies "$packages_file")
+    if (( choice >= 1 && choice < i )); then
+        local selected="${themes[$((choice-1))]}"
+        local pkgs_file="$theme_dir/$selected/packages"
+        if [[ -f "$pkgs_file" ]]; then
+            local pkgs
+            pkgs=$(read_deps "$pkgs_file")
+            info "Installing packages for theme: $selected..."
             # shellcheck disable=SC2086
-            paru -S --needed --noconfirm $theme_packages || {
-                warn "Some theme packages may have failed to install."
-            }
-            success "Theme packages installed"
-
-            # Update sway config to use selected theme
-            info "Updating sway config to use $selected_theme theme..."
-            local sway_config="$HOME/.config/sway/config"
-            if [[ -f "$sway_config" ]]; then
-                # Replace the theme include line
-                sed -i "s|include ~/.config/sway/themes/.*/theme.conf|include ~/.config/sway/themes/$selected_theme/theme.conf|" "$sway_config"
-                success "Sway configured to use $selected_theme theme"
-            fi
+            paru -S --needed --noconfirm $pkgs || warn "Some theme packages may have failed."
         else
-            warn "No packages file found for $selected_theme"
+            warn "No packages file for theme: $selected"
+        fi
+
+        local sway_config="$HOME/.config/sway/config"
+        if [[ -f "$sway_config" ]]; then
+            sed -i \
+                "s|include ~/.config/sway/themes/.*/theme.conf|include ~/.config/sway/themes/$selected/theme.conf|" \
+                "$sway_config"
+            info "Sway configured to use theme: $selected"
         fi
     else
-        warn "Invalid selection. Skipping theme installation."
+        warn "Invalid selection — skipping theme"
     fi
 }
 
-# Setup the bare git repository
-setup_bare_repo() {
-    info "Setting up dotfiles bare repository..."
-
-    if [[ -d "$DOTFILES_DIR" ]]; then
-        warn "Dotfiles directory already exists at $DOTFILES_DIR"
-        read -rp "Do you want to update from remote? [y/N]: " update_choice
-        if [[ "$update_choice" =~ ^[Yy]$ ]]; then
-            git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" fetch origin
-            git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" reset --hard origin/main
-            success "Dotfiles updated from remote"
-        fi
-        return 0
-    fi
-
-    # Clone bare repository
-    info "Cloning dotfiles repository..."
-    git clone --bare "$DOTFILES_REPO" "$DOTFILES_DIR"
-
-    success "Bare repository cloned to $DOTFILES_DIR"
-}
-
-# Backup conflicting files before checkout
-backup_conflicts() {
-    info "Checking for file conflicts..."
-
-    local conflicts
-    conflicts=$(git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" checkout 2>&1 | grep "^\s*\." | awk '{print $1}' || true)
-
-    if [[ -n "$conflicts" ]]; then
-        warn "Found conflicting files. Creating backup..."
-        mkdir -p "$BACKUP_DIR"
-
-        echo "$conflicts" | while read -r file; do
-            if [[ -n "$file" ]] && [[ -e "$HOME/$file" ]]; then
-                # Create directory structure in backup
-                local backup_path="$BACKUP_DIR/$file"
-                mkdir -p "$(dirname "$backup_path")"
-                mv "$HOME/$file" "$backup_path"
-                info "Backed up: $file"
-            fi
-        done
-
-        success "Conflicting files backed up to $BACKUP_DIR"
-    else
-        success "No file conflicts found"
-    fi
-}
-
-# Checkout the dotfiles
-checkout_dotfiles() {
-    info "Deploying dotfiles..."
-
-    # Try checkout, if fails backup conflicts and retry
-    if ! git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" checkout 2>/dev/null; then
-        backup_conflicts
-        git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" checkout
-    fi
-
-    # Configure git to ignore untracked files
-    git --git-dir="$DOTFILES_DIR" --work-tree="$HOME" config status.showUntrackedFiles no
-
-    success "Dotfiles deployed successfully"
-}
-
-# Make all scripts executable
-fix_permissions() {
-    info "Setting executable permissions on scripts..."
-
-    # Find all shell scripts and Python files
-    local script_dirs=(
-        "$HOME/.config/sway/scripts"
-        "$HOME/.scripts"
-        "$HOME/.local/bin"
-    )
-
-    for dir in "${script_dirs[@]}"; do
-        if [[ -d "$dir" ]]; then
-            find "$dir" -type f \( -name "*.sh" -o -name "*.py" -o ! -name "*.*" \) -exec chmod +x {} \;
-            info "Made scripts executable in $dir"
-        fi
-    done
-
-    # Specific files that need to be executable
-    [[ -f "$HOME/.scripts/clipardo" ]] && chmod +x "$HOME/.scripts/clipardo"
-
-    success "Permissions fixed"
-}
-
-# Show post-install instructions
+# ── POST-INSTALL SUMMARY ──────────────────────────────────────────────────────
 show_post_install() {
     echo ""
-    echo -e "${GREEN}======================================${NC}"
-    echo -e "${GREEN}    Installation Complete!           ${NC}"
-    echo -e "${GREEN}======================================${NC}"
+    echo -e "${GREEN}${BOLD}══════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}${BOLD}         Installation Complete!               ${NC}"
+    echo -e "${GREEN}${BOLD}══════════════════════════════════════════════${NC}"
     echo ""
-    echo "Next steps:"
+    echo "  Next steps:"
     echo ""
-    echo "1. Add the dots alias to your current session:"
-    echo "   source ~/.aliases"
+    echo "  1. Switch dotfiles remote back to SSH (for pushing):"
+    echo -e "     ${CYAN}git --git-dir=~/.dotfiles remote set-url origin git@github.com:milojarow/dotfiles.git${NC}"
     echo ""
-    echo "2. Log out and select 'Sway' as your session"
+    echo "  2. Log out and select 'Sway' as your session"
     echo ""
-    echo "3. Once in Sway, press ${BLUE}Mod+/${NC} to show the cheatsheet"
+    echo "  3. Once in Sway, press Mod+/ to open the cheatsheet"
     echo ""
-    echo "4. Install optional packages for extra features:"
-    echo "   paru -S --needed \$(grep -v '^#' ~/.dependencies-optional | grep -v '^\s*\$' | tr '\\n' ' ')"
+    echo "  4. Optional packages (phone integration, night light, etc.):"
+    echo -e "     ${CYAN}paru -S --needed \$(grep -v '^#' ~/.dependencies-optional | grep -v '^\s*\$' | tr '\\n' ' ')${NC}"
     echo ""
 
-    if [[ -d "$BACKUP_DIR" ]]; then
-        echo "Backup of your previous dotfiles: $BACKUP_DIR"
+    # Conditional notes
+    local notes=()
+    [[ ! -f "$HOME/.cargo/bin/eww" ]] && \
+        notes+=("eww was not installed — retry: paru -S eww")
+    [[ ! -f "$HOME/.kube/config-hostinger" ]] && \
+        notes+=("s45-panel.service needs ~/.kube/config-hostinger to start")
+    notes+=("etesync-web.service needs ~/.local/lib/etesync-web/ built before it starts")
+
+    if (( ${#notes[@]} > 0 )); then
+        echo "  Notes:"
+        for note in "${notes[@]}"; do
+            echo "  ${YELLOW}·${NC}  $note"
+        done
         echo ""
     fi
 
-    echo "Useful commands:"
-    echo "  dots status  - Check dotfiles status"
-    echo "  dots add     - Stage changes"
-    echo "  dots commit  - Commit changes"
-    echo "  dots push    - Push to remote"
+    if [[ -d "$BACKUP_DIR" ]]; then
+        echo "  Backed-up conflicting files: $BACKUP_DIR"
+        echo ""
+    fi
+
+    echo "  Dotfiles management (after starting fish):"
+    echo "    dots status   dots add <file>   dots commit   dots push"
     echo ""
 }
 
-# Main installation flow
+# ── MAIN ──────────────────────────────────────────────────────────────────────
 main() {
-    echo -e "${BLUE}"
-    echo "╔════════════════════════════════════════╗"
-    echo "║      Milo's Dotfiles Installer         ║"
-    echo "║         CachyOS / Arch Linux           ║"
-    echo "╚════════════════════════════════════════╝"
-    echo -e "${NC}"
-    echo ""
+    # Set BACKUP_DIR once with a fixed timestamp — stable across the whole run
+    BACKUP_DIR="$HOME/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
 
-    check_system
-    ensure_paru
+    print_banner
+    step_preflight_not_root      # Always-run: never checkpointed
+    handle_checkpoint
 
-    echo ""
-    read -rp "Install core dependencies before cloning? [Y/n]: " install_deps
-    if [[ ! "$install_deps" =~ ^[Nn]$ ]]; then
-        # For fresh install, we need to fetch the deps file first
-        if [[ ! -f "$HOME/.dependencies" ]]; then
-            info "Fetching dependency list from repository..."
-            curl -sL "https://raw.githubusercontent.com/milojarow/dotfiles/main/.dependencies" -o /tmp/.dependencies
-            if [[ -f /tmp/.dependencies ]]; then
-                cp /tmp/.dependencies ./.dependencies
-                install_core_dependencies
-                rm -f ./.dependencies /tmp/.dependencies
-            else
-                warn "Could not fetch dependency list. Will install after checkout."
-            fi
-        else
-            install_core_dependencies
-        fi
-    fi
+    print_section "PRE-FLIGHT"
+    run_step preflight_arch      1  "System compatibility"     step_preflight_arch
+    run_step preflight_internet  2  "Internet connectivity"    step_preflight_internet
+    run_step preflight_disk      3  "Disk space (≥ 5 GB)"      step_preflight_disk
 
-    setup_bare_repo
-    checkout_dotfiles
-    fix_permissions
+    print_section "BASE TOOLS"
+    run_step install_paru        4  "AUR helper (paru)"        step_install_paru
+    run_step fetch_deps_file     5  "Dependency list"          step_fetch_deps_file
+    run_step install_core_deps   6  "Core packages"            step_install_core_deps
 
-    echo ""
-    read -rp "Install theme-specific packages? [Y/n]: " install_theme
-    if [[ ! "$install_theme" =~ ^[Nn]$ ]]; then
-        install_theme_packages
-    fi
+    print_section "DOTFILES"
+    run_step clone_bare_repo     7  "Clone dotfiles (HTTPS)"   step_clone_bare_repo
+    run_step checkout_dotfiles   8  "Deploy dotfiles"          step_checkout_dotfiles
+    run_step configure_bare_repo 9  "Configure git"            step_configure_bare_repo
+    run_step fix_permissions     10 "Script permissions"       step_fix_permissions
 
-    # Source aliases for this session
-    if [[ -f "$HOME/.aliases" ]]; then
-        # shellcheck source=/dev/null
-        source "$HOME/.aliases"
-        success "Aliases loaded"
-    fi
+    print_section "BUILD TOOLS"
+    run_step install_rust        11 "Rust toolchain"           step_install_rust
+    _run_eww_step                   # Custom checkpoint: marks done only if binary appears
+
+    print_section "SYSTEM INTEGRATION"
+    run_step systemd_reload      13 "systemd daemon-reload"    step_systemd_reload
+    run_step systemd_enable_start 14 "Enable + start services" step_systemd_enable_start
+    run_step systemd_enable_only 15 "Enable Wayland services"  step_systemd_enable_only
+    run_step create_pacman_hooks 16 "Pacman hooks"             step_create_pacman_hooks
+    run_step set_default_shell   17 "Default shell → fish"     step_set_default_shell
+    run_step mandb_user          18 "Man page index"           step_mandb_user
+
+    _run_bluetooth               # Bonus step: not numbered, non-fatal
+
+    step_select_theme            # Interactive: never checkpointed
+
+    # Full success — remove checkpoint
+    rm -f "$CHECKPOINT_FILE"
 
     show_post_install
 }
 
-# Run main function
 main "$@"

@@ -1,0 +1,12 @@
+[Unit]
+Description=Auto-extract zip files dropped in ~/unzipper
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/unzipper-watch
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

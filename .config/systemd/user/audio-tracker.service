@@ -1,0 +1,11 @@
+[Unit]
+Description=Audio app tracker for waybar tooltip
+After=pipewire.service pipewire-pulse.service
+
+[Service]
+ExecStart=%h/.local/bin/audio-tracker
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target
