@@ -61,7 +61,6 @@ printf "\e[?1004l"
 
 # Override fish_title to always include current directory
 # This ensures waybar can extract the path even when commands are running
-# Includes shell PID for footclient CWD detection (footclient shares PID across all terminals)
 function fish_title
     set -l command_part ""
     set -l running_command (status current-command)
@@ -77,7 +76,7 @@ function fish_title
         set command_part ": $full_command - $running_command"
     end
 
-    # Include shell PID at the end for waybar to map window -> shell -> CWD
+    # Include shell PID at the end; used by the footclient branch of window-title.sh
     # Format: "~/path [PID]" or "~/path: command - command [PID]"
     # Use full path instead of abbreviated prompt_pwd for waybar clarity
     echo (pwd | sed "s|^$HOME|~|")$command_part" [$fish_pid]"
