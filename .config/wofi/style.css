@@ -1,4 +1,5 @@
-/* Wofi style file - based on Manjaro Sway */
+/* Wofi stylesheet for the palette theme picker (spawned by theme-selector.sh menu)
+ * Part of the Palette Theming system — see man palette-theming */
 
 window {
     margin: 0px;
