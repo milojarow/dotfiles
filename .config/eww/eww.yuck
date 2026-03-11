@@ -8,3 +8,5 @@
 (include "./widgets/usb-widget.yuck")
 (include "./widgets/widget-de-las-flechas.yuck")
 (include "./widgets/clock.yuck")
+(include "./widgets/disk-widget.yuck")
+(include "./widgets/bar.yuck")

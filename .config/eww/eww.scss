@@ -1,3 +1,5 @@
+* { all: unset; }
+
 @import "./styles/cpu-gauge.scss";
 @import "./styles/cpu-temp.scss";
 @import "./styles/activate-linux.scss";
@@ -7,3 +9,5 @@
 @import "./styles/temps.scss";
 @import "./styles/usb-widget.scss";
 @import "./styles/clock.scss";
+@import "./styles/disk-widget.scss";
+@import "./styles/bar.scss";

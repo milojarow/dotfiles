@@ -1,0 +1,40 @@
+; ── Workspace data ───────────────────────────────────────────────────────────
+(deflisten workspaces
+  :initial "[]"
+  `~/.config/eww/scripts/workspace-subscribe.py`)
+
+; ── Workspace widget ─────────────────────────────────────────────────────────
+(defwidget bar-workspaces []
+  (box :orientation "h"
+       :spacing 2
+       :class "bar-workspaces"
+       :halign "start"
+       :valign "center"
+    (for ws in workspaces
+      (button
+        :class {ws.focused  ? "bar-ws bar-ws--focused"
+              : ws.urgent   ? "bar-ws bar-ws--urgent"
+              : ws.has_windows ? "bar-ws bar-ws--occupied"
+              : "bar-ws bar-ws--empty"}
+        :onclick "${ws.cmd}"
+        (label :text "${ws.icon}")))))
+
+; ── Bar layout ────────────────────────────────────────────────────────────────
+(defwidget eww-bar-widget []
+  (centerbox :orientation "h"
+             :class "bar"
+    (bar-workspaces)
+    (box)
+    (box)))
+
+; ── Bar window ────────────────────────────────────────────────────────────────
+(defwindow eww-bar
+  :monitor 0
+  :geometry (geometry :x "0%"
+                      :y "35px"
+                      :width "100%"
+                      :height "30px"
+                      :anchor "top center")
+  :stacking "bg"
+  :exclusive false
+  (eww-bar-widget))

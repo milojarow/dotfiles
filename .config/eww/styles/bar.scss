@@ -1,0 +1,60 @@
+@import "./theme";
+
+.bar {
+  background-color: $theme-bg;
+  color: $theme-fg;
+  padding: 0 8px;
+}
+
+.bar-workspaces {
+  margin-left: 48px;
+}
+
+.bar-ws {
+  padding: 2px 9px;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: background-color 150ms ease;
+  margin: 0 1px;
+}
+
+// Empty workspaces — just the number, muted/neutral
+.bar-ws--empty {
+  color: mix($theme-fg, $theme-bg, 30%);
+  font-size: 11px;
+}
+
+.bar-ws--empty:hover {
+  background-color: $theme-selection;
+  color: mix($theme-fg, $theme-bg, 60%);
+}
+
+// Workspaces with windows — full text color, icon visible
+.bar-ws--occupied {
+  color: $theme-fg;
+}
+
+.bar-ws--occupied:hover {
+  background-color: $theme-selection;
+}
+
+// Focused workspace — accent background
+.bar-ws--focused {
+  background-color: $theme-accent;
+  color: $theme-bg;
+  font-weight: bold;
+}
+
+.bar-ws--focused:hover {
+  background-color: $theme-accent;
+}
+
+// Urgent workspace — red
+.bar-ws--urgent {
+  background-color: #cc0000;
+  color: #ffffff;
+}
+
+.bar-ws--urgent:hover {
+  background-color: #dd0000;
+}
