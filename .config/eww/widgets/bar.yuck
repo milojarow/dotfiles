@@ -42,6 +42,7 @@
        :valign "center"
     (for ws in workspaces
       (button
+        :width 32
         :class {ws.focused  ? "bar-ws bar-ws--focused"
               : ws.urgent   ? "bar-ws bar-ws--urgent"
               : ws.has_windows ? "bar-ws bar-ws--occupied"
