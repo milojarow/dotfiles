@@ -179,10 +179,13 @@
     (bar-gamma)))
 
 (defwidget bar-tray []
-  (systray :spacing 4
-           :icon-size 18
-           :prepend-new true
-           :class "bar-tray"))
+  (box :class "bar-tray"
+       :width 64
+       :space-evenly false
+    (systray :spacing 4
+             :icon-size 18
+             :halign "end"
+             :hexpand true)))
 
 ; ── Bar layout ────────────────────────────────────────────────────────────────
 (defwidget eww-bar-widget []
