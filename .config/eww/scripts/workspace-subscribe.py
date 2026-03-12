@@ -56,6 +56,8 @@ ICON_MAP = {
     "vlc":                     "\U000f057c",
     # s45-panel
     "s45-panel":               "\U000f0b5f",
+    # LibreWolf with custom profile (app_id = profile name)
+    "s45-blindando":           "\ue745",
 }
 
 ICON_UNKNOWN         = "\uebf2"
