@@ -1,7 +1,7 @@
 @import "./theme";
 
 .arch-logo-icon {
-  color: $color11;
+  color: adjust-hue($theme-accent, 240deg);
   font-family: "JetBrainsMono NF", "Roboto Mono", sans-serif;
   font-size: 40px;
 }

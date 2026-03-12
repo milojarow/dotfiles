@@ -1,6 +1,6 @@
 @import "./theme";
 
-$volume-color: #9fca56; // $color11 — green
+$volume-color: adjust-hue($theme-accent, 120deg);
 
 // ── Bar volume button ─────────────────────────────────────────────────────────
 .bar-volume {
