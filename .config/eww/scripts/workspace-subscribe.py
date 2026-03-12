@@ -27,8 +27,8 @@ ICON_MAP = {
     "brave":                   "\ue639",
     # Messaging
     "altus":                   "\uf232",
-    "org.telegram.desktop":    "\uf2c6",
-    "telegramdesktop":         "\uf2c6",
+    "org.telegram.desktop":    "\ue217",
+    "telegramdesktop":         "\ue217",
     # File browsers
     "nemo":                    "\uf4d3",
     "nautilus":                "\uf4d3",
@@ -46,8 +46,8 @@ ICON_MAP = {
     "gedit":                   "\U000f1a7c",
     "kate":                    "\U000f1a7c",
     # Email
-    "betterbird":              "\uf370",
-    "thunderbird":             "\uf370",
+    "betterbird":              "\ueb1c",
+    "thunderbird":             "\ueb1c",
     # Claude desktop
     "claude":                  "\U000f09d1",
     # Obsidian
@@ -63,6 +63,20 @@ ICON_MAP = {
 ICON_UNKNOWN         = "\uebf2"
 ICON_SCRATCHPAD_ONE  = "\U000f05af"
 ICON_SCRATCHPAD_MANY = "\U000f05b2"
+
+# Subscript number icons (Nerd Font U+F0B3A–U+F0B42) for workspace overlays.
+# Workspace 10 and scratchpad (-1) fall back to plain string.
+NUM_ICONS = {
+    1: "\U000F0B3A",
+    2: "\U000F0B3B",
+    3: "\U000F0B3C",
+    4: "\U000F0B3D",
+    5: "\U000F0B3E",
+    6: "\U000F0B3F",
+    7: "\U000F0B40",
+    8: "\U000F0B41",
+    9: "\U000F0B42",
+}
 
 ALWAYS_SHOW = set(range(1, 10))  # workspaces 1-9 always visible
 
@@ -180,6 +194,7 @@ def build_output(last_focused, tree, ws_raw):
 
         result.append({
             "num":         num,
+            "num_icon":    NUM_ICONS.get(num, str(num)),
             "name":        ws_name,
             "focused":     raw.get("focused", False),
             "urgent":      raw.get("urgent", False),
@@ -201,6 +216,7 @@ def build_output(last_focused, tree, ws_raw):
         if leaves or raw.get("focused"):
             result.append({
                 "num":         10,
+                "num_icon":    "10",
                 "name":        ws_name,
                 "focused":     raw.get("focused", False),
                 "urgent":      raw.get("urgent", False),
@@ -215,6 +231,7 @@ def build_output(last_focused, tree, ws_raw):
         count = len(scratch_wins)
         result.append({
             "num":         -1,
+            "num_icon":    "-1",
             "name":        "scratchpad",
             "focused":     False,
             "urgent":      False,
