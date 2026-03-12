@@ -14,7 +14,8 @@ fish_vi_key_bindings
 #    # smth smth
 #end
 
-# Add npm global bin to PATH (must be before aliases that use npm binaries)
+# Add cargo and npm global bins to PATH
+fish_add_path $HOME/.cargo/bin
 fish_add_path $HOME/.npm-global/bin
 
 # aliases

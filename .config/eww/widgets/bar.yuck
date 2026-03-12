@@ -1,3 +1,10 @@
+; ── Fullscreen detection ──────────────────────────────────────────────────────
+; Runs in bar.yuck so the listener lives as long as the bar (always).
+; Side-effect only: closes arch-logo-window when fullscreen, reopens on exit.
+(deflisten fullscreen-active
+  :initial "false"
+  `~/.config/eww/scripts/fullscreen-subscribe.sh`)
+
 ; ── Clipboard data ───────────────────────────────────────────────────────────
 (deflisten clipboard
   :initial "{\"icon\": \"\", \"count\": 0}"
@@ -48,7 +55,14 @@
               : ws.has_windows ? "bar-ws bar-ws--occupied"
               : "bar-ws bar-ws--empty"}
         :onclick "${ws.cmd}"
-        (label :text "${ws.icon}")))))
+        (overlay
+          (label :text "${ws.icon}")
+          (label :class "bar-ws-num"
+                 :valign "end"
+                 :halign "end"
+                 :visible {ws.has_windows && ws.num != -1}
+                 :text "${ws.num}"))))))
+
 
 ; ── Date widget ──────────────────────────────────────────────────────────────
 (defwidget bar-date []
@@ -172,8 +186,11 @@
 (defwidget eww-bar-widget []
   (centerbox :orientation "h"
              :class "bar"
+    ; Hidden label forces eww to track fullscreen-active and run its deflisten
     ; Left zone
-    (bar-workspaces)
+    (box :orientation "h" :space-evenly false
+      (label :visible false :text {fullscreen-active})
+      (bar-workspaces))
     ; Center zone — truly centered in the bar
     (bar-center)
     ; Right zone

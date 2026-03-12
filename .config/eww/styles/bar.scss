@@ -23,6 +23,7 @@
 .bar-ws {
   padding: 2px 5px;
   border-radius: 6px;
+  font-family: "JetBrainsMono NF", "Roboto Mono", monospace;
   font-size: 13px;
   min-width: 32px;
   transition: background-color 150ms ease;
@@ -106,4 +107,12 @@
 
 .bar-ws--urgent:hover {
   background-color: #dd0000;
+}
+
+// Workspace number overlay on active workspace buttons
+.bar-ws-num {
+  font-size: 7px;
+  font-weight: normal;
+  opacity: 0.7;
+  padding: 0 2px 1px 0; // breathing room from bottom-right edge
 }

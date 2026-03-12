@@ -224,6 +224,27 @@ echo "data"          # ✅ stdout
 echo "data" >&2      # ❌ stderr — eww does not read this
 ```
 
+**Cause: variable not referenced in any widget**
+
+**Symptom:** `eww state` does not show the variable at all — not stuck at `:initial`, but completely absent from the output.
+
+**Cause:** eww only starts a `deflisten` script when the variable it defines is referenced in an open window's widget tree. A side-effect-only deflisten — where the script calls `eww close`/`eww open` internally but the variable is never used in any widget attribute — is silently never started by the daemon.
+
+**Fix:** Add a hidden reference in a persistent window (e.g., the main bar):
+
+```yuck
+; ❌ WRONG — variable defined but never used in a widget; script silently never runs
+(deflisten fullscreen-active :initial "false"
+  `~/.config/eww/scripts/fullscreen-subscribe.sh`)
+
+; ✅ CORRECT — hidden label anchors the variable; script starts as long as bar is open
+(label :visible false :text {fullscreen-active})
+```
+
+**Diagnostic tip:** distinguish the two failure modes:
+- Variable **absent from `eww state`** → script is not running (not referenced in any widget)
+- Variable **present but stuck at `:initial`** → script is running but has a buffering or stdout issue (see above)
+
 ---
 
 ## Error: Wayland window not appearing

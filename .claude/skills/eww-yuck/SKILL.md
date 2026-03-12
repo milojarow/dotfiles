@@ -574,6 +574,20 @@ Two interpolation forms exist in yuck:
 
 5. **Window arguments are constants.** They are set once at `eww open` and cannot be changed with `eww update`. Use `defvar` for anything that needs to change after the window is open.
 
+6. **Both `deflisten` and `defpoll` only run when their variable is referenced in an open window's widget tree.** A variable whose name never appears in any widget attribute is treated as dead code — its script will never start. This is the silent failure mode for side-effect-only deflistens (scripts that call `eww close`/`eww open` internally but whose variable is never displayed anywhere). Diagnostic: run `eww state` — if the variable is completely absent, the script is not running at all.
+
+```yuck
+; ❌ WRONG — no widget references fullscreen-active; script never starts
+(deflisten fullscreen-active :initial "false"
+  `~/.config/eww/scripts/fullscreen-subscribe.sh`)
+
+; ✅ CORRECT — hidden label in a persistent window anchors the variable
+(deflisten fullscreen-active :initial "false"
+  `~/.config/eww/scripts/fullscreen-subscribe.sh`)
+; In the always-open bar widget:
+(label :visible false :text {fullscreen-active})
+```
+
 ---
 
 ## Integration with Other Skills
