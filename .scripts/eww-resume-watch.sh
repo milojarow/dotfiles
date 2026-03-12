@@ -10,10 +10,17 @@ dbus-monitor --system \
 while read -r line; do
   # PrepareForSleep(false) = system just resumed
   if echo "$line" | grep -q 'boolean false'; then
-    # Wait for eww daemon to be responsive before opening windows
+    # Wait for eww daemon to be responsive
     timeout=20
     elapsed=0
     until eww ping 2>/dev/null; do
+      sleep 0.5
+      elapsed=$((elapsed + 1))
+      [ "$elapsed" -ge "$((timeout * 2))" ] && break
+    done
+    # Wait for sway to re-register monitors (race condition on resume)
+    elapsed=0
+    until swaymsg -t get_outputs 2>/dev/null | grep -q '"active": true'; do
       sleep 0.5
       elapsed=$((elapsed + 1))
       [ "$elapsed" -ge "$((timeout * 2))" ] && break
