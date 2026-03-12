@@ -54,6 +54,13 @@ generate_theme_scss() {
     color2="${color2:-#3B758C}"
     color11="${color11:-#98971a}"
 
+    # Stop eww daemon before writing theme.scss.
+    # The daemon watches config files via inotify; writing while it runs triggers a
+    # concurrent hot-reload from the daemon AND from each persistent window manager
+    # process (eww open keeps a manager alive per window), causing duplicate windows.
+    # Stopping first guarantees exactly one startup with the new theme.
+    /usr/bin/systemctl --user stop eww.service
+
     cat > "$EWW_THEME_SCSS" << EOF
 // Auto-generated — do not edit manually.
 // Source: ~/.config/sway/definitions.d/theme.conf
@@ -66,6 +73,9 @@ generate_theme_scss() {
 \$color2:          $color2;
 \$color11:         $color11;
 EOF
+
+    # Start eww daemon fresh — reads the new theme.scss, ExecStartPost opens all windows.
+    /usr/bin/systemctl --user start eww.service
 
     echo "Generated eww theme SCSS for theme: $theme_name"
 }
