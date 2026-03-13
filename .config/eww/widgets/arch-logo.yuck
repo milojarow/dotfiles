@@ -1,8 +1,8 @@
 ; ── Arch Linux logo circle ────────────────────────────────────────────────────
 ; arch-icon-x / arch-icon-y: pixel offsets for the icon within the circle.
 ; Adjusted via widget-de-las-flechas. Save button writes values back here.
-(defvar arch-icon-x 62)
-(defvar arch-icon-y 16)
+(defvar arch-icon-x 0)
+(defvar arch-icon-y 0)
 
 (defwidget arch-logo []
   (box :class "arch-logo"
@@ -17,10 +17,10 @@
 
 (defwindow arch-logo-window
   :monitor 0
-  :geometry (geometry :x "-58px"
-                      :y "-58px"
-                      :width "96px"
-                      :height "96px"
+  :geometry (geometry :x "4px"
+                      :y "-42px"
+                      :width "50px"
+                      :height "50px"
                       :anchor "top left")
   :stacking "overlay"
   :focusable false

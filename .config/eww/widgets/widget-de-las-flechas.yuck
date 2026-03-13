@@ -26,7 +26,7 @@
             :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y -10"
             "↓")))
 
-(defwidget widget-de-las-flechas-icon [xvar yvar yuck]
+(defwidget widget-de-las-flechas-icon [xvar yvar yuck ?savecmd]
   (box :class "widget-mover"
        :orientation "v"
        :space-evenly false
@@ -50,7 +50,7 @@
             "↓")
     (button :class "mover-btn mover-btn--save"
             :halign "center"
-            :onclick "~/.config/eww/scripts/save-eww-var.sh ${yuck} ${xvar} && ~/.config/eww/scripts/save-eww-var.sh ${yuck} ${yvar}"
+            :onclick {savecmd ?: "~/.config/eww/scripts/save-eww-var.sh " + yuck + " " + xvar + " && ~/.config/eww/scripts/save-eww-var.sh " + yuck + " " + yvar}
             "save")))
 
 (defwindow widget-de-las-flechas
@@ -62,4 +62,5 @@
   :focusable false
   (widget-de-las-flechas-icon :xvar "arch-icon-x"
                                :yvar "arch-icon-y"
-                               :yuck "~/.config/eww/widgets/arch-logo.yuck"))
+                               :yuck "~/.config/eww/widgets/arch-logo.yuck"
+                               :savecmd "~/.config/eww/scripts/save-arch-logo.sh ~/.config/eww/widgets/arch-logo.yuck"))
