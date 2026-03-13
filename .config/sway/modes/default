@@ -200,7 +200,7 @@ $bindsym $mod+Shift+s exec xdg-open https://github.com/Manjaro-Sway/manjaro-sway
 # inhibit-idle is not installed; idle is managed via the waybar module instead.
 # $bindsym $mod+Shift+i exec inhibit-idle interactive
 
-default_border pixel 1
+default_border pixel 3
 hide_edge_borders smart
 
 # allow to kill focused floating shell windows using Esc
