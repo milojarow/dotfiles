@@ -281,7 +281,7 @@ transition: color 150ms ease, background-color 150ms ease;
 transition: all 200ms linear;
 ```
 
-GTK supports basic transitions on color, background-color, opacity, and border-radius. Complex keyframe animations are not supported.
+GTK supports basic transitions on color, background-color, opacity, and border-radius.
 
 ### Outline (focus ring)
 
@@ -315,11 +315,76 @@ text-decoration: none;
 | `overflow` | Limited support | — |
 | `cursor` | Partially works | — |
 | `content` | Not supported | Use eww `label` with `:text` |
-| `@keyframes` | Not supported | Use `transition` for simple animations |
+| `@keyframes` | **Supported** — see grass limitations below | — |
+| `gap` | Not supported by grass | Use `margin` on children or `:spacing` in yuck |
 | `calc()` | Limited support | Avoid in GTK CSS |
 | `var()` | Not supported | Use SCSS variables `$name` instead |
 | `clamp()` | Not supported | — |
 | `flexbox properties` | Not supported | Use eww box widget attributes |
+
+---
+
+## grass SCSS Compiler Limitations
+
+eww uses **grass** (a Rust SCSS compiler) to compile `eww.scss` before passing the result to GTK. Grass is not 100% spec-compliant — some valid CSS/SCSS that works in `sassc` or `dart-sass` will fail in grass.
+
+**Critical:** a grass compile error stops stylesheet loading at that line. Every rule after the error disappears silently — **ALL widgets lose their styles**, not just the one being edited. Always check `journalctl --user -u eww.service` after any SCSS edit.
+
+### Known grass limitations (confirmed)
+
+#### 1. `@keyframes` works — but no comma-separated keyframe selectors
+
+Grass supports `@keyframes` (the bt-scan-pulse animation in bt-widget.scss is proof). However, grass **does not support comma-separated selectors inside a `@keyframes` block**:
+
+```scss
+/* ❌ FAILS in grass — "Expected closing bracket after keyframes block" */
+@keyframes my-anim {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 1;   }
+}
+
+/* ✅ CORRECT — expand each selector to its own line */
+@keyframes my-anim {
+  0%   { opacity: 0.2; }
+  50%  { opacity: 1;   }
+  100% { opacity: 0.2; }
+}
+```
+
+Note: `sassc` accepts the comma form without error. Grass does not. This is a grass bug.
+
+#### 2. `gap` is not recognized
+
+The `gap` CSS property (used for flex/grid spacing) is not accepted by grass:
+
+```scss
+/* ❌ FAILS — "'gap' is not a valid property name" */
+.my-row {
+  gap: 4px;
+}
+
+/* ✅ CORRECT — use margin on children */
+.my-row > * {
+  margin: 0 2px;
+}
+
+/* ✅ ALSO CORRECT — use :spacing in yuck */
+/* (box :class "my-row" :spacing 4 :orientation "h" ...) */
+```
+
+### Diagnostic
+
+```bash
+# After any SCSS edit, immediately check for errors:
+journalctl --user -u eww.service -n 20 --no-pager | grep "error:"
+
+# Keyframe comma-selector error:
+# error: Expected closing bracket after keyframes block
+#     476 │   0%, 100% {
+
+# Invalid property error:
+# error: 'gap' is not a valid property name
+```
 
 ---
 

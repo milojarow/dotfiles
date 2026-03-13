@@ -167,6 +167,37 @@ Full list of yuck layout attributes that must **never** appear in SCSS:
 journalctl --user -u eww.service -n 50 --no-pager | grep "is not a valid property"
 ```
 
+### Also breaks all styles: grass-unsupported CSS properties
+
+The same "all widgets lose styles" symptom occurs for any property that **grass** (eww's embedded Rust SCSS compiler) does not recognize — even if the property is valid standard CSS that `sassc` or `dart-sass` accept without error:
+
+| Property / construct | Error message | Fix |
+|---|---|---|
+| `gap` | `'gap' is not a valid property name` | Use `margin` on children or `:spacing` in yuck |
+| Comma keyframe selectors (`0%, 100% { }`) | `Expected closing bracket after keyframes block` | Expand to one selector per line |
+
+**Important:** `@keyframes` itself **does work** in grass — the bt-scan-pulse animation is proof. Only comma-separated selectors inside keyframe blocks fail.
+
+```scss
+/* ❌ FAILS in grass */
+@keyframes my-anim {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 1;   }
+}
+
+/* ✅ CORRECT */
+@keyframes my-anim {
+  0%   { opacity: 0.2; }
+  50%  { opacity: 1;   }
+  100% { opacity: 0.2; }
+}
+```
+
+```bash
+# Catches ALL grass SCSS errors (property, keyframe, etc.):
+journalctl --user -u eww.service -n 20 --no-pager | grep "error:"
+```
+
 ---
 
 ## Error: Variable not updating
