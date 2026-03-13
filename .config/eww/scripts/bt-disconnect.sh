@@ -1,2 +1,5 @@
 #!/usr/bin/env bash
-bluetoothctl disconnect "$1" 2>/dev/null
+output=$(bluetoothctl disconnect "$1" 2>&1)
+if ! echo "$output" | grep -qi "successful"; then
+    notify-send -u critical "Bluetooth" "Disconnect failed"
+fi
