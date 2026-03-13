@@ -8,7 +8,7 @@ open_window() {
 }
 
 open_window eww-bar
-open_window arch-logo-window
+# arch-logo-window is managed by fullscreen-subscribe.sh (opens when not fullscreen, closes when fullscreen)
 open_window disk-widget
 open_window activate-linux
 open_window sysmonitor-window

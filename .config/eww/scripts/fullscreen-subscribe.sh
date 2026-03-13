@@ -11,10 +11,14 @@ for pid in $(pgrep -f "fullscreen-subscribe.sh"); do
 done
 
 is_fullscreen() {
-    # Only check con/floating_con nodes — workspace nodes always have
-    # fullscreen_mode=1 in sway's tree, which would cause false positives.
+    # Check if any con on the focused output has fullscreen_mode >= 1.
+    # Cross-reference get_workspaces (has correct .visible) with get_tree
+    # to avoid false positives from fullscreen windows on background workspaces.
+    local visible
+    visible=$(swaymsg -t get_workspaces | jq -r '[.[] | select(.visible) | .name] | @json')
     swaymsg -t get_tree \
-        | jq 'any(.. | objects | select(.type? == "con" or .type? == "floating_con") | .fullscreen_mode? // 0; . >= 1)' 2>/dev/null
+        | jq --argjson vis "$visible" \
+          'any(.. | objects | select(.type? == "workspace" and (.name? as $n | $vis | index($n) != null)) | .. | objects | select(.type? == "con" or .type? == "floating_con") | .fullscreen_mode? // 0; . >= 1)' 2>/dev/null
 }
 
 last_state=""
