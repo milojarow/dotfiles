@@ -120,6 +120,55 @@ GTK CSS does not support `width`/`height` directly:
 
 ---
 
+## Error: Yuck layout attribute used as CSS property (global style breakage)
+
+**Symptom:** After adding or editing a `.scss` file, **all widgets lose their custom styles** — not just the one being worked on. The eww inspector shows no custom CSS rules applying anywhere. `journalctl --user -u eww.service` shows a line like:
+
+```
+error: 'spacing' is not a valid property name
+    ┌─ /home/milo/.config/eww/eww.scss:NNN:1
+```
+
+**Cause:** A yuck widget attribute (`spacing`, `halign`, `valign`, `hexpand`, `vexpand`, `space-evenly`, `orientation`) was written as a CSS property in a `.scss` file. GTK CSS does not recognize these as valid properties. eww stops compiling the stylesheet at the first invalid property, so every rule defined after that line silently disappears.
+
+**Why it's dangerous:** The error is in one widget's `.scss` file but breaks all other widgets. The error message names the property and the line number but does NOT say which widget is affected — it only shows the compiled line number in the final `eww.scss`.
+
+**Fix:**
+
+```scss
+/* ❌ WRONG — 'spacing' is a yuck attribute, not a CSS property */
+.my-box {
+  spacing: 8px;
+}
+
+/* ✅ CORRECT — set spacing in yuck: (box :class "my-box" :spacing 8 ...) */
+
+/* ✅ CORRECT — for CSS-side child spacing, use margin */
+.my-box > * {
+  margin: 0 4px;
+}
+```
+
+Full list of yuck layout attributes that must **never** appear in SCSS:
+
+| Yuck attribute | What to do instead in CSS |
+|---|---|
+| `:spacing N` | Set in yuck only; or use `margin` on children in CSS |
+| `:halign` | No direct CSS equivalent for GTK box children; set in yuck |
+| `:valign` | No direct CSS equivalent; set in yuck |
+| `:hexpand` / `:vexpand` | No CSS equivalent; set in yuck |
+| `:space-evenly` | No CSS equivalent; set in yuck |
+| `:orientation` | No CSS equivalent; set in yuck |
+
+**Diagnostic:**
+
+```bash
+# Find the exact invalid line immediately:
+journalctl --user -u eww.service -n 50 --no-pager | grep "is not a valid property"
+```
+
+---
+
 ## Error: Variable not updating
 
 **Symptom:** `defpoll` value stays at its initial value; `eww state` shows a stale value.

@@ -532,6 +532,34 @@ scale trough           { background-color: $surface; min-height: 4px; min-width:
 scale trough highlight { background-color: $accent; border-radius: 10px; }
 ```
 
+**8. Using yuck layout attributes as CSS properties**
+
+`spacing`, `halign`, `valign`, `hexpand`, `vexpand`, `space-evenly`, and `orientation` are **yuck widget attributes** — they control layout in `.yuck` files. They are not GTK CSS properties. Writing them in `.scss` causes a parse error that stops all CSS loading from that line onward, silently breaking every widget that relies on styles defined after it.
+
+❌ WRONG — `spacing` is a yuck attribute, not CSS:
+
+```scss
+.my-box {
+  spacing: 4px;   /* invalid — GTK CSS parse error */
+}
+```
+
+✅ CORRECT — set `:spacing` in the yuck file; use `margin` on children for CSS-side spacing:
+
+```yuck
+(box :class "my-box" :spacing 8 ...)
+```
+
+```scss
+/* If you need CSS-side spacing, use margins on children */
+.my-box > * {
+  margin: 0 4px;
+}
+```
+
+The full list of yuck-only layout attributes that must **never** appear in SCSS:
+`spacing` · `halign` · `valign` · `hexpand` · `vexpand` · `space-evenly` · `orientation`
+
 ---
 
 ## Integration with Other Skills
@@ -553,6 +581,7 @@ scale trough highlight { background-color: $accent; border-radius: 10px; }
 6. Use `eww inspector` to find exact selectors and debug rule application
 7. Parse errors stop all CSS loading from that line onward
 8. Use `min-width`/`min-height`, not `width`/`height`
+9. Never write yuck layout attributes (`spacing`, `halign`, `valign`, etc.) in SCSS — they are not CSS properties; one invalid property breaks all styles below it
 
 **Reference files in this skill:**
 - `CSS_REFERENCE.md` — complete GTK CSS property and selector reference
