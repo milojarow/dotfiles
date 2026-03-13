@@ -5,6 +5,11 @@
 
 EWW=/home/milo/.cargo/bin/eww
 
+# Kill any prior instance of this script (prevents duplicate listeners on eww restart)
+for pid in $(pgrep -f "fullscreen-subscribe.sh"); do
+    [ "$pid" != "$$" ] && kill "$pid" 2>/dev/null
+done
+
 is_fullscreen() {
     # Only check con/floating_con nodes — workspace nodes always have
     # fullscreen_mode=1 in sway's tree, which would cause false positives.
@@ -38,8 +43,14 @@ handle_state
 
 # Subscribe to window + workspace events (compact JSON lines via jq).
 # Re-check the full tree on every event — authoritative and simple.
-swaymsg -t subscribe -m '["window", "workspace"]' \
-    | jq --unbuffered -c '.' 2>/dev/null \
-    | while IFS= read -r _event; do
-        handle_state
-      done
+# Loop reconnects if swaymsg drops (e.g. sway reload).
+while true; do
+    swaymsg -t subscribe -m '["window", "workspace"]' \
+        | jq --unbuffered -c '.' 2>/dev/null \
+        | while IFS= read -r _event; do
+            handle_state
+          done
+    # Subscription dropped — recheck state before reconnecting
+    handle_state
+    sleep 1
+done
