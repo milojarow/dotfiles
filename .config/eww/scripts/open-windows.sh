@@ -14,4 +14,6 @@ open_window activate-linux
 open_window sysmonitor-window
 open_window temps-window
 open_window usb-widget
+open_window bt-widget
+open_window timer-widget
 open_window clock

@@ -1,0 +1,96 @@
+(defvar bt-popup-open 0)
+
+(deflisten bt-data
+  :initial `{"status":"unknown","scanning":false,"connected_count":0,"connected_device":"","trusted_count":0,"trusted":[],"discovered_count":0,"discovered":[]}`
+  "~/.config/eww/scripts/bt-monitor.sh")
+
+; --- Circle trigger widget ---
+(defwidget bt-trigger []
+  (button :class {bt-popup-open == 1 ? "bt-circle active" : "bt-circle"}
+          :onclick "~/.config/eww/scripts/bt-toggle-popup.sh"
+    (label :class {bt-data.connected_count > 0 ? "bt-icon connected" : "bt-icon"}
+           :text "󰂯")))
+
+; --- Circle trigger window (always open on desktop) ---
+(defwindow bt-widget
+  :monitor 0
+  :geometry (geometry :x "1170px"
+                      :y "570px"
+                      :anchor "bottom left")
+  :stacking "bg"
+  :focusable false
+  (bt-trigger))
+
+; --- Popup content widget ---
+(defwidget bt-popup-content []
+  (box :class "bt-popup"
+       :orientation "v"
+       :space-evenly false
+    (box :class "bt-popup-header"
+         :orientation "h"
+         :space-evenly false
+      (label :class "bt-popup-title"
+             :hexpand true
+             :text "Bluetooth")
+      (label :class "bt-popup-status"
+             :visible {bt-data.connected_count > 0}
+             :truncate true
+             :text {bt-data.connected_device})
+      (button :class {bt-data.scanning ? "bt-scan-btn scanning" : "bt-scan-btn"}
+              :onclick "~/.config/eww/scripts/bt-scan.sh"
+        (label :text {bt-data.scanning ? "stop" : "scan"}))
+      (button :class "bt-close-btn"
+              :onclick "~/.config/eww/scripts/bt-toggle-popup.sh"
+        (label :text "×")))
+    (label :class "bt-section-title"
+           :halign "start"
+           :text "Trusted")
+    (label :class "bt-empty"
+           :visible {bt-data.trusted_count == 0}
+           :halign "center"
+           :text "No trusted devices")
+    (for dev in {bt-data.trusted}
+      (box :class "bt-device"
+           :orientation "h"
+           :space-evenly false
+        (label :class {dev.connected ? "bt-dev-name connected" : "bt-dev-name"}
+               :hexpand true
+               :truncate true
+               :text {dev.name})
+        (button :class {dev.connected ? "bt-action-btn disconnect-btn" : "bt-action-btn connect-btn"}
+                :onclick {dev.connected
+                          ? "~/.config/eww/scripts/bt-disconnect.sh ${dev.mac}"
+                          : "~/.config/eww/scripts/bt-connect.sh ${dev.mac}"}
+          (label :text {dev.connected ? "disconnect" : "connect"}))
+        (button :class "bt-action-btn forget-btn"
+                :onclick "~/.config/eww/scripts/bt-remove.sh ${dev.mac}"
+          (label :text "forget"))))
+    (label :class "bt-section-title"
+           :halign "start"
+           :visible {bt-data.discovered_count > 0 || bt-data.scanning}
+           :text "Nearby")
+    (label :class "bt-empty"
+           :visible {bt-data.scanning && bt-data.discovered_count == 0}
+           :halign "center"
+           :text "Scanning...")
+    (for dev in {bt-data.discovered}
+      (box :class "bt-device"
+           :orientation "h"
+           :space-evenly false
+        (label :class "bt-dev-name"
+               :hexpand true
+               :truncate true
+               :text {dev.name})
+        (button :class "bt-action-btn pair-btn"
+                :onclick "~/.config/eww/scripts/bt-pair.sh ${dev.mac}"
+          (label :text "pair"))))))
+
+; --- Popup window (spawned on click) ---
+(defwindow bt-popup
+  :monitor 0
+  :geometry (geometry :x "0px"
+                      :y "0px"
+                      :anchor "center")
+  :stacking "fg"
+  :focusable false
+  (bt-popup-content))
