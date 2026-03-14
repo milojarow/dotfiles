@@ -562,6 +562,125 @@ The full list of yuck-only layout attributes that must **never** appear in SCSS:
 
 ---
 
+**9. Using standard CSS properties that GTK does not implement**
+
+GTK3's CSS engine implements a subset of the CSS spec. Using an unsupported property causes a parse error that stops **all CSS loading from that line onward**, silently breaking every widget styled below it in the file. The symptom is identical to any other parse error: all widget styling disappears at once.
+
+Two confirmed-unsupported properties that look valid but will break everything:
+
+| Property | Error in `eww logs` / `journalctl` | GTK-native alternative |
+|---|---|---|
+| `overflow: hidden` | `'overflow' is not a valid property name` | `overlay` widget — GTK clips overlay children to the overlay's allocation natively |
+| `transform: translateX()` | `No property named 'transform'` | `margin-left` / `margin-top` in `@keyframes` |
+
+❌ WRONG — both cause parse errors that kill all styles below them:
+
+```scss
+.clip-box {
+  overflow: hidden;               /* GTK CSS parse error */
+}
+.slide {
+  transform: translateX(-100px);  /* GTK CSS parse error */
+}
+```
+
+✅ CORRECT — GTK-native alternatives:
+
+For **clipping** (replacing `overflow: hidden`): use the `overlay` widget. GTK clips
+all overlay children to the overlay's own allocated size — no CSS required.
+
+```yuck
+(overlay
+  (box :width 170 :height 30 :class "clip-bg")  ; main child — sets size, acts as clip
+  (box :class "scrolling-strip" ...))            ; overlay child — natural width, clipped to 170px
+```
+
+For **positional animation** (replacing `transform`): use `margin-left` or `margin-top`
+in `@keyframes`. These ARE supported in GTK CSS.
+
+```scss
+@keyframes scroll-left {
+  from { margin-left: 0px; }
+  to   { margin-left: -200px; }
+}
+.scrolling-strip {
+  animation: scroll-left 8s linear infinite;
+}
+```
+
+> IMPORTANT: `margin-left` on a widget in the normal layout flow will shift adjacent
+> widgets (it affects layout, not just rendering). To animate position without affecting
+> surrounding elements, the widget must be an `overlay` child — overlay children are
+> outside the normal layout flow.
+
+---
+
+## CSS Animations in GTK
+
+GTK3 supports `@keyframes` and the `animation` shorthand. These work reliably in eww.
+
+### What works
+
+```scss
+@keyframes my-anim {
+  0%   { margin-top: 0px; opacity: 1; }
+  50%  { margin-top: -30px; opacity: 0.5; }
+  100% { margin-top: 0px; opacity: 1; }
+}
+
+.animated {
+  animation: my-anim 2s ease-in-out infinite;
+}
+```
+
+**Confirmed animatable properties in GTK CSS:**
+`margin-top` · `margin-left` · `margin-bottom` · `margin-right` · `opacity` ·
+`background-color` · `color` · `min-height` · `min-width` · `padding` · `font-size`
+
+### What does NOT work
+
+`transform` and `overflow` are **not implemented** in GTK3's CSS engine. Using either
+causes a parse error that breaks all styles below that line in the file.
+
+### Horizontal marquee pattern (confirmed working in eww)
+
+Use `overlay` for clipping + `margin-left` animation on the overlay child:
+
+```yuck
+; The overlay's main child sets the visible window size (e.g. 170px).
+; GTK clips overlay children to that size automatically.
+(overlay
+  (box :width 170 :height 30 :class "marquee-bg")
+  ; Strip gets its natural (wider) width; overlay clips it to 170px
+  (box :class "marquee-strip"
+       :orientation "h"
+       :space-evenly false
+       :halign "start"
+       :hexpand false
+    (label :class "marquee-item" :text "first item")
+    (label :class "marquee-item" :text "second item")
+    ; Duplicate for seamless loop:
+    (label :class "marquee-item" :text "first item")
+    (label :class "marquee-item" :text "second item")))
+```
+
+```scss
+.marquee-strip {
+  animation: marquee-scroll 8s linear infinite;
+}
+
+@keyframes marquee-scroll {
+  from { margin-left: 0px; }
+  to   { margin-left: -<one-cycle-width>px; }  /* width of one [first][second] pair */
+}
+```
+
+The loop is seamless: at `-<one-cycle-width>px` the visible content is identical to
+`0px` (the duplicate pair). For monospace fonts, calculate pixel width as:
+`chars × (font-size × 0.6) + padding`.
+
+---
+
 ## Integration with Other Skills
 
 - **eww-yuck** — use `:class` attribute patterns; the yuck side of dynamic classes
@@ -582,6 +701,7 @@ The full list of yuck-only layout attributes that must **never** appear in SCSS:
 7. Parse errors stop all CSS loading from that line onward
 8. Use `min-width`/`min-height`, not `width`/`height`
 9. Never write yuck layout attributes (`spacing`, `halign`, `valign`, etc.) in SCSS — they are not CSS properties; one invalid property breaks all styles below it
+10. `overflow` and `transform` are also not GTK CSS properties — they cause the same parse error; use `overlay` widget for clipping and `margin-left`/`margin-top` in `@keyframes` for positional animation
 
 **Reference files in this skill:**
 - `CSS_REFERENCE.md` — complete GTK CSS property and selector reference
