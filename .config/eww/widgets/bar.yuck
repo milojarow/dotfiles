@@ -69,10 +69,10 @@
          :halign "start"
          :valign "center"
          :hexpand false
-      (label :class "bar-date" :text {formattime(EWW_TIME, "%a, %-d, %b, %Y")})
+      (label :class "bar-date" :text {formattime(EWW_TIME, "%a %-d %b %Y")})
       (label :class "bar-date" :text {formattime(EWW_TIME, "%H:%M")})
       (box :width 5)
-      (label :class "bar-date" :text {formattime(EWW_TIME, "%a, %-d, %b, %Y")})
+      (label :class "bar-date" :text {formattime(EWW_TIME, "%a %-d %b %Y")})
       (label :class "bar-date" :text {formattime(EWW_TIME, "%H:%M")})
       (box :width 5))))
 
