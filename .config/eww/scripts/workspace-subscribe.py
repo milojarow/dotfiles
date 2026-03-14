@@ -35,6 +35,7 @@ ICON_MAP = {
     "org.gnome.nautilus":      "\uf114",
     "thunar":                  "\uf114",
     "pcmanfm":                 "\uf114",
+    "ranger":                  "\uf114",
     # PDF viewers
     "org.pwmt.zathura":        "\U000f0226",
     "evince":                  "\U000f0226",
