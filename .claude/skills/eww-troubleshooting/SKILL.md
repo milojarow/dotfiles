@@ -295,6 +295,34 @@ eww reload ; eww open bar
 
 ---
 
+## Valid yuck Syntax That Looks Like a Bug (But Isn't)
+
+### Variable references without braces `{}`
+
+Both bare references and `{}` form are valid for direct attribute values:
+
+```yuck
+; ✅ BOTH are correct and equivalent:
+(label :text battery)       ; bare reference — valid
+(label :text {battery})     ; expression form — also valid
+
+(button :active panel-open) ; valid
+(scale :value volume)       ; valid
+```
+
+**When `{}` is required:** Only when there are operators, functions, or field access:
+
+```yuck
+; ✅ These DO need {}:
+(label :text {round(battery, 0)})
+(button :class {battery < 20 ? "critical" : "ok"})
+(label :text {EWW_BATTERY.BAT0.capacity})
+```
+
+> CRITICAL: If you are diagnosing a widget that doesn't update and your first suspicion is "missing `{}` on the attribute", verify first with `eww state` that the variable has the expected value. `(label :text battery)` is not a bug — it is perfectly valid yuck syntax.
+
+---
+
 ## Integration with Other Skills
 
 - **eww-yuck** — use when the parse error is in `defwindow`, `defwidget`, or `defpoll` syntax; covers parenthesis rules, property names, and widget nesting

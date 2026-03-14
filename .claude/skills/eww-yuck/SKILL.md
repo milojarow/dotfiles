@@ -329,6 +329,11 @@ Update from a widget button:
 
 ### Examples
 
+> CRITICAL: For displaying the current time, always use `EWW_TIME` with `formattime()` — **not** a `defpoll` that polls `date`. `EWW_TIME` is a built-in magic variable updated every 1 second with no script required. A `defpoll` that runs `date` every second is wasteful and unnecessary.
+>
+> ✅ CORRECT: `(label :text {formattime(EWW_TIME, "%H:%M")})`
+> ❌ INEFFICIENT: `(defpoll time :interval "1s" \`date +%H:%M\`)`
+
 ```yuck
 ; Clock — poll every second
 (defpoll time :interval "1s"

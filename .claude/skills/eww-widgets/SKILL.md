@@ -104,6 +104,8 @@ All EWW_* variables are built-in — no `defpoll` or `defvar` needed. Check live
 | `EWW_CMD` | static | eww command for this config | `"${EWW_CMD} update foo=bar"` |
 | `EWW_EXECUTABLE` | static | Full path to eww binary | `"${EWW_EXECUTABLE} close my-window"` |
 
+> BEST PRACTICE: Use `EWW_TIME` with `formattime()` for clocks — never a `defpoll` that polls `date`. `EWW_TIME` is more efficient (built-in, no subprocess) and always accurate.
+
 > CRITICAL: Magic variables update every **2 seconds**, except `EWW_TIME` which updates every **1 second**. Do not expect sub-second or even sub-2-second precision from EWW_CPU, EWW_RAM, etc.
 
 ---
