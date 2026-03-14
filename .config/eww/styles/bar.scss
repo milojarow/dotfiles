@@ -65,9 +65,13 @@
   background-color: $theme-accent;
 }
 
-// Date / Time rotating ticker
+// Date — horizontal marquee (overlay clips strip to 170px, transform scrolls it)
 .bar-date-bg {
   background-color: $theme-accent;
+}
+
+.bar-date-strip {
+  animation: bar-date-scroll 8s linear infinite;
 }
 
 .bar-date {
@@ -75,8 +79,12 @@
   font-family: "JetBrainsMono NF", "Roboto Mono", sans-serif;
   font-size: 13px;
   font-weight: bold;
-  padding: 0 12px;
-  min-height: 30px;
+  padding: 0 4px;
+}
+
+@keyframes bar-date-scroll {
+  from { margin-left: 0px; }
+  to   { margin-left: -200px; }
 }
 
 // Sway mode indicator
