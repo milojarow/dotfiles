@@ -12,11 +12,23 @@ import re
 import subprocess
 
 
-ICON_MUTED   = "\U000f0581"   # volume muted
-ICON_LOW     = "\U000f057f"   # volume low  (< 34%)
-ICON_MID     = "\U000f0580"   # volume mid  (< 67%)
-ICON_HIGH    = "\U000f057e"   # volume high (>= 67%)
-ICON_MIC_OFF = "\U000f036d"   # mic muted
+ICON_MUTED       = "\U000f0581"   # volume muted
+ICON_LOW         = "\U000f057f"   # volume low  (< 34%)
+ICON_MID         = "\U000f0580"   # volume mid  (< 67%)
+ICON_HIGH        = "\U000f057e"   # volume high (>= 67%)
+ICON_HEADPHONES  = "\U000f02cb"   # wired headphones connected
+ICON_MIC_OFF     = "\U000f036d"   # mic muted
+
+
+def is_headphones_active():
+    try:
+        sinks = subprocess.run(
+            ["pactl", "list", "sinks"],
+            capture_output=True, text=True,
+        ).stdout
+        return bool(re.search(r"Active Port:\s*analog-output-headphones", sinks))
+    except Exception:
+        return False
 
 
 def query():
@@ -46,8 +58,12 @@ def query():
     except Exception:
         mic_muted = False
 
+    headphones = is_headphones_active()
+
     if sink_muted:
         icon = ICON_MUTED
+    elif headphones:
+        icon = ICON_HEADPHONES
     elif volume < 34:
         icon = ICON_LOW
     elif volume < 67:
@@ -66,6 +82,7 @@ def query():
         "volume": volume,
         "muted": sink_muted,
         "mic_muted": mic_muted,
+        "headphones": headphones,
     }
 
 
