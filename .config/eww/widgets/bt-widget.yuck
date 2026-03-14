@@ -1,5 +1,8 @@
 (defvar bt-popup-open 0)
 (defvar bt-scan-done false)
+(defvar bt-scan-requested false)
+(defvar bt-connecting "")
+(defvar bt-forgetting "")
 
 (deflisten bt-data
   :initial `{"status":"unknown","scanning":false,"connected_count":0,"connected_device":"","trusted_count":0,"trusted":[],"discovered_count":0,"discovered":[]}`
@@ -7,7 +10,7 @@
 
 ; --- Circle trigger widget ---
 (defwidget bt-trigger []
-  (button :class {bt-popup-open == 1 ? "bt-circle active" : "bt-circle"}
+  (button :class {bt-popup-open > 0 ? "bt-circle active" : "bt-circle"}
           :onclick "~/.config/eww/scripts/bt-toggle-popup.sh"
     (label :class {bt-data.connected_count > 0 ? "bt-icon connected" : "bt-icon"}
            :text "󰂯")))
@@ -37,11 +40,18 @@
              :visible {bt-data.connected_count > 0}
              :truncate true
              :text {bt-data.connected_device})
-      (button :class {bt-data.scanning ? "bt-scan-btn scanning" : "bt-scan-btn"}
+      (button :class {bt-data.scanning || bt-scan-requested ? "bt-scan-btn scanning" : "bt-scan-btn"}
               :onclick "~/.config/eww/scripts/bt-scan.sh"
         (label :text {bt-data.scanning ? "stop" : "scan"}))
+      (box :class "bt-scan-header-dots"
+           :visible {bt-data.scanning || bt-scan-requested}
+           :orientation "h"
+           :space-evenly false
+        (label :class "bt-scan-dot-1" :text "●")
+        (label :class "bt-scan-dot-2" :text "●")
+        (label :class "bt-scan-dot-3" :text "●"))
       (button :class "bt-close-btn"
-              :onclick "~/.config/eww/scripts/bt-toggle-popup.sh"
+              :onclick "~/.config/eww/scripts/bt-close-popup.sh"
         (label :text "×")))
     (label :class "bt-section-title"
            :halign "start"
@@ -58,20 +68,23 @@
                :hexpand true
                :truncate true
                :text {dev.name})
-        (button :class {dev.connected ? "bt-action-btn disconnect-btn" : "bt-action-btn connect-btn"}
+        (button :class {bt-connecting == dev.mac ? "bt-action-btn op-pending-btn"
+                                                 : (dev.connected ? "bt-action-btn disconnect-btn"
+                                                                  : "bt-action-btn connect-btn")}
                 :onclick {dev.connected
                           ? "~/.config/eww/scripts/bt-disconnect.sh ${dev.mac}"
                           : "~/.config/eww/scripts/bt-connect.sh ${dev.mac}"}
-          (label :text {dev.connected ? "disconnect" : "connect"}))
-        (button :class "bt-action-btn forget-btn"
+          (label :text {bt-connecting == dev.mac ? "…"
+                                                 : (dev.connected ? "disconnect" : "connect")}))
+        (button :class {bt-forgetting == dev.mac ? "bt-action-btn op-pending-btn" : "bt-action-btn forget-btn"}
                 :onclick "~/.config/eww/scripts/bt-remove.sh ${dev.mac}"
-          (label :text "forget"))))
+          (label :text {bt-forgetting == dev.mac ? "…" : "forget"}))))
     (label :class "bt-section-title"
            :halign "start"
-           :visible {bt-data.discovered_count > 0 || bt-data.scanning || bt-scan-done}
+           :visible {bt-data.discovered_count > 0 || bt-data.scanning || bt-scan-requested || bt-scan-done}
            :text "Nearby")
     (box :class "bt-scanning-row"
-         :visible {bt-data.scanning && bt-data.discovered_count == 0}
+         :visible {(bt-data.scanning || bt-scan-requested) && bt-data.discovered_count == 0}
          :orientation "h"
          :space-evenly false
          :halign "center"
