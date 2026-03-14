@@ -835,4 +835,33 @@ menu {
     &:disabled label { color: $muted; }
   }
 }
+
+---
+
+## Rounded Corners — Transparent Corners Require rgba alpha < 1.0
+
+GTK only enables RGBA compositing when it detects `alpha < 1.0` in the background color.
+With a fully opaque color (`#2E3440` or `rgba(..., 1.0)`), the area outside `border-radius`
+renders **black** instead of transparent, even if the compositor supports transparency.
+
+### Wrong (black corners)
+
+```scss
+.my-widget {
+  background: #2E3440;   // fully opaque — GTK skips RGBA compositing
+  border-radius: 14px;   // rounded corners, but outer area is black
+}
+```
+
+### Correct (transparent corners)
+
+```scss
+.my-widget {
+  background: rgba(46, 52, 64, 0.99);  // alpha < 1.0 triggers RGBA compositing
+  border-radius: 14px;                  // corners are now truly transparent
+}
+```
+
+`rgba(46, 52, 64, 0.99)` is visually identical to `#2E3440`. The `0.99` alpha is the minimum
+change needed — it enables compositing without any visible transparency effect.
 ```
