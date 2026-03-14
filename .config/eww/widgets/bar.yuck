@@ -58,14 +58,31 @@
 
 
 ; ── Date widget ──────────────────────────────────────────────────────────────
+; Alternates between date (true) and time (false) every 5 seconds.
+; Uses wall-clock seconds so the phase is consistent and predictable.
+(defpoll date-visible :interval "1s"
+  :initial "true"
+  `[ $(( ($(date +%s%3N) / 2500) % 2 )) -eq 0 ] && echo true || echo false`)
+
 (defwidget bar-date []
   (box :width 170
        :class "bar-date-bg"
-    (label :class "bar-date"
-           :hexpand true
-           :valign "center"
-           :xalign 0.5
-           :text {formattime(EWW_TIME, "%a, %-d, %b, %Y")})))
+       :orientation "v"
+       :space-evenly false
+    (revealer :transition "slideup"
+              :reveal date-visible
+              :duration "500ms"
+      (label :class "bar-date"
+             :hexpand true
+             :xalign 0.5
+             :text {formattime(EWW_TIME, "%a, %-d, %b, %Y")}))
+    (revealer :transition "slideup"
+              :reveal {!date-visible}
+              :duration "500ms"
+      (label :class "bar-date"
+             :hexpand true
+             :xalign 0.5
+             :text {formattime(EWW_TIME, "%H:%M")}))))
 
 ; ── Window title data ────────────────────────────────────────────────────────
 (deflisten window-title

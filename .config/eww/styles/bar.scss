@@ -65,7 +65,7 @@
   background-color: $theme-accent;
 }
 
-// Date
+// Date / Time rotating ticker
 .bar-date-bg {
   background-color: $theme-accent;
 }
@@ -76,6 +76,7 @@
   font-size: 13px;
   font-weight: bold;
   padding: 0 12px;
+  min-height: 30px;
 }
 
 // Sway mode indicator
