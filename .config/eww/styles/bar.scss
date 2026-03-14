@@ -25,11 +25,11 @@
 }
 
 .bar-ws {
-  padding: 2px 5px;
+  padding: 2px 4px;
   border-radius: 6px;
   font-family: "JetBrainsMono NF", "Roboto Mono", monospace;
   font-size: 13px;
-  min-width: 32px;
+  min-width: 40px;
   transition: background-color 150ms ease;
   margin: 0;
 }
@@ -127,3 +127,23 @@
   font-size: 18px;
   opacity: 0.75;
 }
+
+// Scratchpad icon — larger than app icons
+.bar-ws--scratchpad .bar-ws-icon {
+  font-size: 18px;
+  margin-bottom: 0;
+}
+
+// Single app icon — shown larger since it has the space to itself
+.bar-ws-icon--solo {
+  font-size: 16px;
+}
+
+// App icons in geometric arrangement
+.bar-ws-icon {
+  font-family: "JetBrainsMono NF", "Roboto Mono", monospace;
+  font-size: 12px;
+  padding: 0;
+  margin-bottom: -6px;
+}
+

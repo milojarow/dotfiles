@@ -174,6 +174,7 @@ The same "all widgets lose styles" symptom occurs for any property that **grass*
 | Property / construct | Error message | Fix |
 |---|---|---|
 | `gap` | `'gap' is not a valid property name` | Use `margin` on children or `:spacing` in yuck |
+| `line-height` | `'line-height' is not a valid property name` | Remove it; use `padding: 0` on labels and rely on font metrics |
 | Comma keyframe selectors (`0%, 100% { }`) | `Expected closing bracket after keyframes block` | Expand to one selector per line |
 
 **Important:** `@keyframes` itself **does work** in grass — the bt-scan-pulse animation is proof. Only comma-separated selectors inside keyframe blocks fail.
@@ -196,6 +197,40 @@ The same "all widgets lose styles" symptom occurs for any property that **grass*
 ```bash
 # Catches ALL grass SCSS errors (property, keyframe, etc.):
 journalctl --user -u eww.service -n 20 --no-pager | grep "error:"
+```
+
+---
+
+## Error: Nested for loops (config fails to load)
+
+**Symptom:** After adding an inner `(for ...)` loop inside an outer `(for ...)`, eww stops loading the config entirely. `eww open` produces no window, `eww reload` reports failure, and `eww logs` shows a parse or runtime error near the inner loop line.
+
+**Cause:** eww does not support nested `for` iteration. The inner loop is invalid syntax at the config level.
+
+**Fix:** Pre-compute all grouping in the data source script and emit flat named fields. Use a fixed number of sibling widgets in yuck instead of a dynamic inner loop.
+
+```yuck
+; WRONG — nested for causes a config load failure
+(for ws in workspaces
+  (box
+    (label :text "${ws.name}")
+    (for row in {ws.icon_rows}      ; NOT supported
+      (label :text row))))
+
+; CORRECT — script pre-computes icon_top/icon_mid/icon_bot fields
+(for ws in workspaces
+  (box
+    (label :text "${ws.icon_top}")
+    (label :text "${ws.icon_mid}" :visible {ws.has_mid})
+    (label :text "${ws.icon_bot}" :visible {ws.has_bot})))
+```
+
+**Corollary — mixing a sibling label with a for loop inside the same box:**
+Placing a plain `(label :visible {!condition} ...)` as a direct sibling of a `(for ...)` in the same box also causes rendering/parse issues. Encode all display cases (including fallback states) into the flat fields so yuck only ever has homogeneous fixed widgets.
+
+**Diagnostic:**
+```bash
+journalctl --user -u eww.service -n 30 --no-pager | grep -E "error|parse"
 ```
 
 ---

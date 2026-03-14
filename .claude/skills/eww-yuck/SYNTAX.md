@@ -319,17 +319,33 @@ For shell scripts, `echo` always flushes. For tools that buffer, pipe through `s
       (label :text "${win.title}"))))
 ```
 
-### Nested for
+### Nested for — NOT SUPPORTED
+
+eww does **not** support nested `for` loops. An inner `(for ...)` inside an outer
+`(for ...)` causes a parse/runtime error that prevents the config from loading entirely.
 
 ```yuck
-(defvar groups `[{"name": "A", "items": ["x","y"]}, {"name": "B", "items": ["z"]}]`)
+; WRONG — nested for causes a config load failure
+(for group in groups
+  (box :class "group"
+    (for item in {group.items}   ; NOT supported — breaks the entire config
+      (label :text item))))
 
-(box
-  (for group in groups
-    (box :class "group"
-      (label :text "${group.name}"))))
-; Note: cannot iterate group.items directly inside for — use a script to flatten first
+; CORRECT — pre-compute grouping in the data source script,
+; emit flat named fields, use fixed widgets in yuck
+(for ws in workspaces
+  (box
+    (label :text "${ws.icon_top}")
+    (label :text "${ws.icon_mid}" :visible {ws.has_mid})
+    (label :text "${ws.icon_bot}" :visible {ws.has_bot})))
 ```
+
+**Rule:** If you need to render N items per parent item, do the grouping in the
+data source script and emit a fixed set of named fields. Never nest `for` in yuck.
+
+**Corollary:** Placing a plain `(label :visible {!condition} ...)` as a direct sibling
+of a `(for ...)` inside the same `(box ...)` also causes rendering issues. Avoid mixing
+static sibling widgets with a `for` loop — encode all display states into the flat fields.
 
 ---
 

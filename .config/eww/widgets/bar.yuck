@@ -42,10 +42,12 @@
        :valign "center"
     (for ws in workspaces
       (button
-        :class {ws.focused  ? "bar-ws bar-ws--focused"
-              : ws.urgent   ? "bar-ws bar-ws--urgent"
-              : ws.has_windows ? "bar-ws bar-ws--occupied"
-              : "bar-ws bar-ws--empty"}
+        :class {"bar-ws"
+              + (ws.num == -1 ? " bar-ws--scratchpad" : "")
+              + (ws.focused     ? " bar-ws--focused"
+              : ws.urgent      ? " bar-ws--urgent"
+              : ws.has_windows ? " bar-ws--occupied"
+              :                  " bar-ws--empty")}
         :onclick "${ws.cmd}"
         (box :orientation "h"
              :spacing 3
@@ -54,7 +56,13 @@
           (label :class "bar-ws-num"
                  :visible {ws.has_windows && ws.num != -1}
                  :text "${ws.num_icon}")
-          (label :text "${ws.icon}"))))))
+          (box :orientation "v"
+               :halign "center"
+               :valign "center"
+               :spacing 0
+            (label :class {ws.has_mid ? "bar-ws-icon" : "bar-ws-icon bar-ws-icon--solo"} :halign "center" :text "${ws.icon_top}")
+            (label :class "bar-ws-icon" :halign "center" :text "${ws.icon_mid}" :visible {ws.has_mid})
+            (label :class "bar-ws-icon" :halign "center" :text "${ws.icon_bot}" :visible {ws.has_bot})))))))
 
 
 ; ── Date widget ──────────────────────────────────────────────────────────────

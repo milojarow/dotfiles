@@ -30,11 +30,11 @@ ICON_MAP = {
     "org.telegram.desktop":    "\ue217",
     "telegramdesktop":         "\ue217",
     # File browsers
-    "nemo":                    "\uf4d3",
-    "nautilus":                "\uf4d3",
-    "org.gnome.nautilus":      "\uf4d3",
-    "thunar":                  "\uf4d3",
-    "pcmanfm":                 "\uf4d3",
+    "nemo":                    "\uf114",
+    "nautilus":                "\uf114",
+    "org.gnome.nautilus":      "\uf114",
+    "thunar":                  "\uf114",
+    "pcmanfm":                 "\uf114",
     # PDF viewers
     "org.pwmt.zathura":        "\U000f0226",
     "evince":                  "\U000f0226",
@@ -146,6 +146,33 @@ def get_scratchpad_windows(tree):
     return scratch.get("floating_nodes", [])
 
 
+def compute_icon_lines(icons):
+    """Return (top, mid, bot) row strings for the geometric icon display.
+
+    Only 'top' is always non-empty.  'mid' and 'bot' are empty string ""
+    when unused — callers should check has_mid / has_bot before rendering.
+
+    Shapes (center-aligned labels give the geometric feel):
+      1 → top=A                           single
+      2 → top=AB                          pair
+      3 → top=A,   mid=BC                 △  1+2
+      4 → top=AB,  mid=CD                 □  2+2
+      5 → top=AB,  mid=CDE               ⬠  2+3
+      6 → top=ABC, mid=DEF               ⬡  3+3
+      7 → top=ABC, mid=DEF, bot=G
+      8 → top=ABC, mid=DEF, bot=GH
+      9+→ top=ABC, mid=DEF, bot=GHI       (capped at 9 icons)
+    """
+    n = len(icons)
+    j = "".join
+    if n <= 2: return j(icons),       "",           ""
+    if n == 3: return icons[0],       j(icons[1:]), ""
+    if n == 4: return j(icons[:2]),   j(icons[2:]), ""
+    if n == 5: return j(icons[:2]),   j(icons[2:]), ""
+    if n == 6: return j(icons[:3]),   j(icons[3:]), ""
+    return     j(icons[:3]),   j(icons[3:6]),j(icons[6:9])
+
+
 # ── State update ──────────────────────────────────────────────────────────────
 
 def update_last_focused(last_focused, tree):
@@ -188,9 +215,12 @@ def build_output(last_focused, tree, ws_raw):
         has_windows = len(leaves) > 0
 
         if has_windows:
-            icon = "".join(icon_for(get_app_id(leaf)) for leaf in leaves)
+            icon_list = [icon_for(get_app_id(leaf)) for leaf in leaves]
+            icon      = "".join(icon_list)
+            top, mid, bot = compute_icon_lines(icon_list)
         else:
-            icon = str(num)
+            icon      = str(num)
+            top, mid, bot = str(num), "", ""
 
         result.append({
             "num":         num,
@@ -200,6 +230,11 @@ def build_output(last_focused, tree, ws_raw):
             "urgent":      raw.get("urgent", False),
             "has_windows": has_windows,
             "icon":        icon,
+            "icon_top":    top,
+            "icon_mid":    mid,
+            "icon_bot":    bot,
+            "has_mid":     mid != "",
+            "has_bot":     bot != "",
             "cmd":         "swaymsg workspace {}".format(num),
         })
 
@@ -214,6 +249,11 @@ def build_output(last_focused, tree, ws_raw):
         if ws_node:
             walk_leaves(ws_node, leaves)
         if leaves or raw.get("focused"):
+            ws10_icon_list = [icon_for(get_app_id(l)) for l in leaves]
+            if leaves:
+                w10top, w10mid, w10bot = compute_icon_lines(ws10_icon_list)
+            else:
+                w10top, w10mid, w10bot = "10", "", ""
             result.append({
                 "num":         10,
                 "num_icon":    "10",
@@ -221,7 +261,12 @@ def build_output(last_focused, tree, ws_raw):
                 "focused":     raw.get("focused", False),
                 "urgent":      raw.get("urgent", False),
                 "has_windows": len(leaves) > 0,
-                "icon":        "".join(icon_for(get_app_id(l)) for l in leaves) if leaves else "10",
+                "icon":        "".join(ws10_icon_list) if leaves else "10",
+                "icon_top":    w10top,
+                "icon_mid":    w10mid,
+                "icon_bot":    w10bot,
+                "has_mid":     w10mid != "",
+                "has_bot":     w10bot != "",
                 "cmd":         "swaymsg workspace 10",
             })
 
@@ -229,6 +274,7 @@ def build_output(last_focused, tree, ws_raw):
     scratch_wins = get_scratchpad_windows(tree)
     if scratch_wins:
         count = len(scratch_wins)
+        scratch_icon = ICON_SCRATCHPAD_ONE if count == 1 else ICON_SCRATCHPAD_MANY
         result.append({
             "num":         -1,
             "num_icon":    "-1",
@@ -236,7 +282,12 @@ def build_output(last_focused, tree, ws_raw):
             "focused":     False,
             "urgent":      False,
             "has_windows": True,
-            "icon":        ICON_SCRATCHPAD_ONE if count == 1 else ICON_SCRATCHPAD_MANY,
+            "icon":        scratch_icon,
+            "icon_top":    scratch_icon,
+            "icon_mid":    "",
+            "icon_bot":    "",
+            "has_mid":     False,
+            "has_bot":     False,
             "cmd":         "swaymsg scratchpad show",
         })
 
