@@ -1,4 +1,4 @@
-.TH SSH-TMUX 1 "2025-12-28" "1.0" "User Commands"
+.TH SSH-TMUX 1 "2026-03-15" "1.1" "User Commands"
 .SH NAME
 ssh-tmux, ssht \- SSH wrapper with persistent tmux sessions
 .SH SYNOPSIS
@@ -117,7 +117,12 @@ ssht hostinger-vps blindando
 .SH FILES
 .TP
 .I ~/.config/tmux/tmux.conf
-tmux configuration file with vi mode and custom styling
+tmux configuration file with vi mode, custom styling, and extended key passthrough.
+Includes
+.B extended-keys always
+so that
+.B Shift+Enter
+inserts a newline (instead of submitting) in Claude Code CLI, both locally and over SSH.
 .TP
 .I ~/.config/tmux/README.md
 Complete tmux guide with examples
@@ -134,6 +139,31 @@ However, tmux is the real solution for persistent sessions across long suspends.
 tmux sessions run on the
 .BR server ,
 not your local machine. This means your work persists even if you close your terminal, suspend your computer, or lose network connection.
+.SH KEYBINDINGS
+.PP
+.B Shift+Enter
+inserts a newline in Claude Code CLI without submitting the message.
+This requires coordinated configuration in two places:
+.IP \(bu 2
+.I ~/.config/foot/foot.ini
+\(em foot sends the extended key sequence
+.BR \ex1b[27;2;13~ .
+.IP \(bu
+.I ~/.config/tmux/tmux.conf
+\(em tmux forwards extended key sequences to inner applications via
+.B extended-keys always
+and
+.BR "terminal-features screen-256color:extkeys" .
+.PP
+For SSH sessions, the remote VPS tmux config also needs
+.B extended-keys always
+and
+.B terminal-features xterm-256color:extkeys
+(since
+.B $TERM
+is
+.B xterm-256color
+over SSH).
 .SH AUTHOR
 Created for persistent SSH workflows, particularly for Claude Code CLI sessions.
 .SH SEE ALSO
