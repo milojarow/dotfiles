@@ -28,6 +28,11 @@
   :initial "{\"text\": \"\", \"class\": \"\", \"volume\": 0, \"muted\": false, \"mic_muted\": false}"
   `~/.config/eww/scripts/volume-subscribe.py`)
 
+; ── Memory pressure (PSI) data ───────────────────────────────────────────────
+(deflisten mem-pressure
+  :initial "{\"avg60\": 0, \"class\": \"normal\", \"active\": 0}"
+  `~/.config/eww/scripts/mem-pressure-watch.py`)
+
 ; ── Workspace data ───────────────────────────────────────────────────────────
 (deflisten workspaces
   :initial "[]"
@@ -54,7 +59,7 @@
              :halign "center"
              :valign "center"
           (label :class "bar-ws-num"
-                 :visible {ws.has_windows && ws.num != -1}
+                 :visible {ws.has_windows && ws.num != -1 && !ws.secret}
                  :text "${ws.num_icon}")
           (box :orientation "v"
                :halign "center"
@@ -89,10 +94,10 @@
   :initial "{\"text\": \"\", \"css_class\": \"empty\"}"
   `~/.config/eww/scripts/window-title-subscribe.py`)
 
-; Flash override — polled every 500ms from file written by window-title-click-eww.sh.
-; Auto-expires via timestamp check in the reader; no background process needed.
-(defpoll wt-flash :interval "500ms"
-  `~/.config/eww/scripts/window-title-flash-read.sh`)
+; Flash override — event-driven via inotifywait watching /tmp for the flash file.
+; Zero CPU between events. Expiry handled by window-title-click-eww.sh (sleep+rm).
+(deflisten wt-flash :initial ""
+  `~/.config/eww/scripts/window-title-flash-watch.sh`)
 
 ; ── Sway mode data ────────────────────────────────────────────────────────────
 (deflisten sway-mode
@@ -138,6 +143,13 @@
           :tooltip {gamma.active ? "Gamma correction on — warm display" : "Gamma correction off"}
     (label :text {gamma.icon})))
 
+; ── Memory pressure indicator (inside module groups) ─────────────────────────
+(defwidget bar-mem-pressure []
+  (button :class "bar-module bar-mem-pressure bar-mem-pressure--${mem-pressure.class}"
+          :visible {mem-pressure.active == 1}
+          :tooltip "Memory pressure: ${mem-pressure.avg60}% (PSI avg60)"
+    (label :text "")))
+
 ; ── Volume button (inside module groups) ─────────────────────────────────────
 (defwidget bar-volume []
   (eventbox :onscroll "~/.config/eww/scripts/volume-scroll.sh {}"
@@ -179,6 +191,7 @@
        :space-evenly false
        :spacing 2
        :valign "center"
+    (bar-mem-pressure)
     (bar-clipboard)
     (bar-wifi)
     (bar-idle-inhibitor)

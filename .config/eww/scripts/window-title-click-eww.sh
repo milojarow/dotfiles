@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Left-click handler for eww window title — flashes the app name for 3 seconds.
-# Uses a file with expiry timestamp (mirrors waybar approach). The defpoll in
-# bar.yuck reads this file every 500ms and auto-expires it without needing a
-# background process.
+# Writes the app name to a file watched by window-title-flash-watch.sh (deflisten).
+# Expiry is handled here via a background sleep+rm — no polling needed.
 
 FLASH_FILE="/tmp/eww-window-title-flash-${USER}"
 
@@ -39,5 +38,6 @@ get_app_name() {
 }
 
 app_name=$(get_app_name "$app_id")
-expires=$(($(date +%s) + 3))
-printf '%s\n%s\n' "$app_name" "$expires" > "$FLASH_FILE"
+echo "$app_name" > "$FLASH_FILE"
+# Expire after 3 seconds — the deflisten reacts to the DELETE event
+(sleep 3; rm -f "$FLASH_FILE") &

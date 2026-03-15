@@ -14,9 +14,10 @@ fish_vi_key_bindings
 #    # smth smth
 #end
 
-# Add cargo and npm global bins to PATH
+# Add cargo, npm global bins, and custom scripts to PATH
 fish_add_path $HOME/.cargo/bin
 fish_add_path $HOME/.npm-global/bin
+fish_add_path $HOME/.scripts
 
 # aliases
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'

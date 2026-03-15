@@ -139,6 +139,25 @@
   font-size: 16px;
 }
 
+// Memory pressure indicator — hidden at normal levels, visible under pressure
+.bar-mem-pressure {
+  font-size: 14px;
+}
+
+.bar-mem-pressure--warning {
+  color: #ebcb8b; // Nord yellow
+}
+
+.bar-mem-pressure--critical {
+  color: #bf616a; // Nord red
+  animation: mem-pressure-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes mem-pressure-pulse {
+  from { opacity: 1.0; }
+  to   { opacity: 0.5; }
+}
+
 // App icons in geometric arrangement
 .bar-ws-icon {
   font-family: "JetBrainsMono NF", "Roboto Mono", monospace;

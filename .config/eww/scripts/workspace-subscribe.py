@@ -64,6 +64,7 @@ ICON_MAP = {
 ICON_UNKNOWN         = "\uebf2"
 ICON_SCRATCHPAD_ONE  = "\U000f05af"
 ICON_SCRATCHPAD_MANY = "\U000f05b2"
+ICON_WS10            = "\U000F153C"  # secret workspace icon (U+F153C)
 
 # Subscript number icons (Nerd Font U+F0B3A–U+F0B42) for workspace overlays.
 # Workspace 10 and scratchpad (-1) fall back to plain string.
@@ -236,40 +237,29 @@ def build_output(last_focused, tree, ws_raw):
             "icon_bot":    bot,
             "has_mid":     mid != "",
             "has_bot":     bot != "",
+            "secret":      False,
             "cmd":         "swaymsg workspace {}".format(num),
         })
 
-    # Workspace 10 — only if it has content
-    if 10 in ws_by_num:
-        raw = ws_by_num[10]
-        ws_name = raw.get("name", "10")
-        ws_node = find_node(tree,
-            lambda n, name=ws_name: n.get("type") == "workspace" and n.get("name") == name
-        )
-        leaves = []
-        if ws_node:
-            walk_leaves(ws_node, leaves)
-        if leaves or raw.get("focused"):
-            ws10_icon_list = [icon_for(get_app_id(l)) for l in leaves]
-            if leaves:
-                w10top, w10mid, w10bot = compute_icon_lines(ws10_icon_list)
-            else:
-                w10top, w10mid, w10bot = "10", "", ""
-            result.append({
-                "num":         10,
-                "num_icon":    "10",
-                "name":        ws_name,
-                "focused":     raw.get("focused", False),
-                "urgent":      raw.get("urgent", False),
-                "has_windows": len(leaves) > 0,
-                "icon":        "".join(ws10_icon_list) if leaves else "10",
-                "icon_top":    w10top,
-                "icon_mid":    w10mid,
-                "icon_bot":    w10bot,
-                "has_mid":     w10mid != "",
-                "has_bot":     w10bot != "",
-                "cmd":         "swaymsg workspace 10",
-            })
+    # Workspace 10 — secret workspace: only visible when focused, fixed icon, no num, no app icons
+    if 10 in ws_by_num and ws_by_num[10].get("focused"):
+        raw10 = ws_by_num[10]
+        result.append({
+            "num":         10,
+            "num_icon":    "",
+            "name":        raw10.get("name", "10"),
+            "focused":     True,
+            "urgent":      raw10.get("urgent", False),
+            "has_windows": False,
+            "icon":        ICON_WS10,
+            "icon_top":    ICON_WS10,
+            "icon_mid":    "",
+            "icon_bot":    "",
+            "has_mid":     False,
+            "has_bot":     False,
+            "secret":      True,
+            "cmd":         "swaymsg workspace 10",
+        })
 
     # Scratchpad — only if it has content
     scratch_wins = get_scratchpad_windows(tree)
@@ -289,6 +279,7 @@ def build_output(last_focused, tree, ws_raw):
             "icon_bot":    "",
             "has_mid":     False,
             "has_bot":     False,
+            "secret":      False,
             "cmd":         "swaymsg scratchpad show",
         })
 
