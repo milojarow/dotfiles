@@ -133,6 +133,22 @@ and
 inside
 .B exec_always
 so both daemons restart on every sway reload.
+.TP
+.I ~/.config/sway/themes/<name>/theme.conf
+Defines the
+.I $colorN
+variables (e.g.\&
+.IR $color5 ,
+.IR $color7 ,
+.IR $color10 )
+referenced in the pango markup of
+.IR $mode_screenshot .
+The active theme is symlinked at runtime to
+.I ~/.config/sway/definitions.d/theme.conf
+(generated \(em not tracked in git).
+See
+.BR palette-theming (1)
+for the full theming system.
 .SH PROGRAMS
 .BR grim (1),
 .BR slurp (1),
