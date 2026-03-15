@@ -30,3 +30,33 @@ bluetuith
 # Application specific
 firefox
 code
+
+# Output/monitor management (kanshi autostart — multi-monitor layout daemon)
+kanshi
+
+# XDG autostart runner (dex runs .desktop entries tagged for SWAY)
+dex
+
+# Terminal executor (xdg-terminal-exec used by checkupdates.sh to open update terminal)
+xdg-terminal-exec
+
+# Workspace app icons (sworkstyle shows icons next to workspace numbers)
+sworkstyle
+
+# Battery/UPS notifications
+poweralertd
+
+# Focus flash animation on window focus
+flashfocus
+
+# Microphone noise suppression
+noisetorch
+
+# Qt theme engine (kvantummanager — required for palette-theming, see man palette-theming)
+kvantum
+
+# Papirus icon set (papirus-folders — required for palette-theming icon colour switching)
+papirus-icon-theme
+
+# NVIDIA GPU tools (nvidia-smi used by eww gpu-gauge.sh — NVIDIA hardware only)
+nvidia-utils

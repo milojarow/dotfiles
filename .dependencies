@@ -39,6 +39,34 @@ curl
 imagemagick
 inotify-tools
 
+# Screenshot & display (swayimg required for freeze-and-crop screenshot mode)
+swayimg
+
+# Network management (nmcli used by eww WiFi widget, nm-applet, waybar network)
+networkmanager
+network-manager-applet
+
+# Package update checker (checkupdates command used by waybar pacman module)
+pacman-contrib
+
+# Python graphics (pycairo — required by eww gauge-render.py for sysmonitor gauges)
+python-cairo
+
+# Hardware sensors (sensors -j used by eww cpu-gauge.sh for CPU temperature)
+lm_sensors
+
+# Clipboard persistence (keeps clipboard alive after source app closes)
+wl-clip-persist
+
+# Authentication agent (polkit GUI dialogs for mounting disks, sudo prompts, etc.)
+polkit-gnome
+
+# Secrets/keyring storage (gnome-keyring-daemon started in sway config)
+gnome-keyring
+
+# Auto-tiling for sway (autotiling or autotiling-rs — both guarded in autostart)
+autotiling
+
 # Terminal Utilities
 btop
 calcurse
