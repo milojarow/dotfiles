@@ -201,12 +201,11 @@
 
 (defwidget bar-tray []
   (box :class "bar-tray"
-       :width 64
        :space-evenly false
     (systray :spacing 4
              :icon-size 18
              :halign "end"
-             :hexpand true)))
+             :hexpand false)))
 
 ; ── Bar layout ────────────────────────────────────────────────────────────────
 (defwidget eww-bar-widget []
