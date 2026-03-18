@@ -25,6 +25,23 @@ while read -r line; do
       elapsed=$((elapsed + 1))
       [ "$elapsed" -ge "$((timeout * 2))" ] && break
     done
+    # Wait for output geometry to stabilize — kanshi may still be reconfiguring.
+    # Require two consecutive identical non-zero widths before opening windows
+    # so the bar's 100% width is computed against the final settled resolution.
+    prev_width=0; stable=0; elapsed=0
+    while [ "$stable" -lt 2 ]; do
+      cur_width=$(swaymsg -t get_outputs 2>/dev/null | \
+        python3 -c "import json,sys; ol=[o for o in json.load(sys.stdin) if o.get('active')]; print(max((o.get('current_mode',{}).get('width',0) for o in ol), default=0))" 2>/dev/null || echo 0)
+      if [ "${cur_width:-0}" -gt 0 ] && [ "$cur_width" = "$prev_width" ]; then
+        stable=$((stable + 1))
+      else
+        stable=0
+        prev_width="${cur_width:-0}"
+      fi
+      sleep 0.3
+      elapsed=$((elapsed + 1))
+      [ "$elapsed" -ge 60 ] && break  # 18s hard timeout
+    done
     /home/milo/.config/eww/scripts/open-windows.sh
   fi
 done

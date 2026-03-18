@@ -22,14 +22,26 @@ LOCKFILE="/tmp/lock.sh.lock"
 # unlock, causing a double lock screen.
 SWAYLOCK_RAN=false
 
+# Capture swayidle state before locking: if the idle inhibitor was active
+# (swayidle killed intentionally), do not restart it after unlock.
+SWAYIDLE_WAS_RUNNING=false
+pgrep -x swayidle > /dev/null && SWAYIDLE_WAS_RUNNING=true
+
 _on_exit() {
     if $SWAYLOCK_RAN; then
-        # Kill and immediately restart swayidle to reset idle timer after unlock.
-        # Do NOT wait for swayidle to die — waiting creates a deadlock because
-        # swayidle blocks waiting for lock.sh to exit while lock.sh waits for
-        # swayidle to die.
-        pkill -x swayidle 2>/dev/null
-        swayidle -w -S seat0 200>&- &
+        if $SWAYIDLE_WAS_RUNNING; then
+            # Kill and immediately restart swayidle to reset idle timer after unlock.
+            # Do NOT wait for swayidle to die — waiting creates a deadlock because
+            # swayidle blocks waiting for lock.sh to exit while lock.sh waits for
+            # swayidle to die.
+            pkill -x swayidle 2>/dev/null
+            swayidle -w -S seat0 200>&- &
+            disown
+        fi
+        # Reopen eww bar after unlock: fixes width regression from resume (output
+        # resolution may not have settled when eww first opened) and forces the
+        # idle-inhibitor deflisten to re-emit the correct state.
+        /home/milo/.config/eww/scripts/open-windows.sh &
         disown
     fi
 }
