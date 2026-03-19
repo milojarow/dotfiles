@@ -1,0 +1,18 @@
+(defpoll selene-storage :interval "5m"
+  :initial `{"used":"?","total":"?","pct":0}`
+  `~/.config/eww/scripts/selene-storage.sh`)
+
+(defwidget selene-storage-widget []
+  (box :class "selene-storage" :orientation "h"
+       :space-evenly false :valign "center"
+    (label :class "selene-title" :text "selene")
+    (progress :class "selene-bar" :value {selene-storage.pct} :orientation "h")
+    (label :class "selene-stats"
+           :text "${selene-storage.used} / ${selene-storage.total}")))
+
+(defwindow selene-storage-window
+  :monitor 0
+  :geometry (geometry :width "320px" :anchor "bottom right" :x "8px" :y "8px")
+  :stacking "bg"
+  :focusable false
+  (selene-storage-widget))

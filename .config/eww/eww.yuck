@@ -13,3 +13,4 @@
 (include "./widgets/bar.yuck")
 (include "./widgets/wifi-popup.yuck")
 (include "./widgets/timer-widget.yuck")
+(include "./widgets/selene-storage.yuck")

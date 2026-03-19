@@ -3,6 +3,11 @@
   :initial `{"documents":0,"pictures":0,"downloads":0,"videos":0,"other":0,"root":0}`
   `~/.config/eww/scripts/disk-usage.sh`)
 
+; Top 6 heaviest dirs in "Other" — refreshes every 10 minutes
+(defpoll disk-other-data :interval "10m"
+  :initial `[]`
+  `~/.config/eww/scripts/disk-other-breakdown.sh`)
+
 ; Single row: [folder-icon] [name] ... [chart-icon] [pct%]
 (defwidget disk-row [label path pct]
   (button :class "disk-row"
@@ -20,7 +25,13 @@
     (disk-row :label "Pictures"  :path "/home/milo/Pictures"  :pct {jq(disk-data, ".pictures")})
     (disk-row :label "Downloads" :path "/home/milo/Downloads" :pct {jq(disk-data, ".downloads")})
     (disk-row :label "Videos"    :path "/home/milo/Videos"    :pct {jq(disk-data, ".videos")})
-    (disk-row :label "Other"     :path "/home/milo"           :pct {jq(disk-data, ".other")})
+    (button :class "disk-row disk-row-other"
+            :onclick "${EWW_CMD} open --toggle disk-other-popup"
+      (box :orientation "h" :space-evenly false :valign "center"
+        (label :class "disk-folder-icon" :text "")
+        (label :class "disk-name" :text "Other" :hexpand true :halign "start")
+        (label :class "disk-chart-icon" :text "")
+        (label :class "disk-pct" :text "${jq(disk-data, '.other')}%")))
     (disk-row :label "Root"      :path "/root"                :pct {jq(disk-data, ".root")})))
 
 (defwindow disk-widget
@@ -29,3 +40,20 @@
   :stacking "bg"
   :focusable false
   (disk-widget))
+
+; Popup: top 6 heaviest dirs in "Other"
+(defwidget disk-other-popup-widget []
+  (box :class "disk-other-popup" :orientation "v" :space-evenly false
+    (for entry in disk-other-data
+      (button :class "disk-other-entry"
+              :onclick "xdg-open '${entry.path}'"
+        (box :orientation "h" :space-evenly false :valign "center"
+          (label :class "disk-other-name" :text {entry.name} :hexpand true :halign "start")
+          (label :class "disk-other-size" :text {entry.size}))))))
+
+(defwindow disk-other-popup
+  :monitor 0
+  :geometry (geometry :x "852px" :y "530px" :width "220px" :anchor "top right")
+  :stacking "bg"
+  :focusable false
+  (disk-other-popup-widget))
