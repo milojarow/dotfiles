@@ -95,6 +95,12 @@ shopt -s histappend
 # Habilitar el modo vi en la línea de comandos
 set -o vi
 
+# Change cursor shape based on vi mode
+# Requires bash 4.4+ (readline 7+)
+bind 'set show-mode-in-prompt on'
+bind $'set vi-ins-mode-string \1\e[6 q\2'  # steady bar for insert mode
+bind $'set vi-cmd-mode-string \1\e[2 q\2'  # steady block for command mode
+
 # --- Disable all pagers ------------------------
 export PAGER=bat          # programa por defecto
 export MANPAGER=bat       # man(1)
@@ -124,3 +130,6 @@ export VISUAL=vim
 
 # Disable focus reporting mode (prevents [O[I characters when switching windows)
 printf "\e[?1004l"
+
+# Enable bracketed paste mode (prevents multi-line paste issues)
+bind 'set enable-bracketed-paste on'

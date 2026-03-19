@@ -83,3 +83,6 @@ printf "\e[?1004l"
 
 # Fix for Node 25 experimental localStorage API issue
 export NODE_OPTIONS="--localstorage-file=/tmp/node-localstorage.json"
+
+# Enable bracketed paste mode (prevents multi-line paste issues)
+set zle_bracketed_paste
