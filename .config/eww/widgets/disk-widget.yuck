@@ -8,6 +8,8 @@
   :initial `[]`
   `~/.config/eww/scripts/disk-other-breakdown.sh`)
 
+(defvar show-disk-other 0)
+
 ; Single row: [folder-icon] [name] ... [chart-icon] [pct%]
 (defwidget disk-row [label path pct]
   (button :class "disk-row"
@@ -18,42 +20,36 @@
       (label :class "disk-chart-icon" :text "")
       (label :class "disk-pct" :text "${pct}%"))))
 
-; Full list widget
+; Full list widget — horizontal: disk list + revealer panel
 (defwidget disk-widget []
-  (box :class "disk-widget" :orientation "v" :space-evenly false
-    (disk-row :label "Documents" :path "/home/milo/Documents" :pct {jq(disk-data, ".documents")})
-    (disk-row :label "Pictures"  :path "/home/milo/Pictures"  :pct {jq(disk-data, ".pictures")})
-    (disk-row :label "Downloads" :path "/home/milo/Downloads" :pct {jq(disk-data, ".downloads")})
-    (disk-row :label "Videos"    :path "/home/milo/Videos"    :pct {jq(disk-data, ".videos")})
-    (button :class "disk-row disk-row-other"
-            :onclick "${EWW_CMD} open --toggle disk-other-popup"
-      (box :orientation "h" :space-evenly false :valign "center"
-        (label :class "disk-folder-icon" :text "")
-        (label :class "disk-name" :text "Other" :hexpand true :halign "start")
-        (label :class "disk-chart-icon" :text "")
-        (label :class "disk-pct" :text "${jq(disk-data, '.other')}%")))
-    (disk-row :label "Root"      :path "/root"                :pct {jq(disk-data, ".root")})))
+  (box :orientation "h" :space-evenly false
+    (box :class "disk-widget" :orientation "v" :space-evenly false
+      (disk-row :label "Documents" :path "/home/milo/Documents" :pct {jq(disk-data, ".documents")})
+      (disk-row :label "Pictures"  :path "/home/milo/Pictures"  :pct {jq(disk-data, ".pictures")})
+      (disk-row :label "Downloads" :path "/home/milo/Downloads" :pct {jq(disk-data, ".downloads")})
+      (disk-row :label "Videos"    :path "/home/milo/Videos"    :pct {jq(disk-data, ".videos")})
+      (button :class {show-disk-other == 1 ? "disk-row disk-row-other open" : "disk-row disk-row-other"}
+              :onclick "${EWW_CMD} update show-disk-other=$((1 - ${show-disk-other}))"
+        (box :orientation "h" :space-evenly false :valign "center"
+          (label :class "disk-folder-icon" :text "")
+          (label :class "disk-name" :text "Other" :hexpand true :halign "start")
+          (label :class "disk-chart-icon" :text "")
+          (label :class "disk-pct" :text "${jq(disk-data, '.other')}%")))
+      (disk-row :label "Root"      :path "/root"                :pct {jq(disk-data, ".root")}))
+    (revealer :transition "slideright"
+              :reveal {show-disk-other == 1}
+              :duration "250ms"
+      (box :class "disk-other-panel" :orientation "v" :space-evenly false
+        (for entry in disk-other-data
+          (button :class "disk-other-entry"
+                  :onclick "xdg-open '${entry.path}'"
+            (box :orientation "h" :space-evenly false :valign "center"
+              (label :class "disk-other-name" :text {entry.name} :hexpand true :halign "start")
+              (label :class "disk-other-size" :text {entry.size}))))))))
 
 (defwindow disk-widget
   :monitor 0
-  :geometry (geometry :x "1120px" :y "530px" :width "260px" :anchor "top right")
+  :geometry (geometry :x "540px" :y "530px" :anchor "top left")
   :stacking "bg"
   :focusable false
   (disk-widget))
-
-; Popup: top 6 heaviest dirs in "Other"
-(defwidget disk-other-popup-widget []
-  (box :class "disk-other-popup" :orientation "v" :space-evenly false
-    (for entry in disk-other-data
-      (button :class "disk-other-entry"
-              :onclick "xdg-open '${entry.path}'"
-        (box :orientation "h" :space-evenly false :valign "center"
-          (label :class "disk-other-name" :text {entry.name} :hexpand true :halign "start")
-          (label :class "disk-other-size" :text {entry.size}))))))
-
-(defwindow disk-other-popup
-  :monitor 0
-  :geometry (geometry :x "852px" :y "530px" :width "220px" :anchor "top right")
-  :stacking "bg"
-  :focusable false
-  (disk-other-popup-widget))

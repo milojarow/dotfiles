@@ -1,0 +1,18 @@
+(defpoll helios-storage :interval "5m"
+  :initial `{"used":"?","total":"?","pct":0}`
+  `~/.config/eww/scripts/helios-storage.sh`)
+
+(defwidget helios-storage-widget []
+  (box :class "helios-storage" :orientation "h"
+       :space-evenly false :valign "center"
+    (label :class "helios-title" :text "helios")
+    (progress :class "helios-bar" :value {helios-storage.pct} :orientation "h")
+    (label :class "helios-stats"
+           :text "${helios-storage.used} / ${helios-storage.total}")))
+
+(defwindow helios-storage-window
+  :monitor 0
+  :geometry (geometry :width "320px" :anchor "bottom right" :x "8px" :y "46px")
+  :stacking "bg"
+  :focusable false
+  (helios-storage-widget))
