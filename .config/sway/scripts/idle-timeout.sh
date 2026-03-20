@@ -60,6 +60,7 @@ EOF
 # Restart swayidle to apply changes
 pkill swayidle || true
 swayidle -w -S seat0 &
+{ sleep 0.1; pkill -USR1 -f 'idle-inhibitor-subscribe.sh' 2>/dev/null; } &
 
 # Notify user
 notify-send "Idle timeout set" "System will lock after $timeout_minutes minutes of inactivity"

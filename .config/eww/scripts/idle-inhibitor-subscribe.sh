@@ -19,6 +19,9 @@ emit() {
     fi
 }
 
+# Re-emit current state when signaled (after external swayidle restart)
+trap 'emit' USR1
+
 toggle() {
     if pgrep -x swayidle > /dev/null; then
         pkill swayidle

@@ -38,10 +38,10 @@ _on_exit() {
             swayidle -w -S seat0 200>&- &
             disown
         fi
-        # Reopen eww bar after unlock: fixes width regression from resume (output
-        # resolution may not have settled when eww first opened) and forces the
-        # idle-inhibitor deflisten to re-emit the correct state.
-        /home/milo/.config/eww/scripts/open-windows.sh &
+        # Signal idle-inhibitor deflisten to re-check swayidle state.
+        # No close+open needed — resolution doesn't change on unlock,
+        # and resume geometry is handled by eww-resume-watch.sh.
+        { sleep 0.1; pkill -USR1 -f 'idle-inhibitor-subscribe.sh' 2>/dev/null; } &
         disown
     fi
 }

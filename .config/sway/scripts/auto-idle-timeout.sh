@@ -50,3 +50,4 @@ pkill -x swayidle 2>/dev/null
 while pgrep -x swayidle > /dev/null 2>&1; do sleep 0.1; done
 swayidle -w -S seat0 &
 disown
+{ sleep 0.1; pkill -USR1 -f 'idle-inhibitor-subscribe.sh' 2>/dev/null; } &
