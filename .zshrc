@@ -52,11 +52,8 @@ if [[ -f "$HOME/.env" ]]; then
   source "$HOME/.env"
 fi
 
-# --- Disable all pagers ------------------------
-export PAGER=bat
-export MANPAGER=bat
-export SYSTEMD_PAGER=bat
-export GIT_PAGER=bat
+# Environment variables (EDITOR, PAGER, PATH, etc.) are set in
+# ~/.config/environment.d/10-defaults.conf — inherited by all processes
 
 
 # user custom behavior – disable command autocorrect
@@ -71,18 +68,11 @@ unsetopt hist_find_no_dups
 bindkey -M vicmd 'k' history-beginning-search-backward
 bindkey -M vicmd 'j' history-beginning-search-forward
 
-# Add npm global bin to PATH
-export PATH="$HOME/.npm-global/bin:$PATH"
-
-# Default editor configuration
-export EDITOR=vim
-export VISUAL=vim
 
 # Disable focus reporting mode (prevents [O[I characters when switching windows)
 printf "\e[?1004l"
 
-# Fix for Node 25 experimental localStorage API issue
-export NODE_OPTIONS="--localstorage-file=/tmp/node-localstorage.json"
+# NODE_OPTIONS is set in ~/.config/environment.d/10-defaults.conf
 
 # Enable bracketed paste mode (prevents multi-line paste issues)
 set zle_bracketed_paste

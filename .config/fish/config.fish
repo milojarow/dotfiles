@@ -14,10 +14,9 @@ fish_vi_key_bindings
 #    # smth smth
 #end
 
-# Add cargo, npm global bins, and custom scripts to PATH
-fish_add_path $HOME/.cargo/bin
-fish_add_path $HOME/.npm-global/bin
-fish_add_path $HOME/.scripts
+# PATH is set in ~/.config/environment.d/10-defaults.conf
+# fish_add_path only needed for ~/.local/bin (pipx) since fish doesn't inherit it reliably
+fish_add_path $HOME/.local/bin
 
 # aliases
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
@@ -45,18 +44,8 @@ function remote-exists
     end
 end
 
-# --- Disable all pagers ------------------------
-set -Ux PAGER bat
-set -Ux MANPAGER bat
-set -Ux SYSTEMD_PAGER bat
-set -Ux GIT_PAGER bat
-
-# Default editor configuration
-set -gx EDITOR vim
-set -gx VISUAL vim
-
-# Kubernetes config for Hostinger VPS
-set -gx KUBECONFIG "$HOME/.kube/config-hostinger"
+# Environment variables (EDITOR, PAGER, KUBECONFIG, etc.) are set in
+# ~/.config/environment.d/10-defaults.conf — inherited by all processes
 
 # Disable focus reporting mode (prevents [O[I characters when switching windows)
 printf "\e[?1004l"

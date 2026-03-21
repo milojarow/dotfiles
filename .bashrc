@@ -101,17 +101,13 @@ bind 'set show-mode-in-prompt on'
 bind $'set vi-ins-mode-string \1\e[6 q\2'  # steady bar for insert mode
 bind $'set vi-cmd-mode-string \1\e[2 q\2'  # steady block for command mode
 
-# --- Disable all pagers ------------------------
-export PAGER=bat          # programa por defecto
-export MANPAGER=bat       # man(1)
-export SYSTEMD_PAGER=bat  # systemctl / journalctl
-export GIT_PAGER=bat      # git log, diff, etc.
+# Environment variables (EDITOR, PAGER, PATH, etc.) are set in
+# ~/.config/environment.d/10-defaults.conf — inherited by all processes
 
-#
-
+# NVM (Node Version Manager)
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # Wrapper for nvm use to automatically handle prefix conflict
 nvm() {
@@ -121,12 +117,6 @@ nvm() {
     command nvm "$@"
   fi
 }
-
-export PATH="$HOME/.npm-global/bin:$PATH"
-
-# Default editor configuration
-export EDITOR=vim
-export VISUAL=vim
 
 # Disable focus reporting mode (prevents [O[I characters when switching windows)
 printf "\e[?1004l"
