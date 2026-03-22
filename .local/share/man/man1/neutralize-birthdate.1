@@ -1,0 +1,110 @@
+.TH NEUTRALIZE-BIRTHDATE 1 "2026-03-22" "system hardening" "User Commands"
+.SH NAME
+neutralize-birthdate \- nullify the systemd userdb birthDate field for all human users
+.SH DESCRIPTION
+Preemptive countermeasure against OS-level age verification infrastructure.
+.PP
+systemd PR #40954 (merged 2026-03-18) added a
+.B birthDate
+field to userdb JSON records. This field feeds age data to
+.BR xdg-desktop-portal (1)
+for application-level age gating, mandated by California AB 1043
+(effective 2027-01-01) and Brazil Lei 15.211 (effective 2026-03-17).
+.PP
+This tool creates
+.I /etc/userdb/<user>.user
+drop-in JSON files with
+.B birthDate
+set to
+.BR null ,
+neutralizing the field before it arrives in a systemd update.
+The systemd Multiplexer merges these drop-ins with NSS records from
+.IR /etc/passwd ,
+so only the userName, uid, and birthDate fields are needed.
+.SH OPERATION
+Three event-driven triggers invoke the same script:
+.TP
+.B systemd .path unit
+Watches
+.I /etc/userdb/
+(external tools writing birthDate) and
+.I /etc/passwd
+(new user creation via
+.BR useradd (8)).
+Uses inotify via
+.BR PathModified= ,
+not polling.
+.TP
+.B pacman hook
+Fires after
+.B systemd
+or
+.B systemd-libs
+package upgrades. Catches the moment birthDate support actually lands.
+.TP
+.B Manual invocation
+.B sudo neutralize-birthdate.sh
+can be run at any time. The script is idempotent \(em it skips users
+whose drop-in already has birthDate set to null.
+.SH IDEMPOTENCY
+The script uses a python3 guard: if the existing drop-in already contains
+.BR "birthDate: null" ,
+it exits without writing, preventing feedback loops from the .path unit
+re-triggering on its own writes. The service unit also has
+.B StartLimitBurst=5
+per 60 seconds as a safety net.
+.SH FILES
+.TP
+.I ~/.scripts/neutralize-birthdate.sh
+Core script. Iterates /etc/passwd for UIDs 1000\(en65533, creates or
+updates drop-in JSON files, creates UID symlinks, and restarts
+.BR systemd-userdbd (8)
+if changes were made. Logs to journald via
+.BR logger (1)
+with tag
+.BR neutralize-birthdate .
+.TP
+.I /etc/systemd/system/neutralize-birthdate.service
+Oneshot service that executes the script. No [Install] section \(em
+activated only by the .path unit and pacman hook.
+.TP
+.I /etc/systemd/system/neutralize-birthdate.path
+Path watcher. PathModified on /etc/userdb and /etc/passwd.
+Enabled at multi-user.target.
+.TP
+.I /etc/pacman.d/hooks/neutralize-birthdate.hook
+Pacman alpm hook. Targets systemd and systemd-libs packages,
+PostTransaction.
+.TP
+.I /etc/userdb/<username>.user
+Drop-in JSON records created by the script. Minimal format:
+.BR "{ userName, uid, birthDate: null }" .
+.TP
+.I /etc/userdb/<uid>.user
+Symlink to <username>.user for UID-based lookups.
+.SH VERIFICATION
+.nf
+# Check drop-in content
+cat /etc/userdb/milo.user
+
+# Query via userdbctl DropIn service
+userdbctl --json=pretty --service=io.systemd.DropIn user milo
+
+# Check path unit status
+systemctl status neutralize-birthdate.path
+
+# Check journal logs
+journalctl -t neutralize-birthdate --no-pager -n 20
+.fi
+.SH BACKGROUND
+Ageless Linux (agelesslinux.org) pioneered the birthDate neutralization
+approach via their become-ageless.sh script. This implementation extracts
+the technical mechanism, replaces the 24-hour polling timer with
+event-driven systemd .path units and pacman hooks, and omits the
+os-release rebranding and compliance documentation.
+.SH SEE ALSO
+.BR userdbctl (1),
+.BR systemd-userdbd.service (8),
+.BR nss-systemd (8),
+.BR systemd.path (5),
+.BR alpm-hooks (5)
