@@ -5,6 +5,12 @@
 data=$(ssh -o ConnectTimeout=5 -o BatchMode=yes helios "df -B1 / | tail -1" 2>/dev/null)
 
 if [[ -z "$data" ]]; then
+  # No connection — wait for network up event, then retry once
+  nmcli monitor 2>/dev/null | grep -m1 -q "connected"
+  data=$(ssh -o ConnectTimeout=5 -o BatchMode=yes helios "df -B1 / | tail -1" 2>/dev/null)
+fi
+
+if [[ -z "$data" ]]; then
   echo '{"used":"?","total":"?","pct":0}'
   exit 0
 fi
