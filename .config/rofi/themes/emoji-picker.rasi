@@ -23,7 +23,29 @@ window {
 mainbox {
     padding: 0;
     spacing: 6px;
-    children: [inputbar, listview];
+    children: [inputbar, mode-switcher, listview];
+}
+
+/* Tab bar for emoji categories */
+mode-switcher {
+    background-color: transparent;
+    spacing: 2px;
+    padding: 2px 0px;
+}
+
+button {
+    padding: 4px 6px;
+    border-radius: 4px;
+    background-color: transparent;
+    text-color: rgba(248, 248, 242, 0.6);
+    cursor: pointer;
+}
+
+button selected {
+    background-color: @selected-bg;
+    text-color: @accent-color;
+    border: 0px 0px 2px 0px;
+    border-color: @accent-color;
 }
 
 inputbar {
@@ -32,13 +54,8 @@ inputbar {
     border-color: @accent-color;
     border-radius: 4px;
     background-color: #1c2526;
-    children: [prompt, entry];
+    children: [entry];
     spacing: 6px;
-}
-
-prompt {
-    text-color: @accent-color;
-    enabled: true;
 }
 
 entry {

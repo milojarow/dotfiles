@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Rofi script-mode handler for the emoji picker.
+# Usage: emoji-modi-handler <category>
+# Called by rofi for each tab (faces, people, animals, etc.)
+
+CATEGORY="$1"
+CATEGORY_DIR="$HOME/.local/share/bemoji/categories"
+HISTORY_FILE="$HOME/.local/state/bemoji-history.txt"
+SELECTION_FILE="/tmp/emoji-picker-selection"
+MAX_RECENT=50
+
+# On selection (ROFI_RETV=1 or 2): save selection and output nothing to close rofi
+if [[ "$ROFI_RETV" == "1" || "$ROFI_RETV" == "2" ]]; then
+    # $@ contains the selected text (e.g., "😀 grinning face")
+    shift  # Remove category arg, rest is the selected line
+    echo "$*" > "$SELECTION_FILE"
+    exit 0
+fi
+
+# Initial call (ROFI_RETV=0): output the emoji list for this category
+case "$CATEGORY" in
+    recent)
+        if [[ -f "$HISTORY_FILE" ]]; then
+            # Show most recent first, deduplicated, limited to MAX_RECENT
+            tac "$HISTORY_FILE" | awk '!seen[$0]++' | head -n "$MAX_RECENT"
+        fi
+        ;;
+    *)
+        cat "$CATEGORY_DIR/$CATEGORY.txt" 2>/dev/null
+        ;;
+esac
