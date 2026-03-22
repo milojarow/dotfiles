@@ -1,0 +1,12 @@
+# Drop Zone — see: man drop-zone
+[Unit]
+Description=Drop Zone — auto-sync ~/shared/selene to selene VPS
+After=network-online.target
+
+[Service]
+ExecStart=%h/.scripts/sync-to-selene.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
