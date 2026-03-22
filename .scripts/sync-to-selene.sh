@@ -14,6 +14,9 @@ mkdir -p "$WATCH_DIR"
 
 inotifywait -mr -e close_write,moved_to,delete "$WATCH_DIR" --format '%e %w%f' |
 while read -r event file; do
+  # Auto-spawn monitor window if not already open (don't disturb scratchpad)
+  swaymsg -t get_tree 2>/dev/null | grep -q '"app_id":"sync-selene"' || \
+    swaymsg exec "$HOME/.scripts/sync-selene-monitor.sh" 2>/dev/null
   name="${file#$WATCH_DIR/}"
   echo "$(date '+%H:%M:%S') ── syncing: $name" >> "$LOG"
   start=$(date +%s)
