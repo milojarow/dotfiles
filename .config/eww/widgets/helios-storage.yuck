@@ -1,6 +1,6 @@
-(defpoll helios-storage :interval "5m"
+(deflisten helios-storage
   :initial `{"used":"?","total":"?","pct":0}`
-  `~/.config/eww/scripts/helios-storage.sh`)
+  `~/.config/eww/scripts/vps-storage.sh helios`)
 
 (defwidget helios-storage-widget []
   (box :class "helios-storage" :orientation "h"

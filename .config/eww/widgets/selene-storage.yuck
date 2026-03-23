@@ -1,6 +1,6 @@
-(defpoll selene-storage :interval "5m"
+(deflisten selene-storage
   :initial `{"used":"?","total":"?","pct":0}`
-  `~/.config/eww/scripts/selene-storage.sh`)
+  `~/.config/eww/scripts/vps-storage.sh selene`)
 
 (defwidget selene-storage-widget []
   (box :class "selene-storage" :orientation "h"
