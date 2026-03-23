@@ -20,10 +20,14 @@ fi
 # Initial call (ROFI_RETV=0): output the emoji list for this category
 case "$CATEGORY" in
     recent)
-        if [[ -f "$HISTORY_FILE" ]]; then
-            # Show most recent first, deduplicated, limited to MAX_RECENT
-            tac "$HISTORY_FILE" | awk '!seen[$0]++' | head -n "$MAX_RECENT"
-        fi
+        # Recent items first, then ALL emojis (except kaomoji) for search.
+        # awk deduplicates so recent items don't repeat in the full list.
+        {
+            if [[ -f "$HISTORY_FILE" ]]; then
+                tac "$HISTORY_FILE" | head -n "$MAX_RECENT"
+            fi
+            cat "$CATEGORY_DIR"/{faces,people,animals,food,travel,activities,objects,symbols,flags}.txt 2>/dev/null
+        } | awk '!seen[$0]++'
         ;;
     *)
         cat "$CATEGORY_DIR/$CATEGORY.txt" 2>/dev/null
