@@ -18,6 +18,17 @@ fish_vi_key_bindings
 # fish_add_path only needed for ~/.local/bin (pipx) since fish doesn't inherit it reliably
 fish_add_path $HOME/.local/bin
 
+# Load secrets from environment.d (systemd only injects these into user services,
+# not into terminal sessions started via sway/TTY)
+if test -f $HOME/.secrets/environment.d/11-secrets.conf
+    while read -l line
+        string match -qr '^\s*#' -- $line; and continue
+        string match -qr '^\s*$' -- $line; and continue
+        set -l parts (string split -m1 '=' -- $line)
+        test (count $parts) -eq 2; and set -gx $parts[1] $parts[2]
+    end <$HOME/.secrets/environment.d/11-secrets.conf
+end
+
 # aliases
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
 alias claude='claude --dangerously-skip-permissions'
