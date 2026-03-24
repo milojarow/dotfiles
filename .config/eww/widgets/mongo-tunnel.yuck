@@ -15,7 +15,7 @@
         (label :class {mongo-tunnel.active ? "mongo-icon leaf active" : "mongo-icon leaf"}
                :text "󰌪")))
     (label :class {mongo-tunnel.active ? "mongo-tube active" : "mongo-tube"}
-           :text {mongo-tunnel.active ? "━━━━━━━━" : "━━▶    ◀━━"})
+           :text "━━━━━━━━━━")
     (eventbox :cursor "pointer"
       (button :class {mongo-tunnel.active ? "mongo-orb mongo-moon active" : "mongo-orb mongo-moon"}
               :onclick "echo t > /tmp/eww-mongo-tunnel"

@@ -1,46 +1,47 @@
 #!/usr/bin/env bash
 # mongo-tunnel-subscribe.sh — eww deflisten for MongoDB SSH tunnel toggle.
 #
-# Architecture:
-# - Named pipe receives toggle signals from the widget onclick
-# - Emits JSON with active (bool) and status (disconnected/connecting/connected)
-# - Manages SSH tunnel: ssh -fN -L 27017:localhost:27017 selene
+# Uses a PID file instead of pgrep -f to avoid false positives
+# (pgrep -f matches its own command line).
 
 PIPE="/tmp/eww-mongo-tunnel"
-TUNNEL_PATTERN="ssh.*-L 27017:localhost:27017"
+PIDFILE="/tmp/mongo-tunnel.pid"
+
+is_alive() {
+    [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null
+}
 
 emit() {
-    if pgrep -f "$TUNNEL_PATTERN" > /dev/null 2>&1; then
+    if is_alive; then
         printf '{"active": true, "status": "connected"}\n'
     else
+        rm -f "$PIDFILE"
         printf '{"active": false, "status": "disconnected"}\n'
     fi
 }
 
 toggle() {
-    if pgrep -f "$TUNNEL_PATTERN" > /dev/null 2>&1; then
-        pkill -f "$TUNNEL_PATTERN"
+    if is_alive; then
+        kill "$(cat "$PIDFILE")" 2>/dev/null
+        rm -f "$PIDFILE"
     else
-        # Show connecting state while SSH authenticates
         printf '{"active": false, "status": "connecting"}\n'
-        # -f backgrounds after auth, -N no remote command
-        ssh -fN -o ConnectTimeout=10 -o BatchMode=yes \
-            -L 27017:localhost:27017 selene 2>/dev/null
+        if ssh -fN -o ConnectTimeout=10 -o BatchMode=yes \
+               -L 27017:localhost:27017 selene 2>/dev/null; then
+            # ssh -f returns after forking; find the backgrounded process
+            pgrep -n -f "ssh.*27017:localhost:27017.*selene" > "$PIDFILE" 2>/dev/null
+        fi
     fi
     emit
 }
 
-# Re-emit state when signaled externally
 trap 'emit' USR1
 
-# Recreate pipe on each (re)start
 rm -f "$PIPE"
 mkfifo "$PIPE"
 
-# Bootstrap: emit current state
 emit
 
-# Block waiting for toggle signals from the widget
 while read -r _ < "$PIPE"; do
     toggle
 done
