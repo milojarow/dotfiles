@@ -1,0 +1,58 @@
+@import "./theme";
+
+// ── MongoDB tunnel toggle — glass orbs ──────────────────────────────────────
+
+@keyframes mongo-connecting-pulse {
+  0%   { opacity: 1.0; }
+  50%  { opacity: 0.3; }
+  100% { opacity: 1.0; }
+}
+
+@keyframes mongo-glow-breathe {
+  0%   { opacity: 0.85; }
+  50%  { opacity: 1.0; }
+  100% { opacity: 0.85; }
+}
+
+// ── Orbs ────────────────────────────────────────────────────────────────────
+.mongo-orb {
+  background: rgba(46, 52, 64, 0.99);
+  border: 2px solid rgba(76, 86, 106, 0.40);
+  border-radius: 48px;
+  min-width: 96px;
+  min-height: 96px;
+
+  &.active {
+    animation: mongo-glow-breathe 3s ease-in-out infinite;
+  }
+}
+
+.mongo-leaf.active {
+  border-color: rgba(158, 206, 106, 0.50);
+  background: rgba(46, 60, 30, 0.99);
+}
+
+.mongo-moon.active {
+  border-color: rgba(120, 100, 220, 0.50);
+  background: rgba(40, 36, 64, 0.99);
+}
+
+// ── Icons ───────────────────────────────────────────────────────────────────
+.mongo-icon {
+  font-family: "JetBrainsMono Nerd Font";
+  font-size: 42px;
+  color: #4C566A;
+}
+
+.mongo-icon.leaf.active  { color: $color11; }
+.mongo-icon.moon.active  { color: #B4A7F5; }
+
+// ── Tube connector ──────────────────────────────────────────────────────────
+.mongo-tube {
+  font-family: "JetBrainsMono NF", "Roboto Mono", monospace;
+  font-size: 14px;
+  padding: 0 4px;
+  color: rgba(76, 86, 106, 0.5);
+
+  &.active { color: rgba(158, 180, 200, 0.5); }
+}

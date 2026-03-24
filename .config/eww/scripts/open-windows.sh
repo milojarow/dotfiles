@@ -19,5 +19,5 @@ open_window usb-widget
 open_window bt-widget
 open_window timer-widget
 open_window clock
-open_window helios-storage-window
 open_window selene-storage-window
+open_window mongo-tunnel-window
