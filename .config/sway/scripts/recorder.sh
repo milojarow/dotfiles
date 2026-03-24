@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
-set -x
 
-pgrep wf-recorder
+pgrep -x wf-recorder > /dev/null
 status=$?
 
 countdown() {
@@ -19,6 +18,13 @@ notify() {
     notify-send "Recording" "${line}" -i /usr/share/icons/Papirus-Dark/32x32/devices/camera-video.svg $*
 }
 
+# Signal both eww (default) and waybar (fallback) bars
+signal_bars() {
+    waybar-signal recorder 2>/dev/null || true
+    pid=$(pgrep -of "eww/scripts/recorder-subscribe.sh")
+    [ -n "$pid" ] && kill -USR1 "$pid" 2>/dev/null || true
+}
+
 if [ $status != 0 ]; then
     target_path=$(xdg-user-dir VIDEOS)
     timestamp=$(date +'recording_%Y%m%d-%H%M%S')
@@ -27,7 +33,7 @@ if [ $status != 0 ]; then
     area=$(swaymsg -t get_tree | jq -r '.. | select(.pid? and .visible?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"' | slurp)
 
     countdown
-    (sleep 0.5 && waybar-signal recorder) &
+    (sleep 0.5 && signal_bars) &
 
     if [ "$1" = "-a" ]; then
         file="$target_path/$timestamp.mp4"
@@ -37,8 +43,9 @@ if [ $status != 0 ]; then
         wf-recorder -g "$area" -c libvpx --codec-param="qmin=0" --codec-param="qmax=25" --codec-param="crf=4" --codec-param="b:v=1M" --file="$file"
     fi
 
-    waybar-signal recorder && notify "Finished recording ${file}"
+    signal_bars
+    notify "Finished recording ${file}"
 else
     pkill -x --signal SIGINT wf-recorder
-    waybar-signal recorder
+    # Notification is handled by the first instance after wf-recorder exits.
 fi

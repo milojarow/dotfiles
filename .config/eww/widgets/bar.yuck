@@ -99,19 +99,31 @@
 (deflisten wt-flash :initial ""
   `~/.config/eww/scripts/window-title-flash-watch.sh`)
 
+; ── Recording indicator data ─────────────────────────────────────────────────
+(deflisten recorder
+  :initial '{"active": false}'
+  `~/.config/eww/scripts/recorder-subscribe.sh`)
+
 ; ── Sway mode data ────────────────────────────────────────────────────────────
 (deflisten sway-mode
   :initial "{\"name\": \"\", \"active\": false}"
   `~/.config/eww/scripts/sway-mode-subscribe.py`)
 
-; ── Center zone: sway mode (when active) or window title ─────────────────────
+; ── Center zone: sway mode | recording indicator | window title ──────────────
 (defwidget bar-center []
   (box :halign "center" :space-evenly false
     (label :class "bar-mode"
            :markup {sway-mode.name}
            :visible {sway-mode.active})
+    (button :class "bar-recorder-center"
+            :visible {!sway-mode.active && recorder.active}
+            :onclick "echo stop > /tmp/eww-recorder"
+            :tooltip "Recording — click to stop"
+      (box :orientation "h" :space-evenly false :spacing 8 :valign "center"
+        (label :class "bar-recorder-dot" :text "󰑊")
+        (label :class "bar-recorder-label" :text "REC")))
     (button :class "bar-wintitle-btn"
-            :visible {!sway-mode.active}
+            :visible {!sway-mode.active && !recorder.active}
             :onclick "~/.config/eww/scripts/window-title-click-eww.sh"
             :onrightclick "swaymsg -q exec '~/.config/eww/scripts/window-title-rename-eww.sh'"
       (label :class "bar-wintitle ${strlength(wt-flash) > 0 ? 'app-flash' : window-title.css_class}"
@@ -184,6 +196,14 @@
   (button :class "bar-module bar-wifi ${wifi.class}"
           :onclick "${EWW_CMD} open --toggle eww-wifi-popup"
     (label :text {wifi.icon})))
+
+; ── Recording indicator (inside module groups) ──────────────────────────────
+(defwidget bar-recorder []
+  (button :class "bar-module bar-recorder"
+          :visible {recorder.active}
+          :onclick "echo stop > /tmp/eww-recorder"
+          :tooltip "Recording — click to stop"
+    (label :text "󰑊")))
 
 ; ── Module groups ─────────────────────────────────────────────────────────────
 (defwidget bar-module-groups []

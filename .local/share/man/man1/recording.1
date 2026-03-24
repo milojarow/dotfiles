@@ -1,13 +1,13 @@
-.TH RECORDING 1 "2026-03-15" "sway dotfiles" "User Commands"
+.TH RECORDING 1 "2026-03-23" "sway dotfiles" "User Commands"
 .SH NAME
-recording \- screen recording with region selection, audio support, and waybar indicator for sway
+recording \- screen recording with region selection, audio support, and bar indicator for sway
 .SH DESCRIPTION
 The Recording functionality covers the full pipeline from region selection to file output:
 interactive window-snapping region selection via
 .BR slurp (1),
 an optional 3-second countdown, recording via
 .BR wf-recorder (1),
-and a waybar indicator that appears while a recording is in progress.
+and a bar indicator (eww or waybar) that appears while a recording is in progress.
 .PP
 A single script handles both starting and stopping:
 .TP
@@ -20,7 +20,8 @@ If not running, prompts for region selection, counts down, and starts the record
 If already running, sends
 .B SIGINT
 to stop it gracefully.
-In both cases it signals waybar (signal 8) to update the recording indicator.
+In both cases it signals both bars (eww via USR1, waybar via signal 8)
+to update the recording indicator.
 .SH KEYBINDINGS
 Enter recording mode by pressing
 .BR $mod+Shift+r .
@@ -54,19 +55,20 @@ Return to default mode without recording.
 To stop an active recording from anywhere:
 .TP
 .B $mod+Escape
-Sends
-.B SIGINT
-to all
+Runs
+.I recorder.sh
+which detects
 .B wf-recorder
-processes (equivalent to
-.BR "killall -s SIGINT wf-recorder" ).
+is running and sends
+.B SIGINT
+to stop it gracefully.
 .SH SCRIPT BEHAVIOR
 .SS Starting a recording
 .nr step 1 1
 .IP \n[step]. 3
 .I recorder.sh
 runs
-.B pgrep wf-recorder
+.B pgrep -x wf-recorder
 to confirm no recording is active.
 .IP \n+[step].
 Output directory is resolved via
@@ -95,8 +97,10 @@ notifications ("Recording in 3 seconds", "Recording in 2 seconds",
 "Recording in 1 seconds"), one per second.
 .IP \n+[step].
 After 0.5 s,
-.B waybar-signal recorder
-(signal 8) is sent in the background so the waybar indicator appears
+.B signal_bars
+is called in the background to signal both eww (USR1 to
+.IR recorder-subscribe.sh )
+and waybar (signal 8) so the bar indicator appears
 before the first frame is captured.
 .IP \n+[step].
 .BR wf-recorder (1)
@@ -120,8 +124,8 @@ wf-recorder --audio -g "$area" --file="$target_path/$timestamp.mp4"
 When
 .BR wf-recorder (1)
 exits,
-.B waybar-signal recorder
-is sent again to hide the indicator, and a
+.B signal_bars
+is called again to hide the bar indicators, and a
 .BR notify-send (1)
 notification "Finished recording \fI<path>\fP" is shown.
 .SS Stopping a recording
@@ -140,17 +144,51 @@ pkill -x --signal SIGINT wf-recorder
 .EE
 .RE
 .IP \n+[step].
-.B waybar-signal recorder
-(signal 8) is sent to hide the waybar indicator.
+The notification and bar signaling are handled by the first instance of
+.I recorder.sh
+(the one that started the recording), which continues executing after
+.B wf-recorder
+exits.
 .PP
 Stopping can be triggered in three ways: the
 .B $mod+Escape
-keybinding, clicking the waybar indicator, or by
+keybinding, clicking the eww or waybar indicator, or by
 .I recorder.sh
 itself when it detects
 .B wf-recorder
 is already running.
-.SH WAYBAR INDICATOR
+.SH EWW INDICATOR (DEFAULT)
+The eww bar shows a recording indicator in the
+.B center zone
+(replacing the window title) while a recording is active.
+It displays a red pulsating record icon with a
+.B REC
+label.
+.TP
+.B Visibility
+Controlled by a
+.BR deflisten
+variable fed by
+.IR recorder-subscribe.sh ,
+which checks
+.BR "pgrep -x wf-recorder" .
+The indicator is invisible when no recording is in progress.
+.TP
+.B Update mechanism
+.I recorder.sh
+sends
+.B USR1
+to the
+.I recorder-subscribe.sh
+process after starting or stopping a recording.
+.TP
+.B Click
+Left-click writes to the named pipe
+.I /tmp/eww-recorder
+which triggers
+.B pkill -x --signal SIGINT wf-recorder
+to stop the recording.
+.SH WAYBAR INDICATOR (FALLBACK)
 The
 .B custom/wf-recorder
 module in waybar shows a recording icon (nf-md-record_circle) in
@@ -184,7 +222,7 @@ to stop the recording and refresh the indicator.
 .TP
 .I ~/.config/sway/scripts/recorder.sh
 Main script: starts or stops the recording, handles countdown, region selection,
-waybar signaling, and notifications.
+dual-bar signaling (eww + waybar), and notifications.
 .TP
 .I ~/.config/sway/modes/recording
 Sway mode configuration: defines
@@ -195,6 +233,17 @@ all in-mode keybindings, and the
 entry binding and the
 .B $mod+Escape
 stop binding.
+.TP
+.I ~/.config/eww/scripts/recorder-subscribe.sh
+Eww deflisten script: emits JSON recording state, receives USR1 signals
+from recorder.sh and stop commands via named pipe
+.IR /tmp/eww-recorder .
+.TP
+.I ~/.config/eww/widgets/bar.yuck
+Eww bar definition: contains the recording indicator widget in the center zone.
+.TP
+.I ~/.config/eww/styles/recorder.scss
+Eww SCSS: red pulsating animation for the recording indicator.
 .TP
 .I ~/.config/sway/config.d/01-definitions.conf
 Defines the

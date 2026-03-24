@@ -15,5 +15,5 @@ mode --pango_markup $mode_recording {
 ## Launch // Recording Mode ##
 $bindsym $mod+Shift+r mode $mode_recording
 
-## Launch // Stop Recording Mode ##
-$bindsym $mod+Escape exec killall -s SIGINT wf-recorder
+## Stop Recording ##
+$bindsym $mod+Escape exec $recorder
