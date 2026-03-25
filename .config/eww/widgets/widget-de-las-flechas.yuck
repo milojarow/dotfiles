@@ -43,7 +43,25 @@
     (button :class "mover-btn mover-btn--fast"
             :halign "center"
             :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y -50"
-            "↓↓")))
+            "↓↓")
+    ;; Jump movement (200px)
+    (button :class "mover-btn mover-btn--jump"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y 200"
+            "↑↑↑")
+    (box :orientation "h"
+         :space-evenly false
+         :spacing 4
+      (button :class "mover-btn mover-btn--jump"
+              :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} x -200"
+              "←←←")
+      (button :class "mover-btn mover-btn--jump"
+              :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} x 200"
+              "→→→"))
+    (button :class "mover-btn mover-btn--jump"
+            :halign "center"
+            :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y -200"
+            "↓↓↓")))
 
 (defwindow widget-de-las-flechas
   :monitor 0
@@ -52,5 +70,5 @@
                       :anchor "bottom left")
   :stacking "fg"
   :focusable false
-  (widget-de-las-flechas :window "mongo-tunnel-window"
-                          :yuck "~/.config/eww/widgets/mongo-tunnel.yuck"))
+  (widget-de-las-flechas :window "sysmonitor-window"
+                          :yuck "~/.config/eww/widgets/sysmonitor.yuck"))
