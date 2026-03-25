@@ -68,7 +68,7 @@
                :text {wifi-error != ""
                        ? wifi-error
                        : "Connecting to ${wifi-connecting}..."}
-               :truncate true
+               :wrap true
                :hexpand true)))
     ; ── Network list section ──────────────────────────────────────────────────
     (label :class "wifi-section-label"
@@ -122,7 +122,7 @@
 ; ── Wifi manager window ────────────────────────────────────────────────────────
 (defwindow eww-wifi-popup
   :monitor 0
-  :geometry (geometry :x "-8px"
+  :geometry (geometry :x "28px"
                       :y "38px"
                       :width "380px"
                       :anchor "top right")
