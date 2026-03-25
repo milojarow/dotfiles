@@ -179,3 +179,35 @@
   color: mix($theme-fg, $theme-bg, 70%);
   background-color: $theme-selection;
 }
+
+// Connection status bar (revealer)
+.wifi-status-bar {
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.wifi-status-bar.connecting {
+  background-color: mix($theme-accent, $theme-bg, 15%);
+  color: $theme-accent;
+}
+
+.wifi-status-bar.error {
+  background-color: rgba(#f7768e, 0.12);
+  color: #f7768e;
+}
+
+.wifi-status-icon {
+  font-size: 13px;
+  min-width: 16px;
+}
+
+.wifi-status-text {
+  font-size: 11px;
+}
+
+// Pending operation button (connecting...)
+.op-pending-btn {
+  color: mix($theme-fg, $theme-bg, 50%);
+  border: 1px solid $theme-selection;
+}

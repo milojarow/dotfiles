@@ -1,3 +1,7 @@
+; ── Wifi manager state ────────────────────────────────────────────────────────
+(defvar wifi-connecting "")   ; SSID currently being connected — empty = idle
+(defvar wifi-error "")        ; Error message string — empty = no error
+
 ; ── Wifi manager data ─────────────────────────────────────────────────────────
 (defpoll wifi-networks :interval "30s"
   `~/.config/eww/scripts/wifi-scan.py`)
@@ -50,6 +54,22 @@
       (box :orientation "h" :space-evenly false :spacing 6
         (label :class "wifi-detail-label" :xalign 0.0 :text "Security")
         (label :class "wifi-detail-value" :text {wifi.security})))
+    ; ── Connection status feedback ──────────────────────────────────────────
+    (revealer :reveal {wifi-connecting != "" || wifi-error != ""}
+              :transition "slidedown"
+              :duration "200ms"
+      (box :class {wifi-error != "" ? "wifi-status-bar error" : "wifi-status-bar connecting"}
+           :orientation "h"
+           :space-evenly false
+           :spacing 8
+        (label :class "wifi-status-icon"
+               :text {wifi-error != "" ? "✗" : "⟳"})
+        (label :class "wifi-status-text"
+               :text {wifi-error != ""
+                       ? wifi-error
+                       : "Connecting to ${wifi-connecting}..."}
+               :truncate true
+               :hexpand true)))
     ; ── Network list section ──────────────────────────────────────────────────
     (label :class "wifi-section-label"
            :halign "start"
@@ -84,10 +104,12 @@
                      :visible {strlength(net.security) > 0}
                      :text {net.security}))
             ; Action buttons
-            (button :class "wifi-action-btn connect-btn"
+            (button :class {wifi-connecting == net.ssid
+                             ? "wifi-action-btn op-pending-btn"
+                             : "wifi-action-btn connect-btn"}
                     :visible {!net.in_use}
                     :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-connect.sh \"${net.ssid}\" ${net.known} \"${net.security}\"'"
-              (label :text "connect"))
+              (label :text {wifi-connecting == net.ssid ? "connecting..." : "connect"}))
             (button :class "wifi-action-btn disconnect-btn"
                     :visible {net.in_use}
                     :onclick "~/.config/eww/scripts/wifi-disconnect.sh"
