@@ -10,7 +10,7 @@
 
 ; --- Circle trigger widget ---
 (defwidget bt-trigger []
-  (button :class {bt-popup-open > 0 ? "bt-circle active" : "bt-circle"}
+  (button :class {bt-data.connected_count > 0 ? "bt-circle connected" : "bt-circle"}
           :onclick "~/.config/eww/scripts/bt-toggle-popup.sh"
     (label :class {bt-data.connected_count > 0 ? "bt-icon connected" : "bt-icon"}
            :text "󰂯")))
