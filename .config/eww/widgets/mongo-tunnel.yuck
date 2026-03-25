@@ -27,7 +27,7 @@
 
 (defwindow mongo-tunnel-window
   :monitor 0
-  :geometry (geometry :anchor "bottom right" :x "8px" :y "200px")
+  :geometry (geometry :anchor "bottom right" :x "68px" :y "260px")
   :stacking "bg"
   :focusable false
   (mongo-tunnel-widget))
