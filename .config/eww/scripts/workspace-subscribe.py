@@ -60,6 +60,8 @@ ICON_MAP = {
     "s45-panel":               "\U000f0b5f",
     # LibreWolf with custom profile (app_id = profile name)
     "s45-blindando":           "\ue745",
+    # MongoDB Compass
+    "mongodb compass":         "\U000f032a",  # leaf (same as mongo-tunnel)
 }
 
 # TUI apps that run inside a terminal — identified by child process comm name.
