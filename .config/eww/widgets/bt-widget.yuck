@@ -18,8 +18,8 @@
 ; --- Circle trigger window (always open on desktop) ---
 (defwindow bt-widget
   :monitor 0
-  :geometry (geometry :x "1170px"
-                      :y "570px"
+  :geometry (geometry :x "1460px"
+                      :y "910px"
                       :anchor "bottom left")
   :stacking "bg"
   :focusable false
