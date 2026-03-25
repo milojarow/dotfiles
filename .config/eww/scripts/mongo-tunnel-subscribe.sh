@@ -1,14 +1,27 @@
 #!/usr/bin/env bash
 # mongo-tunnel-subscribe.sh — eww deflisten for MongoDB SSH tunnel toggle.
 #
-# Uses a PID file instead of pgrep -f to avoid false positives
-# (pgrep -f matches its own command line).
+# Bulletproof: survives eww reload, daemon restart, suspend/resume, reboots.
+# Desired state persists in ~/.local/state/mongo-tunnel/wanted.
+# Health check every 30s auto-reconnects if tunnel drops.
 
 PIPE="/tmp/eww-mongo-tunnel"
 PIDFILE="/tmp/mongo-tunnel.pid"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/mongo-tunnel"
+WANTED="$STATE_DIR/wanted"
+
+mkdir -p "$STATE_DIR"
 
 is_alive() {
-    [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null
+    if [[ -f "$PIDFILE" ]]; then
+        kill -0 "$(cat "$PIDFILE")" 2>/dev/null && return 0
+        rm -f "$PIDFILE"
+    fi
+    # Fallback: find by pattern if PID file was lost
+    local pid
+    pid=$(pgrep -n -f "[s]sh.*-L 27017:localhost:27017.*selene" 2>/dev/null) || return 1
+    echo "$pid" > "$PIDFILE"
+    return 0
 }
 
 emit() {
@@ -20,28 +33,47 @@ emit() {
     fi
 }
 
+start_tunnel() {
+    printf '{"active": false, "status": "connecting"}\n'
+    if ssh -fN -o ConnectTimeout=10 -o BatchMode=yes \
+           -o ServerAliveInterval=15 -o ServerAliveCountMax=3 \
+           -o ExitOnForwardFailure=yes \
+           -L 27017:localhost:27017 selene 2>/dev/null; then
+        pgrep -n -f "[s]sh.*-L 27017:localhost:27017.*selene" > "$PIDFILE" 2>/dev/null
+    fi
+}
+
 toggle() {
     if is_alive; then
         kill "$(cat "$PIDFILE")" 2>/dev/null
-        rm -f "$PIDFILE"
+        rm -f "$PIDFILE" "$WANTED"
     else
-        printf '{"active": false, "status": "connecting"}\n'
-        if ssh -fN -o ConnectTimeout=10 -o BatchMode=yes \
-               -L 27017:localhost:27017 selene 2>/dev/null; then
-            # ssh -f returns after forking; find the backgrounded process
-            pgrep -n -f "ssh.*27017:localhost:27017.*selene" > "$PIDFILE" 2>/dev/null
-        fi
+        touch "$WANTED"
+        start_tunnel
     fi
     emit
 }
 
-trap 'emit' USR1
-
+# ── Startup ──────────────────────────────────────────────────────────────────
 rm -f "$PIPE"
 mkfifo "$PIPE"
 
+# Reconcile: if tunnel was wanted but died, restart it
+if [[ -f "$WANTED" ]] && ! is_alive; then
+    start_tunnel
+fi
 emit
 
-while read -r _ < "$PIPE"; do
-    toggle
+# ── Main loop ────────────────────────────────────────────────────────────────
+exec 3<>"$PIPE"
+while true; do
+    if read -t 30 -r _ <&3; then
+        toggle
+    else
+        # Health check: reconnect if wanted but dead
+        if [[ -f "$WANTED" ]] && ! is_alive; then
+            start_tunnel
+            emit
+        fi
+    fi
 done
