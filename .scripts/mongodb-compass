@@ -1,0 +1,23 @@
+#!/bin/bash
+# Wrapper for MongoDB Compass — injects password from environment into
+# the saved connection JSON before launching. Compass strips passwords
+# on exit (stores them in gnome-keyring, which is broken on Wayland),
+# so this re-injects every launch.
+
+COMPASS_DIR="$HOME/.config/MongoDB Compass/Connections"
+
+if [[ -z "$MDB_COMPASS_PASSWORD" ]]; then
+    echo "Warning: MDB_COMPASS_PASSWORD not set, launching Compass without password injection" >&2
+    exec /usr/sbin/mongodb-compass "$@"
+fi
+
+# Patch every saved connection: insert password after "blindando@"
+for f in "$COMPASS_DIR"/*.json; do
+    [[ -f "$f" ]] || continue
+    jq --arg pw "$MDB_COMPASS_PASSWORD" '
+        .connectionInfo.connectionOptions.connectionString |=
+            gsub("blindando@"; "blindando:" + $pw + "@")
+    ' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+done
+
+exec /usr/sbin/mongodb-compass "$@"
