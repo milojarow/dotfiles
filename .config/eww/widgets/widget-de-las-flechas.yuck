@@ -1,5 +1,5 @@
 ;; Arrow widget for repositioning other eww windows.
-;; To target a different widget, edit the defwindow below:
+;; To target a different widget, edit the defwindow instance below:
 ;;   :window — the defwindow name to move
 ;;   :yuck   — path to the .yuck file that contains that defwindow
 
@@ -8,6 +8,7 @@
        :orientation "v"
        :space-evenly false
        :spacing 4
+    ;; Fine movement (10px)
     (button :class "mover-btn"
             :halign "center"
             :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y 10"
@@ -24,34 +25,25 @@
     (button :class "mover-btn"
             :halign "center"
             :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y -10"
-            "↓")))
-
-(defwidget widget-de-las-flechas-icon [xvar yvar yuck ?savecmd]
-  (box :class "widget-mover"
-       :orientation "v"
-       :space-evenly false
-       :spacing 4
-    (button :class "mover-btn"
+            "↓")
+    ;; Coarse movement (50px)
+    (button :class "mover-btn mover-btn--fast"
             :halign "center"
-            :onclick "~/.config/eww/scripts/update-eww-var.sh ${yvar} -4"
-            "↑")
+            :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y 50"
+            "↑↑")
     (box :orientation "h"
          :space-evenly false
          :spacing 4
-      (button :class "mover-btn"
-              :onclick "~/.config/eww/scripts/update-eww-var.sh ${xvar} -4"
-              "←")
-      (button :class "mover-btn"
-              :onclick "~/.config/eww/scripts/update-eww-var.sh ${xvar} 4"
-              "→"))
-    (button :class "mover-btn"
+      (button :class "mover-btn mover-btn--fast"
+              :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} x -50"
+              "←←")
+      (button :class "mover-btn mover-btn--fast"
+              :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} x 50"
+              "→→"))
+    (button :class "mover-btn mover-btn--fast"
             :halign "center"
-            :onclick "~/.config/eww/scripts/update-eww-var.sh ${yvar} 4"
-            "↓")
-    (button :class "mover-btn mover-btn--save"
-            :halign "center"
-            :onclick {savecmd ?: "~/.config/eww/scripts/save-eww-var.sh " + yuck + " " + xvar + " && ~/.config/eww/scripts/save-eww-var.sh " + yuck + " " + yvar}
-            "save")))
+            :onclick "~/.config/eww/scripts/move-widget.sh ${window} ${yuck} y -50"
+            "↓↓")))
 
 (defwindow widget-de-las-flechas
   :monitor 0
@@ -60,7 +52,5 @@
                       :anchor "bottom left")
   :stacking "fg"
   :focusable false
-  (widget-de-las-flechas-icon :xvar "arch-icon-x"
-                               :yvar "arch-icon-y"
-                               :yuck "~/.config/eww/widgets/arch-logo.yuck"
-                               :savecmd "~/.config/eww/scripts/save-arch-logo.sh ~/.config/eww/widgets/arch-logo.yuck"))
+  (widget-de-las-flechas :window "mongo-tunnel-window"
+                          :yuck "~/.config/eww/widgets/mongo-tunnel.yuck"))
