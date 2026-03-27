@@ -410,7 +410,7 @@ Target = *
 [Action]
 Description = Refreshing waybar pacman module...
 When = PostTransaction
-Exec = /usr/bin/pkill -RTMIN+14 waybar
+Exec = /bin/sh -c "pkill -RTMIN+14 waybar; exit 0"
 EOF
         info "Created: waybar-pacman.hook"
     else
@@ -454,6 +454,77 @@ EOF
         info "Created: python-rebuild-nwg-wrapper.hook"
     else
         info "Already exists: python-rebuild-nwg-wrapper.hook"
+    fi
+
+    # neutralize-birthdate.hook — neutralize systemd userdb birthDate after updates
+    hook=/etc/pacman.d/hooks/neutralize-birthdate.hook
+    if [[ ! -f "$hook" ]]; then
+        sudo tee "$hook" > /dev/null << EOF
+# Part of: neutralize-birthdate — systemd userdb birthDate neutralization
+# See: man neutralize-birthdate(1)
+# Related files:
+#   ~/.scripts/neutralize-birthdate.sh                  (core script)
+#   /etc/systemd/system/neutralize-birthdate.service    (oneshot service)
+#   /etc/systemd/system/neutralize-birthdate.path       (inotify watcher)
+
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Type = Package
+Target = systemd
+Target = systemd-libs
+
+[Action]
+Description = Neutralizing birthDate in userdb records after systemd update...
+When = PostTransaction
+Exec = ${HOME}/.scripts/neutralize-birthdate.sh
+EOF
+        info "Created: neutralize-birthdate.hook"
+    else
+        info "Already exists: neutralize-birthdate.hook"
+    fi
+
+    # nvidia-update-notify.hook — flag NVIDIA driver updates for user notification
+    hook=/etc/pacman.d/hooks/nvidia-update-notify.hook
+    if [[ ! -f "$hook" ]]; then
+        sudo tee "$hook" > /dev/null << 'EOF'
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Type = Package
+Target = nvidia-580xx-dkms
+Target = nvidia-580xx-utils
+Target = lib32-nvidia-580xx-utils
+
+[Action]
+Description = NVIDIA driver updated — flagging for user notification on next login
+When = PostTransaction
+Exec = /usr/bin/touch /tmp/nvidia-module-update-pending
+EOF
+        info "Created: nvidia-update-notify.hook"
+    else
+        info "Already exists: nvidia-update-notify.hook"
+    fi
+
+    # prime-run-desktop.hook — re-apply prime-run to .desktop launchers after updates
+    hook=/etc/pacman.d/hooks/prime-run-desktop.hook
+    if [[ ! -f "$hook" ]]; then
+        sudo tee "$hook" > /dev/null << EOF
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Type = Package
+Target = steam
+Target = gimp
+
+[Action]
+Description = Re-applying prime-run to .desktop launchers
+When = PostTransaction
+Exec = /usr/bin/runuser -u ${USER} -- ${HOME}/.scripts/prime-run-desktop-patch.sh
+EOF
+        info "Created: prime-run-desktop.hook"
+    else
+        info "Already exists: prime-run-desktop.hook"
     fi
 }
 
