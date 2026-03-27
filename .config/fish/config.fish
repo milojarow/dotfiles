@@ -31,7 +31,12 @@ end
 
 # aliases
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
-alias claude='claude --dangerously-skip-permissions'
+# Wrapper: clear residual TUI lines Claude Code leaves after exiting
+function claude
+    command claude --dangerously-skip-permissions $argv
+    # Erase any ghost lines the TUI left below the cursor
+    printf '\e[J'
+end
 
 # SSH with tmux for persistent sessions
 function ssht
