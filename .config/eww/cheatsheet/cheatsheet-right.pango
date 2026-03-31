@@ -32,13 +32,6 @@ Play / Pause             <span foreground="#8be9fd">XF86AudioPlay</span>
 Next / Previous          <span foreground="#8be9fd">XF86AudioNext / Prev</span>
 Brightness Up / Down     <span foreground="#8be9fd">XF86MonBrightnessUp / Down</span>
 
-<span foreground="#ff5555" weight="bold">  DROP ZONE &amp; FILE TRANSFER</span>
-Drop Zone (auto-sync)    <span foreground="#50fa7b">~/shared/selene/</span> → selene:~/shared/
-Monitor transfers        <span foreground="#8be9fd">sync-selene-monitor.sh</span>
-Service status           <span foreground="#8be9fd">systemctl --user status sync-selene</span>
-Fetch file from VPS      <span foreground="#8be9fd">scp selene:&lt;path&gt; &lt;local-path&gt;</span>
-Fetch dir from VPS       <span foreground="#8be9fd">scp -r selene:&lt;path&gt; &lt;local-path&gt;</span>
-
 
 <span foreground="#8be9fd" weight="bold">  DISPLAY &amp; SCALING</span>
 Scale Up                 <span foreground="#8be9fd">Alt++</span>
