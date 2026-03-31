@@ -70,24 +70,22 @@
             (label :class "bar-ws-icon" :halign "center" :text "${ws.icon_bot}" :visible {ws.has_bot})))))))
 
 
-; ── Date widget ──────────────────────────────────────────────────────────────
+; ── Date widget (marquee) ────────────────────────────────────────────────────
+; Cycle width (176) must match $bar-date-cycle in bar.scss
+; 22 chars x 8px/char = 176px — trailing space ensures equal gaps between cycles
 (defwidget bar-date []
   (overlay
-    ; Main child — sets the 170px size and background, clips the strip
     (box :width 170 :height 30 :class "bar-date-bg")
-    ; Strip — gets its natural width, clipped to 170px by the overlay
     (box :class "bar-date-strip"
          :orientation "h"
          :space-evenly false
          :halign "start"
          :valign "center"
          :hexpand false
-      (label :class "bar-date" :text {formattime(EWW_TIME, "%a %-d %b %Y")})
-      (label :class "bar-date" :text {formattime(EWW_TIME, "%H:%M")})
-      (box :width 5)
-      (label :class "bar-date" :text {formattime(EWW_TIME, "%a %-d %b %Y")})
-      (label :class "bar-date" :text {formattime(EWW_TIME, "%H:%M")})
-      (box :width 5))))
+      (box :width 176
+        (label :class "bar-date" :text {formattime(EWW_TIME, "%a %e %b %Y %H:%M ")}))
+      (box :width 176
+        (label :class "bar-date" :text {formattime(EWW_TIME, "%a %e %b %Y %H:%M ")})))))
 
 ; ── Window title data ────────────────────────────────────────────────────────
 (deflisten window-title

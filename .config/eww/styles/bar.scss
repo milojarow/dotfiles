@@ -65,13 +65,15 @@
   background-color: $theme-accent;
 }
 
-// Date — horizontal marquee (overlay clips strip to 170px, transform scrolls it)
+// Date — horizontal marquee (overlay clips strip, margin-left scrolls it)
+$bar-date-cycle: 176px;
+
 .bar-date-bg {
   background-color: $theme-accent;
 }
 
 .bar-date-strip {
-  animation: bar-date-scroll 8s linear infinite;
+  animation: bar-date-scroll 4s linear infinite;
 }
 
 .bar-date {
@@ -79,12 +81,12 @@
   font-family: "JetBrainsMono NF", "Roboto Mono", sans-serif;
   font-size: 13px;
   font-weight: bold;
-  padding: 0 4px;
+  padding: 0;
 }
 
 @keyframes bar-date-scroll {
   from { margin-left: 0px; }
-  to   { margin-left: -176.9px; }
+  to   { margin-left: -$bar-date-cycle; }
 }
 
 // Sway mode indicator
