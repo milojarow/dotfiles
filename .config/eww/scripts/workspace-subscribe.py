@@ -302,7 +302,8 @@ def build_output(last_focused, tree, ws_raw):
             "num_icon":    NUM_ICONS.get(num, str(num)),
             "name":        ws_name,
             "focused":     raw.get("focused", False),
-            "urgent":      raw.get("urgent", False),
+            # Sway 1.11: workspace urgent flag sticks after urgent window moves away
+            "urgent":      raw.get("urgent", False) and any(l.get("urgent", False) for l in leaves),
             "has_windows": has_windows,
             "icon":        icon,
             "icon_top":    top,
