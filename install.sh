@@ -484,10 +484,13 @@ EOF
         info "Already exists: neutralize-birthdate.hook"
     fi
 
-    # nvidia-update-notify.hook — flag NVIDIA driver updates for user notification
-    hook=/etc/pacman.d/hooks/nvidia-update-notify.hook
-    if [[ ! -f "$hook" ]]; then
-        sudo tee "$hook" > /dev/null << 'EOF'
+    # NVIDIA-specific hooks — only created if NVIDIA GPU is detected
+    if lspci | grep -qi 'nvidia'; then
+
+        # nvidia-update-notify.hook — flag NVIDIA driver updates for user notification
+        hook=/etc/pacman.d/hooks/nvidia-update-notify.hook
+        if [[ ! -f "$hook" ]]; then
+            sudo tee "$hook" > /dev/null << 'EOF'
 [Trigger]
 Operation = Upgrade
 Operation = Install
@@ -501,15 +504,15 @@ Description = NVIDIA driver updated — flagging for user notification on next l
 When = PostTransaction
 Exec = /usr/bin/touch /tmp/nvidia-module-update-pending
 EOF
-        info "Created: nvidia-update-notify.hook"
-    else
-        info "Already exists: nvidia-update-notify.hook"
-    fi
+            info "Created: nvidia-update-notify.hook"
+        else
+            info "Already exists: nvidia-update-notify.hook"
+        fi
 
-    # prime-run-desktop.hook — re-apply prime-run to .desktop launchers after updates
-    hook=/etc/pacman.d/hooks/prime-run-desktop.hook
-    if [[ ! -f "$hook" ]]; then
-        sudo tee "$hook" > /dev/null << EOF
+        # prime-run-desktop.hook — re-apply prime-run to .desktop launchers after updates
+        hook=/etc/pacman.d/hooks/prime-run-desktop.hook
+        if [[ ! -f "$hook" ]]; then
+            sudo tee "$hook" > /dev/null << EOF
 [Trigger]
 Operation = Upgrade
 Operation = Install
@@ -522,9 +525,13 @@ Description = Re-applying prime-run to .desktop launchers
 When = PostTransaction
 Exec = /usr/bin/runuser -u ${USER} -- ${HOME}/.scripts/prime-run-desktop-patch.sh
 EOF
-        info "Created: prime-run-desktop.hook"
+            info "Created: prime-run-desktop.hook"
+        else
+            info "Already exists: prime-run-desktop.hook"
+        fi
+
     else
-        info "Already exists: prime-run-desktop.hook"
+        info "No NVIDIA GPU detected — skipping NVIDIA hooks"
     fi
 }
 
