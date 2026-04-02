@@ -22,6 +22,15 @@ ICON_MIC_OFF     = "\U000f036d"   # mic muted
 
 def is_headphones_active():
     try:
+        # Bluetooth audio sink takes over output entirely
+        default_sink = subprocess.run(
+            ["pactl", "get-default-sink"],
+            capture_output=True, text=True,
+        ).stdout.strip()
+        if default_sink.startswith("bluez_output"):
+            return True
+
+        # Wired headphones via analog port
         sinks = subprocess.run(
             ["pactl", "list", "sinks"],
             capture_output=True, text=True,
@@ -103,7 +112,7 @@ def main():
 
     for line in proc.stdout:
         # Only react to sink/source change events, not per-app sink-input events
-        if re.search(r"Event 'change' on (sink|source) #", line):
+        if re.search(r"Event '(change|new|remove)' on (sink|source|server)", line):
             emit(query())
 
 
