@@ -6,6 +6,6 @@ input type:keyboard {
     # Reduce repeat delay from the default 600ms to 200ms.
     # The default is far too high compared to the ~250ms TTY kernel default,
     # causing noticeable lag when holding down any key.
-    repeat_delay 200
+    repeat_delay 300
     repeat_rate 35
 }
