@@ -68,18 +68,26 @@ emit_state() {
 # Initial state
 emit_state
 
-# Watch for bluetooth events
-bluetoothctl monitor 2>/dev/null | while IFS= read -r line; do
-    if echo "$line" | grep -qE '^\[NEW\] Device [0-9A-Fa-f:]{17} '; then
+# Watch for bluetooth events via interactive session.
+# BlueZ 5.86+ removed the 'monitor' subcommand; interactive mode emits events.
+# Strip ANSI escape codes and prompt noise from piped output.
+(sleep infinity) | bluetoothctl 2>/dev/null |
+    sed -u $'s/\x1b\\[[0-9;]*[a-zA-Z]//g; s/\x1b\\[[0-9]* q//g; s/\r//g' |
+    while IFS= read -r line; do
+    if echo "$line" | grep -qE '\[NEW\] Device [0-9A-Fa-f:]{17} '; then
         mac=$(echo "$line" | grep -oE '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}')
         name=$(echo "$line" | sed "s/.*\[NEW\] Device $mac //")
         [[ -n "$mac" ]] && discovered["$mac"]="$name"
         emit_state
-    elif echo "$line" | grep -qE '^\[DEL\] Device [0-9A-Fa-f:]{17}'; then
-        mac=$(echo "$line" | grep -oE '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}')
-        [[ -n "$mac" ]] && unset "discovered[$mac]"
-        emit_state
+    elif echo "$line" | grep -qE '\[DEL\] Device [0-9A-Fa-f:]{17}'; then
+        # Ignore DEL events — keep discovered list stable after scan ends.
+        # List is cleared when a new scan starts (Discovering: yes).
+        :
     elif echo "$line" | grep -qE 'Connected:|Powered:|Discovering:|Trusted:|Paired:'; then
+        # Clear discovered list when a new scan starts
+        if echo "$line" | grep -q 'Discovering: yes'; then
+            discovered=()
+        fi
         emit_state
     fi
 done
