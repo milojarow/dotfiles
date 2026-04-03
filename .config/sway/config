@@ -4,6 +4,10 @@
 ### Output
 # output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 
+### Appearance
+corner_radius 15
+for_window [app_id=".*"] dim_inactive 0.2
+
 ### Other settings --------------------------------------------------------
 # Note: floating_modifier is defined in modes/default, not here
 
