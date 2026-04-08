@@ -141,6 +141,15 @@
   color: mix($theme-fg, $theme-bg, 45%);
 }
 
+.wifi-net-band {
+  font-size: 9px;
+  font-weight: bold;
+  color: mix($theme-accent, $theme-fg, 60%);
+  padding: 0 4px;
+  border-radius: 3px;
+  background-color: mix($theme-accent, $theme-bg, 12%);
+}
+
 // Action buttons
 .wifi-action-btn {
   font-size: 11px;

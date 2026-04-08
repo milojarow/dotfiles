@@ -90,7 +90,7 @@
             (label :class {net.available ? "wifi-net-icon" : "wifi-net-icon saved"}
                    :valign "center"
                    :text {net.icon})
-            ; SSID + security
+            ; SSID + security + band
             (box :orientation "v"
                  :space-evenly false
                  :hexpand true
@@ -99,16 +99,22 @@
                      :halign "start"
                      :truncate true
                      :text {net.ssid})
-              (label :class "wifi-net-security"
-                     :halign "start"
-                     :visible {strlength(net.security) > 0}
-                     :text {net.security}))
+              (box :orientation "h"
+                   :space-evenly false
+                   :spacing 6
+                   :halign "start"
+                (label :class "wifi-net-security"
+                       :visible {strlength(net.security) > 0}
+                       :text {net.security})
+                (label :class "wifi-net-band"
+                       :visible {strlength(net.band) > 0}
+                       :text {net.band})))
             ; Action buttons
             (button :class {wifi-connecting == net.ssid
                              ? "wifi-action-btn op-pending-btn"
                              : "wifi-action-btn connect-btn"}
                     :visible {!net.in_use}
-                    :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-connect.sh \"${net.ssid}\" ${net.known} \"${net.security}\"'"
+                    :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-connect.sh \"${net.ssid}\" ${net.known} \"${net.security}\" \"${net.bssid}\"'"
               (label :text {wifi-connecting == net.ssid ? "connecting..." : "connect"}))
             (button :class "wifi-action-btn disconnect-btn"
                     :visible {net.in_use}

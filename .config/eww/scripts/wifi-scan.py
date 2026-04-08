@@ -5,11 +5,12 @@ wifi-scan.py — eww defpoll source for the wifi manager widget.
 Outputs a single JSON object with all networks (available + saved-only):
   {"networks": [
     {"ssid": "MyNet", "signal": 72, "security": "WPA2",
-     "in_use": true, "known": true, "available": true, "icon": "󰤥"},
-    {"ssid": "OldNet", "signal": 0, "security": "WPA2",
-     "in_use": false, "known": true, "available": false, "icon": "󰤭"}
+     "in_use": true, "known": true, "available": true, "icon": "󰤥",
+     "band": "5G", "bssid": "C2:68:CC:91:9E:87"},
+    ...
   ]}
 
+Same SSID on different bands (2.4G / 5G) appears as separate entries.
 Sort order: in_use first → available by signal desc → saved-only at bottom.
 """
 
@@ -35,6 +36,19 @@ def signal_icon(pct):
     return ICONS[0]
 
 
+def freq_to_band(freq_str):
+    """Convert frequency string like '5500 MHz' to band label."""
+    try:
+        mhz = int(freq_str.split()[0])
+    except (ValueError, IndexError):
+        return ""
+    if mhz < 3000:
+        return "2.4G"
+    if mhz < 6000:
+        return "5G"
+    return "6G"
+
+
 def get_known_ssids():
     """Return set of SSIDs with a saved wifi connection."""
     r = subprocess.run(
@@ -50,9 +64,10 @@ def get_known_ssids():
 
 
 def get_available_networks(known_ssids):
-    """Parse nmcli wifi list output into a deduplicated dict keyed by SSID."""
+    """Parse nmcli wifi list output into a deduplicated dict keyed by (SSID, band)."""
     r = subprocess.run(
-        ["nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY,IN-USE", "device", "wifi", "list"],
+        ["nmcli", "-t", "-f", "BSSID,SSID,SIGNAL,SECURITY,IN-USE,FREQ",
+         "device", "wifi", "list"],
         capture_output=True, text=True
     )
     networks = {}
@@ -60,17 +75,21 @@ def get_available_networks(known_ssids):
         # nmcli -t escapes colons in values as \: — split on unescaped colons
         parts = line.replace("\\:", "\x00").split(":")
         parts = [p.replace("\x00", ":") for p in parts]
-        if len(parts) < 4:
+        if len(parts) < 6:
             continue
-        ssid, signal_str, security, in_use_str = parts[0], parts[1], parts[2], parts[3]
+        bssid, ssid, signal_str, security, in_use_str, freq = (
+            parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]
+        )
         if not ssid:
             continue
         signal = int(signal_str) if signal_str.isdigit() else 0
         security = security if security not in ("", "--") else ""
         in_use = in_use_str.strip() == "*"
-        # Keep entry with strongest signal when SSID appears multiple times
-        if ssid not in networks or signal > networks[ssid]["signal"]:
-            networks[ssid] = {
+        band = freq_to_band(freq)
+        # Dedup by (SSID, band) — same SSID on different bands shown separately
+        key = (ssid, band)
+        if key not in networks or signal > networks[key]["signal"]:
+            networks[key] = {
                 "ssid":      ssid,
                 "signal":    signal,
                 "security":  security,
@@ -78,6 +97,8 @@ def get_available_networks(known_ssids):
                 "known":     ssid in known_ssids,
                 "available": True,
                 "icon":      signal_icon(signal),
+                "band":      band,
+                "bssid":     bssid,
             }
     return networks
 
@@ -88,9 +109,10 @@ def main():
         networks = get_available_networks(known_ssids)
 
         # Add saved-only entries (known but not visible in scan)
+        visible_ssids = {k[0] for k in networks}
         for ssid in known_ssids:
-            if ssid not in networks:
-                networks[ssid] = {
+            if ssid not in visible_ssids:
+                networks[(ssid, "")] = {
                     "ssid":      ssid,
                     "signal":    0,
                     "security":  "",
@@ -98,6 +120,8 @@ def main():
                     "known":     True,
                     "available": False,
                     "icon":      ICON_SAVED,
+                    "band":      "",
+                    "bssid":     "",
                 }
 
         result = sorted(

@@ -7,6 +7,7 @@ EWW=/home/milo/.cargo/bin/eww
 SSID="$1"
 KNOWN="$2"
 SECURITY="$3"
+BSSID="$4"
 ERROR_PID_FILE=/tmp/eww-wifi-error-pid
 
 [ -z "$SSID" ] && exit 1
@@ -34,11 +35,19 @@ elif [ -n "$SECURITY" ]; then
         $EWW update wifi-connecting=""
         exit 0
     fi
-    output=$(nmcli device wifi connect "$SSID" password "$password" 2>&1)
+    if [ -n "$BSSID" ]; then
+        output=$(nmcli device wifi connect "$SSID" bssid "$BSSID" password "$password" 2>&1)
+    else
+        output=$(nmcli device wifi connect "$SSID" password "$password" 2>&1)
+    fi
     rc=$?
 else
     # Open network — connect directly
-    output=$(nmcli device wifi connect "$SSID" 2>&1)
+    if [ -n "$BSSID" ]; then
+        output=$(nmcli device wifi connect "$SSID" bssid "$BSSID" 2>&1)
+    else
+        output=$(nmcli device wifi connect "$SSID" 2>&1)
+    fi
     rc=$?
 fi
 
