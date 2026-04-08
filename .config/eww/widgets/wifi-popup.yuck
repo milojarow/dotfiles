@@ -1,6 +1,7 @@
 ; ── Wifi manager state ────────────────────────────────────────────────────────
 (defvar wifi-connecting "")   ; SSID currently being connected — empty = idle
 (defvar wifi-error "")        ; Error message string — empty = no error
+(defvar wifi-popup-open 0)    ; Popup visibility state — 0 = closed, 1 = open
 
 ; ── Wifi manager data ─────────────────────────────────────────────────────────
 (defpoll wifi-networks :interval "30s"
@@ -35,7 +36,12 @@
               :valign "center"
               :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-rescan.sh'"
               :tooltip "Rescan networks"
-        (label :text "↻")))
+        (label :text "↻"))
+      (button :class "wifi-close-btn"
+              :valign "center"
+              :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-close-popup.sh'"
+              :tooltip "Close"
+        (label :text "×")))
     ; ── Current connection details (only when connected) ──────────────────────
     (box :orientation "v"
          :class "wifi-manager-details"

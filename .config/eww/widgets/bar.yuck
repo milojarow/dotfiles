@@ -192,7 +192,7 @@
 ; ── Wifi button (inside module groups) ───────────────────────────────────────
 (defwidget bar-wifi []
   (button :class "bar-module bar-wifi ${wifi.class}"
-          :onclick "${EWW_CMD} open --toggle eww-wifi-popup"
+          :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-toggle-popup.sh'"
     (label :text {wifi.icon})))
 
 ; ── Recording indicator (inside module groups) ──────────────────────────────

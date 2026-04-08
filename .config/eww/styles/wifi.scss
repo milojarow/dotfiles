@@ -72,6 +72,19 @@
   color: $theme-accent;
 }
 
+.wifi-close-btn {
+  font-size: 18px;
+  padding: 0 6px;
+  border-radius: 6px;
+  color: mix($theme-fg, $theme-bg, 35%);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.wifi-close-btn:hover {
+  background-color: $theme-selection;
+  color: #BF616A;
+}
+
 // Connected details
 .wifi-manager-details {
   padding: 8px 0 10px;
