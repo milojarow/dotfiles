@@ -7,6 +7,7 @@
 ### Appearance
 corner_radius 15
 for_window [app_id=".*"] dim_inactive 0.2
+focus_on_window_activation focus
 
 ### Other settings --------------------------------------------------------
 # Note: floating_modifier is defined in modes/default, not here
