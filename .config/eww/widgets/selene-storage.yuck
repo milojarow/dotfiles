@@ -5,9 +5,9 @@
 (defwidget selene-storage-widget []
   (box :class "selene-storage" :orientation "h"
        :space-evenly false :valign "center"
-    (label :class "selene-title" :text "selene")
-    (progress :class "selene-bar" :value {selene-storage.pct} :orientation "h")
-    (label :class "selene-stats"
+    (label :class "selene-title" :valign "center" :text "selene")
+    (progress :class "selene-bar" :valign "center" :value {selene-storage.pct} :orientation "h")
+    (label :class "selene-stats" :valign "center"
            :text "${selene-storage.used} / ${selene-storage.total}")))
 
 (defwindow selene-storage-window
