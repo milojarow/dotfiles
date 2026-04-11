@@ -26,7 +26,7 @@
            :halign "center"
            :space-evenly false
         (label :class "battery-bolt"
-               :visible {bat-live.status == "Charging"}
+               :visible {bat-live.status != "Discharging"}
                :text "")
         (label :class "battery-pct"
                :text "${bat-live.capacity}%")))))

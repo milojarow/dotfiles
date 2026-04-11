@@ -222,9 +222,9 @@
 
 ; ── Battery indicator (inside module groups) ────────────────────────────────
 (defwidget bar-battery []
-  (button :class "bar-module bar-battery ${bat-live.status == 'Charging' ? 'charging' : ''}"
+  (button :class "bar-module bar-battery ${bat-live.status != 'Discharging' ? 'charging' : ''}"
           :tooltip "${bat-live.capacity}% — ${bat-live.status}"
-    (label :text {bat-live.status == "Charging"
+    (label :text {bat-live.status != "Discharging"
                   ? ""
                   : "${bat-live.capacity}%"})))
 
