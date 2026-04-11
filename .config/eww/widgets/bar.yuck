@@ -222,11 +222,11 @@
 
 ; ── Battery indicator (inside module groups) ────────────────────────────────
 (defwidget bar-battery []
-  (button :class "bar-module bar-battery ${EWW_BATTERY['BAT0'].status == 'Charging' ? 'charging' : ''}"
-          :tooltip "${EWW_BATTERY['BAT0'].capacity}% — ${EWW_BATTERY['BAT0'].status}"
-    (label :text {EWW_BATTERY["BAT0"].status == "Charging"
+  (button :class "bar-module bar-battery ${bat-live.status == 'Charging' ? 'charging' : ''}"
+          :tooltip "${bat-live.capacity}% — ${bat-live.status}"
+    (label :text {bat-live.status == "Charging"
                   ? ""
-                  : "${EWW_BATTERY['BAT0'].capacity}%"})))
+                  : "${bat-live.capacity}%"})))
 
 ; ── Module groups ─────────────────────────────────────────────────────────────
 (defwidget bar-module-groups []
