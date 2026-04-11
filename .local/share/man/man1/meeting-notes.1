@@ -1,0 +1,109 @@
+.TH MEETING-NOTES 1 "2026-04-10" "1.0" "User Commands"
+.SH NAME
+meeting-notes \- Record and transcribe meetings with speaker diarization
+.SH SYNOPSIS
+.B meeting-notes record
+.RI [ name ]
+.br
+.B meeting-notes transcribe
+.I file
+.RI [ language ]
+.br
+.B meeting-notes help
+.SH DESCRIPTION
+.B meeting-notes
+captures meeting audio via PipeWire (system output + microphone), merges both streams into a single WAV file, and transcribes it with speaker diarization using whisperX.
+.PP
+The transcription identifies individual speakers and produces a labeled transcript:
+.RS
+.nf
+[Speaker 1] Bueno, entonces el deadline es el viernes.
+[Speaker 2] No llegamos ni de broma.
+.fi
+.RE
+.SH SUBCOMMANDS
+.TP
+.B record \fR[\fIname\fR]
+Start recording meeting audio. Captures system audio (what you hear) and microphone (what you say) as separate PipeWire streams. On
+.BR Ctrl+C ,
+merges both into a mono 16kHz WAV file suitable for transcription.
+.I name
+defaults to "meeting".
+.TP
+.B transcribe \fIfile\fR [\fIlanguage\fR]
+Transcribe an audio file with speaker diarization. Uses whisperX with the
+.B large-v3
+model and pyannote for speaker identification.
+.I language
+is an ISO-639-1 code (default: "es").
+.TP
+.B help
+Show usage summary.
+.SH EXAMPLES
+Record a client meeting:
+.RS
+.nf
+meeting-notes record cliente-acme
+.fi
+.RE
+.PP
+Stop recording with Ctrl+C, then transcribe:
+.RS
+.nf
+meeting-notes transcribe ~/recordings/meetings/2026-04-10_1430_cliente-acme.wav
+.fi
+.RE
+.PP
+Transcribe in English:
+.RS
+.nf
+meeting-notes transcribe recording.wav en
+.fi
+.RE
+.SH FILES
+.TP
+.I ~/.local/bin/meeting-notes
+Main script.
+.TP
+.I ~/.local/share/meeting-notes/venv/
+Python virtual environment with whisperX, torch (CUDA), and pyannote-audio.
+.TP
+.I ~/.config/huggingface/token
+HuggingFace API token for pyannote speaker diarization models.
+.TP
+.I ~/recordings/meetings/
+Output directory for recordings. Created automatically on first use.
+Files are named
+.BR YYYY-MM-DD_HHMM_name.wav .
+.SH DEPENDENCIES
+.TP
+.B PipeWire
+Audio capture via
+.BR pw-record (1)
+and
+.BR pw-dump (1).
+.TP
+.B ffmpeg
+Audio stream merging and format conversion.
+.TP
+.B whisperX
+Speech-to-text with word-level timestamps. Runs on CUDA via
+.BR faster-whisper .
+.TP
+.B pyannote-audio
+Speaker diarization. Requires accepted model terms on HuggingFace for
+.I pyannote/speaker-diarization-3.1
+and
+.IR pyannote/segmentation-3.0 .
+.SH NOTES
+The
+.B record
+subcommand captures audio at the PipeWire level, so it works with any video conferencing app (Zoom, Google Meet, Jitsi, etc.) without requiring app-specific integration.
+.PP
+First run of
+.B transcribe
+downloads the whisper large-v3 model (~3 GB) and pyannote diarization models. Subsequent runs use the cached models.
+.SH SEE ALSO
+.BR pw-record (1),
+.BR ffmpeg (1),
+.BR ffprobe (1)

@@ -102,6 +102,11 @@
   :initial '{"active": false}'
   `~/.config/eww/scripts/recorder-subscribe.sh`)
 
+; ── Meeting notes recording data ────────────────────────────────────────────
+(deflisten meeting-notes
+  :initial '{"active": false, "icon": "", "elapsed": "", "tooltip": "Start meeting recording"}'
+  `~/.config/eww/scripts/meeting-notes-subscribe.sh`)
+
 ; ── Sway mode data ────────────────────────────────────────────────────────────
 (deflisten sway-mode
   :initial "{\"name\": \"\", \"active\": false}"
@@ -203,6 +208,18 @@
           :tooltip "Recording — click to stop"
     (label :text "󰑊")))
 
+; ── Meeting notes recording button (inside module groups) ───────────────────
+(defwidget bar-meeting-notes []
+  (button :class "bar-module bar-meeting-notes ${meeting-notes.active ? 'active' : ''}"
+          :onclick "echo toggle > /tmp/eww-meeting-notes"
+          :onrightclick {meeting-notes.active ? "" : "xdg-open $HOME/recordings/meetings"}
+          :tooltip {meeting-notes.tooltip}
+    (box :orientation "h" :space-evenly false :spacing 5 :valign "center"
+      (label :text {meeting-notes.icon})
+      (label :class "bar-meeting-notes-timer"
+             :visible {meeting-notes.active}
+             :text {meeting-notes.elapsed}))))
+
 ; ── Module groups ─────────────────────────────────────────────────────────────
 (defwidget bar-module-groups []
   (box :orientation "h"
@@ -210,6 +227,7 @@
        :spacing 2
        :valign "center"
     (bar-mem-pressure)
+    (bar-meeting-notes)
     (bar-clipboard)
     (bar-wifi)
     (bar-idle-inhibitor)
