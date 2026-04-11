@@ -21,3 +21,4 @@ open_window timer-widget
 open_window clock
 open_window selene-storage-window
 open_window mongo-tunnel-window
+open_window battery-window

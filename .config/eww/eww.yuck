@@ -15,3 +15,4 @@
 (include "./widgets/timer-widget.yuck")
 (include "./widgets/selene-storage.yuck")
 (include "./widgets/mongo-tunnel.yuck")
+(include "./widgets/battery.yuck")

@@ -70,5 +70,5 @@
                       :anchor "bottom left")
   :stacking "fg"
   :focusable false
-  (widget-de-las-flechas :window "sysmonitor-window"
-                          :yuck "~/.config/eww/widgets/sysmonitor.yuck"))
+  (widget-de-las-flechas :window "battery-window"
+                          :yuck "~/.config/eww/widgets/battery.yuck"))
