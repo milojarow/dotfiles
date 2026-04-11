@@ -168,3 +168,14 @@ $bar-date-cycle: 176px;
   margin-bottom: -6px;
 }
 
+// Battery indicator — bolt when charging, percentage when not
+.bar-battery {
+  font-family: "JetBrainsMono NF", "Roboto Mono", monospace;
+  font-size: 13px;
+  margin-right: 6px;
+}
+
+.bar-battery.charging {
+  color: #facc15;
+}
+

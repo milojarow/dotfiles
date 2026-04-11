@@ -220,12 +220,21 @@
              :visible {meeting-notes.active}
              :text {meeting-notes.elapsed}))))
 
+; ── Battery indicator (inside module groups) ────────────────────────────────
+(defwidget bar-battery []
+  (button :class "bar-module bar-battery ${EWW_BATTERY['BAT0'].status == 'Charging' ? 'charging' : ''}"
+          :tooltip "${EWW_BATTERY['BAT0'].capacity}% — ${EWW_BATTERY['BAT0'].status}"
+    (label :text {EWW_BATTERY["BAT0"].status == "Charging"
+                  ? ""
+                  : "${EWW_BATTERY['BAT0'].capacity}%"})))
+
 ; ── Module groups ─────────────────────────────────────────────────────────────
 (defwidget bar-module-groups []
   (box :orientation "h"
        :space-evenly false
        :spacing 2
        :valign "center"
+    (bar-battery)
     (bar-mem-pressure)
     (bar-meeting-notes)
     (bar-clipboard)
