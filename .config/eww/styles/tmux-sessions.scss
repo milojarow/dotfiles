@@ -1,0 +1,53 @@
+.tmux-sessions {
+  background-color: rgba(30, 30, 46, 0.85);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 240px;
+  font-family: "JetBrainsMono Nerd Font";
+  font-size: 12px;
+  color: #cdd6f4;
+}
+
+.tmux-header {
+  margin-bottom: 6px;
+}
+
+.tmux-title {
+  color: #cba6f7;
+  font-weight: bold;
+}
+
+.tmux-status {
+  color: #6c7086;
+  font-size: 11px;
+  padding: 0 6px;
+}
+.tmux-status.ok      { color: #a6e3a1; }
+.tmux-status.offline { color: #f38ba8; }
+
+.tmux-empty {
+  color: #6c7086;
+  font-style: italic;
+  padding: 4px 0;
+}
+.tmux-empty.offline { color: #f38ba8; }
+
+.tmux-session {
+  padding: 4px 6px;
+  border-radius: 6px;
+  margin: 2px 0;
+}
+.tmux-session:hover { background-color: rgba(49, 50, 68, 0.6); }
+.tmux-session.attached {
+  background-color: rgba(166, 227, 161, 0.12);
+}
+
+.tmux-name { color: #cdd6f4; }
+.tmux-session.attached .tmux-name { color: #a6e3a1; }
+
+.tmux-meta {
+  color: #6c7086;
+  font-size: 11px;
+  margin-left: 8px;
+}
+.tmux-session.attached .tmux-meta { color: #a6e3a1; }

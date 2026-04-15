@@ -16,3 +16,4 @@
 (include "./widgets/selene-storage.yuck")
 (include "./widgets/mongo-tunnel.yuck")
 (include "./widgets/battery.yuck")
+(include "./widgets/tmux-sessions.yuck")

@@ -1,0 +1,41 @@
+(deflisten tmux-data :initial `{"sessions":[],"status":"loading","count":0}`
+  "~/.config/eww/scripts/tmux-sessions-subscribe.sh")
+
+(defwidget tmux-sessions []
+  (box :class "tmux-sessions" :orientation "v" :space-evenly false
+    (box :class "tmux-header" :orientation "h" :space-evenly false
+      (label :class "tmux-title" :text "tmux @ selene"
+             :halign "start" :hexpand true)
+      (label :class {tmux-data.status == "ok" ? "tmux-status ok" :
+                     tmux-data.status == "offline" ? "tmux-status offline" :
+                     "tmux-status"}
+             :text {tmux-data.status == "offline" ? "offline" :
+                    tmux-data.status == "loading" ? "…" :
+                    "${tmux-data.count}"}))
+
+    (label :class "tmux-empty"
+           :visible {tmux-data.count == 0 && tmux-data.status == "ok"}
+           :text "no sessions")
+
+    (label :class "tmux-empty offline"
+           :visible {tmux-data.status == "offline"}
+           :text "selene unreachable")
+
+    (for s in {tmux-data.sessions}
+      (button :class {s.attached ? "tmux-session attached" : "tmux-session"}
+              :onclick "foot fish -ic 'ssht selene ${s.name}' &"
+        (box :orientation "h" :space-evenly false
+          (label :class "tmux-name" :text {s.name}
+                 :halign "start" :hexpand true)
+          (label :class "tmux-meta"
+                 :text {s.attached ? "● attached" :
+                        s.age_secs < 3600  ? "${round(s.age_secs / 60, 0)}m ago" :
+                        s.age_secs < 86400 ? "${round(s.age_secs / 3600, 0)}h ago" :
+                                             "${round(s.age_secs / 86400, 0)}d ago"}))))))
+
+(defwindow tmux-sessions
+  :monitor 0
+  :geometry (geometry :x "570px" :y "240px" :anchor "top right")
+  :stacking "bg"
+  :focusable false
+  (tmux-sessions))
