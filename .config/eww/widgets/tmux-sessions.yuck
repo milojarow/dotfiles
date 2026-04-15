@@ -11,7 +11,11 @@
                      "tmux-status"}
              :text {tmux-data.status == "offline" ? "offline" :
                     tmux-data.status == "loading" ? "…" :
-                    "${tmux-data.count}"}))
+                    "${tmux-data.count}"})
+      (button :class "tmux-refresh"
+              :tooltip "refresh"
+              :onclick "pkill -P \"$(pgrep -f 'bash.*tmux-sessions-subscribe.sh$' | head -1)\" 2>/dev/null"
+        ""))
 
     (label :class "tmux-empty"
            :visible {tmux-data.count == 0 && tmux-data.status == "ok"}

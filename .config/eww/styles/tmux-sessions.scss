@@ -25,6 +25,14 @@
 .tmux-status.ok      { color: #a6e3a1; }
 .tmux-status.offline { color: #f38ba8; }
 
+.tmux-refresh {
+  color: #6c7086;
+  font-size: 12px;
+  padding: 0 6px;
+  margin-left: 4px;
+}
+.tmux-refresh:hover { color: #cba6f7; }
+
 .tmux-empty {
   color: #6c7086;
   font-style: italic;
