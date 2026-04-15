@@ -1,23 +1,43 @@
 #!/bin/bash
-# Wrapper for MongoDB Compass — injects password from environment into
-# the saved connection JSON before launching. Compass strips passwords
-# on exit (stores them in gnome-keyring, which is broken on Wayland),
-# so this re-injects every launch.
+# Wrapper for MongoDB Compass — injects passwords from environment into
+# saved connection JSONs before launching. Compass strips passwords on
+# exit (stores them in gnome-keyring, which is broken on Wayland), so
+# this re-injects every launch.
+#
+# To add a new user: add an env var to ~/.secrets/environment.d/11-secrets.conf
+# and append an entry to USERS below.
 
 COMPASS_DIR="$HOME/.config/MongoDB Compass/Connections"
 
-if [[ -z "$MDB_COMPASS_PASSWORD" ]]; then
-    echo "Warning: MDB_COMPASS_PASSWORD not set, launching Compass without password injection" >&2
-    exec /usr/sbin/mongodb-compass "$@"
-fi
+# user:env_var_name pairs
+USERS=(
+    "blindando:MDB_COMPASS_PASSWORD"
+    "posteacasa:MDB_COMPASS_POSTEACASA_PASSWORD"
+)
 
-# Patch every saved connection: insert password after "blindando@"
+url_encode() {
+    # URL-encode special chars that break MongoDB connection strings
+    local s="$1"
+    s="${s//+/%2B}"
+    s="${s//@/%40}"
+    s="${s//:/%3A}"
+    s="${s//\//%2F}"
+    printf '%s' "$s"
+}
+
 for f in "$COMPASS_DIR"/*.json; do
     [[ -f "$f" ]] || continue
-    jq --arg pw "$MDB_COMPASS_PASSWORD" '
-        .connectionInfo.connectionOptions.connectionString |=
-            gsub("blindando@"; "blindando:" + $pw + "@")
-    ' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    for pair in "${USERS[@]}"; do
+        user="${pair%%:*}"
+        var="${pair#*:}"
+        pw="${!var}"
+        [[ -z "$pw" ]] && continue
+        encoded=$(url_encode "$pw")
+        jq --arg user "$user" --arg pw "$encoded" '
+            .connectionInfo.connectionOptions.connectionString |=
+                gsub($user + "@"; $user + ":" + $pw + "@")
+        ' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    done
 done
 
 exec /usr/sbin/mongodb-compass "$@"
