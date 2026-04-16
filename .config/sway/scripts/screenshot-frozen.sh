@@ -29,7 +29,7 @@ trap cleanup EXIT
 grim "$TEMP_SCREENSHOT"
 
 # 2. Display frozen screenshot in fullscreen without info overlay
-swayimg -F -e "swayimg.text.hide()" "$TEMP_SCREENSHOT" &
+swayimg -F -e "swayimg.text.hide(); swayimg.viewer.set_default_scale('real')" "$TEMP_SCREENSHOT" &
 VIEWER_PID=$!
 
 # Give swayimg time to render
