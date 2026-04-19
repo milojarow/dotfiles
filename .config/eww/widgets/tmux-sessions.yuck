@@ -14,7 +14,7 @@
                     "${tmux-data.count}"})
       (button :class "tmux-refresh"
               :tooltip "refresh"
-              :onclick "pkill -P \"$(pgrep -f 'bash.*tmux-sessions-subscribe.sh$' | head -1)\" 2>/dev/null"
+              :onclick "~/.config/eww/scripts/tmux-sessions-refresh.sh"
         ""))
 
     (label :class "tmux-empty"
