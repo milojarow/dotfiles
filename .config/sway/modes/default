@@ -18,7 +18,7 @@ $bindsym $mod+Ctrl+Shift+q exec kill $(swaymsg -t get_tree | jq -r '.. | select(
 
 ## Launch // Open launcher ##
 $bindsym $mod+d exec $menu
-$bindsym $alt_mod+space exec $menu
+$bindsym $alt_mod+space exec ~/.config/sway/scripts/launch-floating.py
 
 ## Launch // Open clipboard ##  [Clipboard Functionality]
 $bindsym $mod+Shift+p exec $clipboard
