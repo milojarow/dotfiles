@@ -49,6 +49,11 @@ case $1'' in
     fi
     waybar-signal sunset
     ;;
+'force-warm')
+    pkill -x wlsunset 2>/dev/null
+    wlsunset -t 4000 -T 4000 &
+    waybar-signal sunset
+    ;;
 'check')
     command -v wlsunset
     exit $?

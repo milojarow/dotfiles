@@ -23,3 +23,4 @@ open_window selene-storage-window
 open_window mongo-tunnel-window
 open_window battery-window
 open_window tmux-sessions
+open_window gamma-popup

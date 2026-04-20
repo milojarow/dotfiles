@@ -12,6 +12,7 @@
 (include "./widgets/disk-widget.yuck")
 (include "./widgets/bar.yuck")
 (include "./widgets/wifi-popup.yuck")
+(include "./widgets/gamma-popup.yuck")
 (include "./widgets/timer-widget.yuck")
 (include "./widgets/selene-storage.yuck")
 (include "./widgets/mongo-tunnel.yuck")

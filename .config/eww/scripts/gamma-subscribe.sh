@@ -21,11 +21,19 @@ toggle() {
     emit
 }
 
+force_warm() {
+    ~/.config/sway/scripts/sunset.sh force-warm
+    emit
+}
+
 rm -f "$PIPE"
 mkfifo "$PIPE"
 
 emit
 
-while read -r _ < "$PIPE"; do
-    toggle
+while read -r cmd < "$PIPE"; do
+    case "$cmd" in
+        w) force_warm ;;
+        *) toggle ;;
+    esac
 done

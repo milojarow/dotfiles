@@ -155,6 +155,7 @@
 (defwidget bar-gamma []
   (button :class "bar-module bar-gamma ${gamma.active ? 'active' : ''}"
           :onclick "echo t > /tmp/eww-gamma"
+          :onrightclick "~/.config/eww/scripts/gamma-popup-toggle.sh"
           :tooltip {gamma.active ? "Gamma correction on — warm display" : "Gamma correction off"}
     (label :text {gamma.icon})))
 

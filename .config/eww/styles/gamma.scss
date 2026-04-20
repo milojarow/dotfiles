@@ -23,3 +23,37 @@
   background-color: $theme-selection;
   color: $color2;
 }
+
+// ── Gamma popup (right-click menu) ────────────────────────────────────────────
+.gamma-popup {
+  background-color: rgba(20, 26, 27, 0.99);
+  border: 1px solid $theme-selection;
+  border-top: 2px solid $color2;
+  border-radius: 0 0 10px 10px;
+  padding: 6px;
+  min-width: 180px;
+}
+
+.gamma-popup-action {
+  all: unset;
+  background: transparent;
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: $theme-fg;
+  transition: background-color 120ms ease;
+
+  &:hover {
+    background-color: $theme-selection;
+  }
+}
+
+.gamma-popup-icon {
+  font-family: "JetBrainsMono Nerd Font";
+  font-size: 16px;
+  color: $color2;
+}
+
+.gamma-popup-label {
+  font-size: 13px;
+  color: $theme-fg;
+}

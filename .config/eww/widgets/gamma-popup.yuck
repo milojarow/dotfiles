@@ -1,0 +1,18 @@
+(defvar gamma-popup-revealed false)
+
+(defwidget gamma-popup-widget []
+  (box :orientation "v" :space-evenly false :halign "end" :valign "start"
+    (revealer :transition "slidedown" :reveal gamma-popup-revealed :duration "250ms"
+      (box :class "gamma-popup" :orientation "v" :space-evenly false
+        (button :class "gamma-popup-action"
+                :onclick "echo w > /tmp/eww-gamma && ~/.config/eww/scripts/gamma-popup-toggle.sh"
+          (box :orientation "h" :space-evenly false :spacing 10 :valign "center"
+            (label :class "gamma-popup-icon" :text "󰖙")
+            (label :class "gamma-popup-label" :text "Force warmth")))))))
+
+(defwindow gamma-popup
+  :monitor 0
+  :geometry (geometry :x "160px" :y "-22px" :anchor "top right")
+  :stacking "fg"
+  :focusable false
+  (gamma-popup-widget))

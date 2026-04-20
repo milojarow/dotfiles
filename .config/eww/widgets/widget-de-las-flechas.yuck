@@ -70,5 +70,5 @@
                       :anchor "bottom left")
   :stacking "fg"
   :focusable false
-  (widget-de-las-flechas :window "battery-window"
-                          :yuck "~/.config/eww/widgets/battery.yuck"))
+  (widget-de-las-flechas :window "gamma-popup"
+                          :yuck "~/.config/eww/widgets/gamma-popup.yuck"))
