@@ -13,6 +13,6 @@
 (defwindow gamma-popup
   :monitor 0
   :geometry (geometry :x "160px" :y "-22px" :anchor "top right")
-  :stacking "fg"
+  :stacking "bottom"
   :focusable false
   (gamma-popup-widget))
