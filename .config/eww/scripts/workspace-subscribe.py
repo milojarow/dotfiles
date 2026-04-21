@@ -30,6 +30,8 @@ ICON_MAP = {
     "altus":                   "\uf232",
     "org.telegram.desktop":    "\ue217",
     "telegramdesktop":         "\ue217",
+    "discord":                 "\uf1ff",
+    "vencord":                 "\uf1ff",
     # File browsers
     "nemo":                    "\uf114",
     "nautilus":                "\uf114",
