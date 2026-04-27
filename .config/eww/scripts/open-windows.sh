@@ -56,11 +56,19 @@ for w in "${WINDOWS[@]}"; do
 done
 
 # Phase 2: give the daemon a moment to register the windows, then verify and
-# retry anything that silently failed. Post-resume, eww-bar's exclusive
-# layer-shell surface is the one most likely to fail to register on the first
-# try.
+# retry anything that silently failed.
+#
+# IMPORTANT: eww-bar is excluded from per-window retries. Its ':exclusive true'
+# layer-shell surface can desync from eww's tracking after sway re-registers
+# outputs on resume — eww forgets the surface but sway keeps rendering it.
+# In that state 'eww close eww-bar' fails ("no such window was open") and
+# 'eww open eww-bar' creates a SECOND surface, leaving the user with two
+# stacked bars. So if eww-bar is missing in Phase 2 we skip retry and let
+# Phase 3 do a clean service restart, which is the only reliable way to
+# clear orphan layer-shell surfaces.
 sleep 0.4
 for w in "${WINDOWS[@]}"; do
+    [ "$w" = "eww-bar" ] && continue
     attempts=0
     while [ "$attempts" -lt 3 ]; do
         if is_active "$w"; then
