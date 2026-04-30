@@ -23,6 +23,9 @@ $bindsym $alt_mod+space exec ~/.config/sway/scripts/launch-floating.py
 ## Launch // Open clipboard ##  [Clipboard Functionality]
 $bindsym $mod+Shift+p exec $clipboard
 
+## Action // Upload clipboard image to selene and type its path ##  [Clipboard Functionality]
+$bindsym $mod+Shift+v exec ~/.scripts/remote-image-paste.sh
+
 # Drag floating windows by holding down $mod and left mouse button.
 # Resize them with right mouse button + $mod.
 # Despite the name, also works for non-floating windows.
