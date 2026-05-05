@@ -76,3 +76,10 @@ printf "\e[?1004l"
 
 # Enable bracketed paste mode (prevents multi-line paste issues)
 set zle_bracketed_paste
+
+# bun completions
+[ -s "/home/milo/.bun/_bun" ] && source "/home/milo/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
