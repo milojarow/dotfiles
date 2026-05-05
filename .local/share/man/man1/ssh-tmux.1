@@ -1,4 +1,4 @@
-.TH SSH-TMUX 1 "2026-03-15" "1.1" "User Commands"
+.TH SSH-TMUX 1 "2026-04-29" "1.2" "User Commands"
 .SH NAME
 ssh-tmux, ssht \- SSH wrapper with persistent tmux sessions
 .SH SYNOPSIS
@@ -129,6 +129,15 @@ Complete tmux guide with examples
 .TP
 .I ~/.ssh/config
 SSH configuration with keepalive settings
+.TP
+.I ~/.scripts/remote-image-paste.sh
+Script invoked by Super+Shift+V to upload a local clipboard image to the remote and type the resulting path. See IMAGE PASTE.
+.TP
+.I ~/.config/sway/modes/default
+Defines the Super+Shift+V bindsym in the [Clipboard Functionality] section.
+.TP
+.IR <remote>:~/.config/tmux/tmux.conf
+Remote tmux configuration. See REMOTE TMUX CONFIGURATION.
 .SH NOTES
 .PP
 .B ssh-tmux
@@ -163,7 +172,72 @@ and
 .B $TERM
 is
 .B xterm-256color
-over SSH).
+over SSH). See REMOTE TMUX CONFIGURATION for the full set.
+.SH IMAGE PASTE
+.PP
+Pasting an image with
+.B Ctrl+V
+into a claude code CLI running inside a tmux session over SSH does not work \(em the keystroke crosses the SSH tunnel, but claude code on the remote then reads the
+.B remote
+clipboard, which is empty. Image bytes never traverse the SSH stream because the terminal protocol carries only text/keystrokes; there is no standard OSC sequence for "pasted image bytes".
+.PP
+The workaround is bound to
+.B Super+Shift+V
+in sway. It calls
+.IR ~/.scripts/remote-image-paste.sh ,
+which:
+.IP 1. 4
+Detects an image MIME type in the local Wayland clipboard.
+.IP 2.
+Saves it locally with the appropriate extension (png/jpg/gif/webp).
+.IP 3.
+Uploads it via scp to
+.IR /tmp/cc-paste-<timestamp>.<ext>
+on the remote host.
+.IP 4.
+Types the resulting absolute path into the focused window via
+.BR wtype .
+.PP
+Claude code on the remote then reads the file by path. Failures (no image in clipboard, scp errors, wtype errors) surface as desktop notifications.
+.PP
+The script is hardcoded to host \fBselene\fP. For a different host, edit
+.B REMOTE_HOST
+at the top of
+.IR ~/.scripts/remote-image-paste.sh .
+.SH REMOTE TMUX CONFIGURATION
+.PP
+For full keyboard integration with claude code CLI on the remote host, the remote tmux configuration (typically at
+.I ~/.config/tmux/tmux.conf
+on the VPS) must include:
+.PP
+.RS
+.nf
+set -s extended-keys always
+set -as terminal-features xterm-256color:extkeys
+set -as terminal-features screen-256color:extkeys
+.fi
+.RE
+.PP
+.B extended-keys always
+tells tmux to advertise extended-key support to inner applications. The
+.B terminal-features
+lines list which terminals (by
+.B $TERM
+value) understand the extended sequences \(em
+.B xterm-256color
+is the default
+.B $TERM
+that SSH presents to the remote tmux, and
+.B screen-256color
+is what tmux itself sets for processes running inside it.
+.PP
+Without these,
+.B Shift+Enter
+in claude code over SSH submits the message instead of inserting a newline.
+.PP
+Requires tmux 3.4 or later (for the
+.B extended-keys always
+syntax). Verified against tmux 3.6a on selene as of 2026-04-29.
 .SH AUTHOR
 Created for persistent SSH workflows, particularly for Claude Code CLI sessions.
 .SH SEE ALSO
