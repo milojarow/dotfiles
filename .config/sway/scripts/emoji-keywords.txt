@@ -1,0 +1,1499 @@
+# Emoji Keywords — emoji<TAB>kw1 kw2 kw3 ...
+#
+# Per-emoji search synonyms attached as invisible rofi metadata, alongside
+# the cluster aliases in emoji-aliases.txt. Matched by the rofi filter,
+# never displayed in the picker rows.
+#
+# Format
+#   <emoji><TAB>keyword<SPACE>keyword<SPACE>...
+#
+# Notes
+#   - Comments start with #. Blank lines ignored.
+#   - The same emoji may be repeated; the handler merges all occurrences.
+#   - Read by ~/.config/sway/scripts/emoji-modi-handler on every picker launch.
+#
+# The first 545 entries below were generated from
+# /usr/share/oh-my-zsh/plugins/emoji/gemoji_db.json (CLDR aliases + tags,
+# deduped against the description and stopwords). Manual additions to
+# extend coverage and refine search are appended below the auto block.
+
+# === Auto (gemoji-derived) ===
+0️⃣	zero
+💯	100 perfect score
+🔢	1234
+👍	+1 approve ok thumbsup
+👎	-1 bury disapprove thumbsdown
+1️⃣	one
+👆	2 point
+2️⃣	two
+3️⃣	three
+4️⃣	four
+5️⃣	five
+6️⃣	six
+7️⃣	seven
+🎱	8ball billiards
+8️⃣	eight
+🚨	911 emergency rotating
+9️⃣	nine
+🔤	abc alphabet
+🔡	abcd
+🔠	abcd capital letters
+♿	accessibility
+🤧	achoo sick
+🌍	africa earth international world
+🛄	airport
+🇦🇽	aland
+😲	amazed gasp
+🇺🇸	america us
+😇	angel innocent
+💢	angry
+😡	angry pout rage
+📢	announcement
+😠	annoyed mad
+👏	applause clap praise
+🏹	archery
+◀️	arrow backward
+⏫	arrow double
+⏬	arrow double
+🔽	arrow down small
+▶️	arrow forward
+🔼	arrow small up
+🔀	arrows rightwards twisted
+🎨	art design paint
+🌏	asia earth international world
+*️⃣	asterisk
+👟	athletic sneaker sport
+👊	attack facepunch punch
+🍆	aubergine
+🍂	autumn
+🏆	award contest winner
+👜	bag
+☑️	ballot
+🎍	bamboo
+🤕	bandage head hurt
+‼️	bangbang
+❗	bang heavy
+🤢	barf disgusted sick
+🇧🇱	barthelemy
+⛹️‍♂️	basketball
+🚿	bath
+😭	bawling cry sad sob
+👙	beach
+🐚	beach sea
+💅	beauty care manicure
+🐝	bee
+🍻	beers drinks
+💪	bicep flex muscle strong workout
+🚲	bike
+🎁	birthday christmas present
+🎈	birthday party
+🇬🇼	bissau guinea
+🃏	black
+✴️	black eight pointed
+🙈	blind evil ignore no see
+🚫	block entry forbidden no sign
+💨	blow dash fast wind
+🚙	blue car
+☺️	blush pleased relaxed
+😊	blush proud
+🎓	board college education mortar university
+⛵	boat
+💣	boom
+💥	boom explode
+🍳	breakfast egg fried
+🍵	breakfast green tea
+🔆	brightness high
+🔅	brightness low
+🇬🇧	british gb uk
+🥉	bronze
+🍾	bubbly celebration champagne
+🐞	bug
+🚅	bullettrain front
+🚄	bullettrain side
+🐰	bunny
+🍔	burger
+🔥	burn
+👨‍💼	business
+💼	business
+🚏	busstop
+☕	cafe coffee espresso
+🍰	cake dessert
+📲	call calling incoming
+📞	call phone
+⛺	camping
+🍁	canada
+🚗	car red
+🐈	cat2
+💿	cd
+🎆	celebration festival
+🏁	checkered finish milestone
+🥂	cheers toast
+👨‍🍳	chef
+🍗	chicken meat
+👦	child
+👧	child
+👪	child home parents
+👶	child newborn
+💝	chocolates gift
+🔪	chop cut hocho
+🎅	christmas
+☃️	christmas snow winter
+🌇	city sunrise
+🌆	city sunset
+🎩	classy tophat
+🕐	clock1
+🕙	clock10
+🕥	clock1030
+🕚	clock11
+🕦	clock1130
+🕛	clock12
+🕧	clock1230
+🕜	clock130
+🕑	clock2
+🕝	clock230
+🕒	clock3
+🕞	clock330
+🕓	clock4
+🕟	clock430
+🕔	clock5
+🕠	clock530
+🕕	clock6
+🕡	clock630
+🕖	clock7
+🕢	clock730
+🕗	clock8
+🕣	clock830
+🕘	clock9
+🕤	clock930
+😝	closed eyes out prank stuck
+🔐	closed lock security
+♣️	clubs
+🇨🇳	cn
+👨‍💻	coder
+😰	cold nervous
+❄️	cold weather winter
+💬	comment
+❓	confused
+🎮	console controller play
+😎	cool
+👮	cop law
+🇨🇮	cote ivory
+👬	couple date two
+👩‍❤️‍💋‍👨	couplekiss
+💏	couplekiss
+🐄	cow2
+💩	crap hankey poop shit
+💰	cream dollar moneybag
+👸	crown royal
+🤴	crown royal
+😍	crush eyes heart love
+😢	cry sad tear
+💘	cupid love
+🇨🇼	curacao
+🥘	curry paella
+✂️	cut
+🍴	cutlery
+🇨🇿	czech republic
+👨	dad father mustache
+🕺	dancer
+💀	danger dead poison
+🎯	dart target
+📅	date schedule
+🇩🇪	de
+🙉	deaf evil hear no
+🤝	deal
+🐪	desert dromedary
+💻	desktop screen
+👿	devil evil imp
+😈	devil evil imp
+💎	diamond
+♦️	diamonds
+🎲	dice gambling
+📁	directory
+😥	disappointed nervous phew sweat
+📄	document
+📜	document
+📝	document note pencil
+🐩	dog
+🐕	dog2
+🚯	do litter not
+💸	dollar
+↕️	down up
+🙃	down upside
+📉	downwards graph metrics trend
+🎭	drama theater
+🍸	drink
+🍺	drink
+💦	drops water workout
+🌾	ear
+🎧	earphones headphones music
+🌎	earth international world
+✳️	eight spoked
+📧	e-mail
+💌	email envelope
+✉️	email letter
+💍	engaged marriage wedding
+♻️	environment green recycle
+🇪🇸	es
+🇪🇺	eu
+🏤	european
+🏰	european
+🙊	evil hush mute no speak
+👓	eyeglasses
+😜	eye out prank silly stuck
+😻	eyes heart
+🐼	face
+🦊	face
+😿	face sad tear
+⏩	fast forward
+🐾	feet
+👣	feet tracks
+🎬	film
+🎦	film movie
+🎥	film video
+🎣	fish
+🎏	flags
+✈️	flight
+🛫	flight
+🛬	flight
+🐬	flipper
+😘	flirt heart kissing
+😉	flirt wink
+🌷	flower
+🌹	flower
+💐	flowers
+🌸	flower spring
+⏳	flowing sand time
+👔	formal shirt
+🔮	fortune
+🇫🇷	fr french
+🍌	fruit
+🍏	fruit
+🍒	fruit
+🍓	fruit
+🖕	fu
+⛽	fuelpump
+👾	game invader retro space
+🤓	geek glasses
+🌐	global international world
+🥇	gold
+🏅	gold winner
+⛳	golf
+👋	goodbye wave
+👨‍🎓	graduation
+📈	graph metrics trend upwards
+❔	grey
+❕	grey
+😁	grin
+👥	group team users
+🔫	gun shoot weapon
+🏋️‍♂️	gym weight workout
+😃	haha happy joy smiley
+😆	haha happy laughing satisfied
+👨‍🦰	haired
+👻	halloween
+🎃	halloween jack lantern o
+😄	happy joy laugh pleased smile
+😀	happy smile
+#️⃣	hash number
+🐥	hatched
+⤴️	heading
+⤵️	heading
+💉	health hospital needle
+💊	health medicine
+👂	hear listen sound
+💓	heartbeat
+💗	heartpulse
+♥️	hearts
+✔️	heavy
+❣️	heavy
+➕	heavy
+➖	heavy
+➗	heavy
+✖️	heavy x
+👠	heel high
+👷	helmet
+✋	highfive stop
+↪️	hook
+↩️	hook leftwards return
+🙌	hooray raised
+🎉	hooray tada
+🤞	hopeful luck
+🙏	hope please pray wish
+🙀	horror scream
+😱	horror scream shocked
+🌭	hotdog
+😅	hot smile
+♨️	hotsprings
+🤗	hugs
+🤐	hush mouth silence zipper
+🍦	icecream
+💡	idea
+😷	ill sick
+😮	impressed surprise wow
+🔏	ink lock
+💠	inside shape
+⁉️	interrobang
+🔬	investigate laboratory science
+📱	iphone smartphone
+ℹ️	source
+🇮🇹	it
+🚮	its place put
+🏮	izakaya
+👺	japanese
+👹	japanese monster
+🇯🇵	jp
+🌁	karl
+👑	king queen royal
+👄	kiss lips
+🇰🇷	kr
+🔵	large
+🚀	launch ship
+🍃	leaves
+🤛	left
+↙️	left lower
+↔️	left right
+↖️	left upper
+🇹🇱	leste timor
+🤥	liar
+📚	library
+😋	lick tongue yum
+⚡	lightning thunder zap
+⛔	limit
+💋	lipstick
+📌	location
+📍	location
+🔑	lock password
+🔒	lock private security
+🤣	lol rofl
+👀	look see watch
+🔁	loop
+🔊	loud sound
+❤️	love
+↘️	lower right
+🍀	luck
+🇲🇴	macau
+🔎	mag
+🔍	mag search zoom
+📬	mail
+📭	mail no
+💄	makeup
+🕵️‍♂️	male sleuth
+🍊	mandarin orange
+🎽	marathon sash
+💒	marriage
+◽	medium small
+◾	medium small
+📣	mega
+😐	meh
+😒	meh
+🤘	metal
+📊	metrics stats
+🍼	milk
+💽	minidisc
+💵	money
+🤑	money mouth rich
+⏰	morning
+🐁	mouse2
+🗿	moyai stone
+🎶	music
+📴	mute
+😶	mute no silence
+🔇	mute sound volume
+❎	negative squared
+😟	nervous
+🆕	fresh
+🌙	night
+🚱	non-potable
+🍜	noodle ramen
+🔕	no off volume
+🔔	notification sound
+⭕	o
+🌊	ocean sea
+🆗	yes
+👴	older
+🔂	one
+🅾️	o2
+😨	oops scared shocked
+☂️	open
+😛	out stuck
+👨‍🎨	painter
+👖	pants
+⛅	partly sunny weather
+🎂	party
+🍝	pasta
+✌️	peace v
+✏️	pencil2
+😣	persevere struggling
+🐱	pet
+🐶	pet
+🐹	pet
+☎️	phone
+📷	photo
+📸	photo
+🎹	piano
+🐖	pig2
+🌱	plant
+📻	podcast
+☝️	point
+👇	point
+👈	point
+👉	point
+🔯	pointed six
+🚩	post
+👝	pouch
+✊	power
+🔋	power
+🅿️	parking
+📰	press
+🏳️‍🌈	pride
+🇸🇹	principe sao tome
+👨‍🏫	professor school
+🖖	prosper spock
+🐇	rabbit2
+🐎	racehorse speed
+🌂	rain weather
+👨‍🔬	research
+🚾	restroom toilet wc
+🇷🇪	reunion
+⏪	rewind
+🎑	rice scene
+🤜	right
+↗️	right upper
+🎸	rock
+👨‍🎤	rockstar
+🙄	roll
+🇷🇺	ru
+😞	sad
+🤶	santa
+🎒	satchel school
+💾	save
+📆	schedule
+♏	scorpius
+🐳	sea
+🔓	security unlock
+🚦	semaphore
+🐑	sheep
+✨	shiny
+⚓	ship
+🚤	ship
+📦	shipping
+👕	shirt
+🤒	sick
+📡	signal
+📶	signal strength wifi
+😯	silence speechless
+🥈	silver
+🎤	sing
+🎿	ski
+💤	sleeping
+🐌	slow
+🐢	slow
+🔺	small
+🔻	small
+👃	smell
+😸	smile
+😺	smiley
+😼	smirk
+😏	smirk smug
+🚬	smoking
+😤	smug triumph
+🆘	emergency help
+🔉	sound
+👨‍🚀	space
+♠️	spades
+⚽	sports
+⚾	sports
+🎾	sports
+🏀	sports
+🏈	sports
+💫	star
+🌟	star2
+🌠	stars
+🚂	steam train
+🍲	stew
+😧	stunned
+💳	subscription
+🌞	summer
+🍹	summer vacation
+☀️	sunny weather
+🇸🇿	swaziland
+🍬	sweet
+🌀	swirl
+🔄	sync
+👅	taste
+🍤	tempura
+🔟	ten
+🦃	thanksgiving
+💭	thinking
+🐅	tiger2
+⌚	time
+⌛	time
+😩	tired
+😪	tired
+™️	tm trademark
+🍞	toast
+🚻	toilet
+🔧	tool
+🔨	tool
+🇹🇷	tr
+🚋	train
+🚆	train2
+📺	tv
+👽	ufo
+🔞	underage
+😫	upset whine
+👤	user
+📼	vhs
+💧	water
+🚽	wc
+☔	weather
+🐋	whale2
+😌	whew
+🥃	whisky
+✅	white
+⛄	winter
+⚠️	wip
+🚧	wip
+🌲	wood
+🌳	wood
+❌	x
+😴	zzz
+🈁	koko
+🈂️	sa
+🉑	accept
+🉐	advantage ideograph
+
+# === Manual additions ===
+
+# --- Batch 1: faces ---
+🫠	melt embarrassed cringe
+☠️	death poison pirate danger
+☹️	unhappy disappointed sad
+❤️‍🩹	healing recovery comfort
+❤️‍🔥	passion burning desire
+👁️‍🗨️	witness see attention
+💔	heartbreak breakup pain
+💕	affection cute romance
+💖	special shimmer crush
+💙	calm trust water
+💚	nature jealousy envy
+💛	friendship sunshine warm
+💜	royalty creative magic
+💞	romance circular spinning
+💟	symbol decoration ornament
+🕳️	pit dig empty void
+🖤	dark goth empty
+🗨️	talk dialogue chat
+🗯️	shout yell rage
+😂	laugh cry funny lmao
+😑	blank flat indifferent
+😓	tired ashamed exhausted
+😔	reflective dejected gloomy
+😕	puzzled unsure perplexed
+😖	frustrated suffering pain
+😗	kiss whistle pucker
+😙	kiss affectionate sweet
+😚	kiss tender gentle
+😦	shocked worried gasping
+😬	awkward yikes uncomfortable
+😮‍💨	relief sigh phew
+😳	blush flushed shy
+😵	dead dizzy knockout
+😵‍💫	dizzy hypnotized confused
+😶‍🌫️	hazy foggy distracted
+😹	kitten laugh cry
+😽	kitten kiss affection
+😾	kitten grumpy mad
+🙁	mild disappointed sad
+🙂	polite okay subtle
+🙂‍↔️	no disagree negative
+🙂‍↕️	yes agree affirm
+🤔	think hmm wonder ponder
+🤖	ai bot machine android
+🤠	western yeehaw rodeo
+🤡	joker silly creepy circus
+🤤	hungry desire sleep saliva
+
+# --- Batch 2: activities ---
+🧨	explosion bang celebration
+♟️	game strategy piece
+⛸️	skating winter rink
+🀄	tile asian game
+🎀	bow gift decoration
+🎄	xmas pine holiday
+🎇	firework spark celebration
+🎊	celebration party explode
+🎋	bamboo wish japanese
+🎎	festival hina culture
+🎐	bell breeze peaceful
+🎖️	award honor service
+🎗️	awareness cause cancer
+🎟️	entry event pair
+🎫	admission concert pass
+🎰	gamble vegas casino
+🎳	strike pins game
+🎴	hanafuda japanese deck
+🏉	ball oval sport
+🏏	bat ball wicket
+🏐	ball net beach
+🏑	stick ball turf
+🏒	puck stick rink
+🏓	table tennis paddle
+🏸	racket shuttlecock court
+🕹️	game arcade controller
+🖼️	art painting gallery
+🥅	score sport
+🥊	punch fight ring
+🥋	gi karate judo
+
+# --- Batch 3: food ---
+🌮	mexican shell tortilla
+🌯	mexican wrap roll
+🌰	nut autumn brown
+🌶️	spicy chili heat
+🌽	maize cob yellow
+🍄‍🟫	fungi cremini portobello
+🍅	fruit red sauce
+🍇	wine fruit purple
+🍈	fruit cantaloupe sweet
+🍉	fruit summer juicy
+🍋	citrus sour yellow
+🍋‍🟩	citrus sour green
+🍍	tropical fruit spiky
+🍎	fruit doctor crisp
+🍐	fruit green sweet
+🍑	fruit butt cute
+🍕	italian cheese slice
+🍖	drumstick chicken protein
+🍘	asian senbei snack
+🍙	onigiri japanese seaweed
+🍚	bowl asian grain
+🍛	indian japanese spice
+🍟	potato fast salty
+🍠	yam asian street
+🍡	mochi japanese skewer
+🍢	japanese fishcake skewer
+🍣	japanese raw nigiri
+🍥	narutomaki ramen kamaboko
+🍧	kakigori summer cold
+🍨	cold sundae sweet
+🍩	donut sweet hole
+🍪	biscuit chocolate sweet
+🍫	cocoa sweet candy
+🍭	candy stick sweet
+🍮	flan pudding caramel
+🍯	bee sweet sticky
+🍱	japanese lunch meal
+🍶	japanese alcohol rice
+🍷	alcohol red merlot
+🍽️	dining meal restaurant
+🍿	cinema movie snack
+🏺	vase greek pottery
+🥄	utensil cutlery scoop
+🥐	french pastry buttery
+🥑	guacamole green toast
+🥒	vegetable green pickle
+🥓	pork breakfast crispy
+🥔	vegetable spud root
+🥕	vegetable orange rabbit
+🥖	french loaf crusty
+🥗	healthy vegetables lettuce
+🥙	gyro pita kebab
+🥚	breakfast yolk shell
+🥛	dairy white drink
+🥜	nuts snack legume
+🥝	fruit green fuzzy
+🥞	breakfast syrup stack
+🧀	dairy yellow swiss
+
+# --- Batch 4: animals ---
+☘️	irish luck clover
+🌴	tropical beach island
+🌵	desert spiky succulent
+🌺	tropical hawaii flower
+🌻	yellow summer big
+🌼	daisy spring petal
+🌿	leaf plant green
+🍄	fungus toadstool red
+🏵️	ribbon award decoration
+🐀	rodent vermin pest
+🐂	cattle bull strong
+🐃	cattle asian farm
+🐆	cat spotted wild
+🐈‍⬛	cat halloween superstition
+🐉	mythical fire chinese
+🐊	reptile gator river
+🐍	serpent reptile slither
+🐏	male sheep horns
+🐐	mountain greatest cheese
+🐒	ape primate jungle
+🐓	chicken male crow
+🐔	hen poultry farm
+🐕‍🦺	assistance helper trained
+🐗	wild pig tusk
+🐘	trunk huge memory
+🐙	tentacle ocean cephalopod
+🐛	caterpillar insect creep
+🐜	insect colony tiny
+🐟	ocean swim scales
+🐠	reef colorful aquarium
+🐡	puffer poison spiky
+🐣	newborn easter egg
+🐤	cute yellow tweet
+🐦	fly tweet feather
+🐦‍⬛	crow raven dark
+🐦‍🔥	mythical fire rebirth
+🐧	antarctic tuxedo waddle
+🐨	australia eucalyptus marsupial
+🐫	bactrian desert hump
+🐭	rodent small cute
+🐮	moo cattle dairy
+🐯	cat jungle stripes
+🐲	mythical chinese cute
+🐴	equine mane stable
+🐵	ape primate cheeky
+🐷	pork oink cute
+🐸	amphibian green ribbit
+🐺	pack howl fierce
+🐻	grizzly forest cuddly
+🐻‍❄️	arctic white cold
+🐽	snout pork sniff
+🐿️	squirrel rodent small
+💮	cherry blossom japanese
+🕊️	peace bird wedding
+🕷️	arachnid web halloween
+🕸️	cobweb halloween silk
+🥀	dead sad dying
+🦀	crustacean ocean cancer
+🦁	king jungle mane
+🦂	arachnid sting venom
+🦄	mythical magical horn
+🦅	raptor freedom america
+🦆	quack pond bill
+🦇	halloween fly cave
+🦈	ocean fin teeth
+🦉	wise night hoot
+🦋	wings transform colorful
+🦌	buck antlers forest
+🦍	ape silverback africa
+🦎	reptile gecko climb
+🦏	horn africa charge
+🦐	seafood prawn small
+🦑	tentacle ocean ink
+
+# --- Batch 5: objects ---
+⌨️	typing computer keys
+⚒️	labor mining tools
+⚔️	battle war fight
+⚖️	justice law libra
+⚗️	chemistry distill flask
+⚙️	settings cog mechanic
+⚰️	death funeral burial
+⚱️	ashes cremation memorial
+⛏️	mine dig tool
+⛑️	hardhat safety emergency
+⛓️	bound shackle metal
+⛓️‍💥	freedom liberation snap
+✒️	write calligraphy pen
+🎙️	podcast record voice
+🎚️	audio mix volume
+🎛️	audio dj synth
+🎞️	cinema reel movie
+🎵	song melody tune
+🎷	jazz brass instrument
+🎺	brass horn jazz
+🎻	string strad classical
+🎼	sheet composition staff
+🏷️	tag price sticker
+👗	women clothing skirt
+👘	japanese robe traditional
+👛	wallet women coin
+👞	leather oxford formal
+💴	japan money cash
+💶	europe money cash
+💷	britain money cash
+💹	finance market japan
+📀	disc movie media
+📂	directory open browse
+📃	document paper note
+📇	contacts rolodex business
+📋	list checklist task
+📎	attach office document
+📏	measure length tool
+📐	geometry math draft
+📑	markers pages document
+📒	accounting book notebook
+📓	write journal pages
+📔	diary journal pretty
+📕	reading literature red
+📖	reading literature study
+📗	reading literature manual
+📘	reading literature manual
+📙	reading literature manual
+📟	beeper old retro
+📠	office old retro
+📤	sent mail upload
+📥	received mail download
+📨	mail letter arrive
+📩	mail send delivery
+📪	empty mail none
+📫	mail waiting new
+📮	mailbox letter post
+📯	mail announcement old
+📹	recording film shoot
+📽️	cinema movie reel
+📿	rosary religion meditation
+🔈	quiet sound audio
+🔌	power outlet socket
+🔖	save page reading
+🔗	url hyperlink chain
+🔦	torch light dark
+🔩	hardware fasten screw
+🔭	astronomy stars observe
+🕯️	flame wax light
+🕶️	shades cool summer
+🖇️	attach office documents
+🖊️	write ink ballpoint
+🖋️	write ink fancy
+🖌️	art paint stroke
+🖍️	kids color draw
+🖥️	pc monitor workstation
+🖨️	print office paper
+🖱️	click cursor pointer
+🖲️	input cursor old
+🗂️	organize files tabs
+🗃️	archive storage organize
+🗄️	storage office organize
+🗑️	trash garbage delete
+🗒️	write notes pad
+🗓️	schedule date plan
+🗜️	vise grip tool
+🗝️	vintage rusty antique
+🗞️	news vintage roll
+🗡️	blade weapon stab
+🗳️	vote election democracy
+🚪	entrance open close
+🛁	bath bathroom soak
+🛋️	sofa living relax
+🛍️	buy mall retail
+🛏️	sleep bedroom rest
+🛒	buy supermarket trolley
+🛠️	tools fix maintenance
+🛡️	defend protect armor
+🥁	rhythm beat percussion
+
+# --- Batch 6: people ---
+🧑‍🩰	ballet dance pirouette
+🧑‍🧑‍🧒	parents kid trio
+🧑‍🧑‍🧒‍🧒	parents kids quartet
+🧚‍♀️	magic wings female
+🧔‍♂️	bearded facial male
+🧎‍♂️‍➡️	kneel pray right
+🧑‍⚕️	doctor nurse medical
+🧑‍⚖️	court law gavel
+🧑‍✈️	fly aviation airline
+🧑‍🌾	agriculture rural crops
+🧑‍🍳	chef culinary kitchen
+🧑‍🎄	santa christmas neutral
+🧑‍🎓	graduate school university
+🧑‍🎤	vocalist artist mic
+🧑‍🎨	painter creative palette
+🧑‍🏫	educator school instructor
+🧑‍🏭	industrial blue-collar manufacturing
+🧑‍💻	developer coder programmer
+🧑‍💼	corporate suit business
+🧑‍🔧	repair tools garage
+🧑‍🔬	research lab experiment
+🧑‍🚀	space cosmos nasa
+🧑‍🚒	emergency hose rescue
+⛷️	snow slope alpine
+✍️	pen handwriting compose
+🏂	snow shred slope
+🏃‍♂️	jogger run male
+🏃‍♂️‍➡️	jogger run right
+🏄‍♂️	wave board male
+🏇	jockey derby horse
+🏊‍♂️	pool stroke male
+🏌️‍♂️	golf swing male
+👁️	see watch vision
+👌	perfect approve good
+👐	hug welcome embrace
+👨‍🦯‍➡️	blind cane walking
+👨‍⚕️	doctor nurse male
+👨‍⚖️	court law male
+👨‍✈️	fly aviation male
+👨‍🌾	agriculture rural male
+👨‍🏭	industrial male manufacturing
+👨‍👦	father son dad
+👨‍👦‍👦	father sons dad
+👨‍👧	father daughter dad
+👨‍👧‍👦	father kids dad
+👨‍👧‍👧	father daughters dad
+👨‍👩‍👦	parents son household
+👨‍👩‍👦‍👦	parents sons household
+👨‍👩‍👧	parents daughter household
+👨‍👩‍👧‍👦	parents kids household
+👨‍👩‍👧‍👧	parents daughters household
+👨‍🔧	repair tools male
+👨‍🚒	emergency hose male
+👩‍❤️‍👨	love romance straight
+👩‍🍼	mother nurse infant
+👩‍👦	mother son mom
+👩‍👦‍👦	mother sons mom
+👩‍👧	mother daughter mom
+👩‍👧‍👦	mother kids mom
+👩‍👧‍👧	mother daughters mom
+👮‍♂️	cop law male
+👯‍♀️	dance bunny party
+👯‍♂️	dance bunny party
+👰‍♀️	bride wedding marriage
+👱‍♂️	blonde male hair
+👳‍♂️	sikh muslim cultural
+👷‍♂️	builder hardhat male
+👼	cherub heaven cute
+💁‍♂️	information sass male
+💂	soldier sentry royal
+💂‍♂️	soldier sentry male
+💆‍♂️	spa relax male
+💇‍♂️	barber salon male
+💑	love romance pair
+🕵️	investigator spy mystery
+🖐️	halt high palm
+🗣️	talking voice say
+🙅‍♂️	reject deny male
+🙆‍♂️	approve agree male
+🙇‍♂️	respect apology male
+🙋‍♂️	volunteer ask male
+🙍‍♂️	sad upset male
+🙎‍♂️	grumpy sulk male
+🚣‍♂️	row boat male
+🚴‍♂️	cycle bike male
+🚵‍♂️	cycle trail male
+🚶‍♂️	stroll walk male
+🚶‍♂️‍➡️	stroll walk right
+🤙	shaka hawaii hang
+🤚	halt stop palm
+🤦‍♂️	frustrated disbelief male
+🤰	pregnancy mother expecting
+🤳	photo phone narcissism
+🤵‍♂️	groom formal male
+🤷‍♂️	idk dunno male
+🤸‍♂️	gymnastics flip male
+🤹‍♂️	circus skill male
+🤼‍♂️	grapple fight male
+🤽‍♂️	pool sport male
+🤾‍♂️	court sport male
+
+# --- Batch 7: symbols ---
+©️	legal mark intellectual
+®️	legal trademark mark
+⏏️	remove disc media
+⏭️	skip forward media
+⏮️	skip back media
+⏯️	toggle media transport
+⏸️	stop media transport
+⏹️	halt media transport
+⏺️	capture media transport
+▪️	tiny dark dot
+▫️	tiny light dot
+◻️	light box block
+◼️	dark box block
+☢️	nuclear danger waste
+☣️	toxic dangerous warning
+☦️	christian eastern religion
+☪️	islam muslim religion
+☮️	hippie love sign
+☯️	balance taoist duality
+☸️	buddhism dharma religion
+♀️	woman gender venus
+♂️	man gender mars
+♈	zodiac ram march
+♉	zodiac bull april
+♊	zodiac twins may
+♋	zodiac crab june
+♌	zodiac lion july
+♍	zodiac virgin august
+♎	zodiac scales september
+♐	zodiac archer november
+♑	zodiac goat december
+♒	zodiac water january
+♓	zodiac fish february
+♾️	forever endless loop
+⚕️	caduceus health doctor
+⚛️	physics nucleus science
+⚜️	french royal lily
+⚧️	trans pride lgbt
+⚪	light dot bullet
+⚫	dark dot bullet
+⛎	zodiac serpent thirteenth
+✝️	christian religion church
+✡️	judaism jewish religion
+❇️	glitter shiny decoration
+➡️	east forward direction
+➰	ribbon swirl curl
+➿	ribbon swirl complex
+⬅️	west back direction
+⬆️	north top direction
+⬇️	south bottom direction
+⬛	dark box big
+⬜	light box big
+〰️	squiggle line japanese
+〽️	repeat japanese music
+🏧	cash bank withdraw
+💱	forex foreign money
+💲	cash money usd
+📛	label tag identify
+📳	silent buzz phone
+📵	forbidden cellphone restriction
+🔃	refresh reload sync
+🔘	option select round
+🔙	return previous direction
+🔚	finish stop direction
+🔛	activate enable direction
+🔜	upcoming future direction
+🔝	up best direction
+🔣	punctuation special characters
+🔰	newbie shoshinsha learner
+🔱	poseidon weapon fork
+🔲	dark frame button
+🔳	light frame button
+🔴	dot warning point
+🔶	gem shape orange
+🔷	gem shape blue
+🔸	gem shape tiny orange
+🔹	gem shape tiny blue
+🕉️	hindu sacred chant
+🕎	hanukkah jewish lights
+🚭	forbidden cigarette restriction
+🚰	drinking faucet tap
+🚳	forbidden bike restriction
+🚷	forbidden walk restriction
+🚸	school caution warning
+🚹	bathroom male toilet
+🚺	bathroom female toilet
+🚼	infant nursery changing
+🛂	border immigration airport
+🛃	border declaration airport
+🛅	storage baggage airport
+🛐	church temple religion
+#️⃣	hash pound hashtag
+🅰️	letter blood type
+🆎	letters blood type
+🅱️	letter blood type
+🆑	clearing cyrillic
+🆒	cool cyrillic
+🆓	no charge gratis
+🆔	identify card identity
+Ⓜ️	metro letter
+🆖	no good fail
+🆙	upgrade ascend levelup
+🆚	versus compete fight
+🈹	sale waribiki
+🈴	pass goukaku
+🈺	open eigyou
+🈯	reserved shitei
+🈷️	monthly getsugaku
+🈶	paid yuuryou
+🈵	full manshitsu
+🈚	free muryou
+🈸	apply shinsei
+㊗️	congrats iwai
+🈲	forbidden kinshi
+㊙️	confidential himitsu
+🈳	empty kuuseki
+
+# --- Batch 8: travel ---
+⏱️	race timer chronograph
+⏲️	countdown alarm cooking
+☁️	sky overcast nebula
+☄️	meteor space tail
+⛈️	storm thunder downpour
+⛩️	torii japan religion
+⛪	christian cross worship
+⛰️	peak rocky climb
+⛱️	beach parasol vacation
+⛲	water plaza park
+⛴️	boat passenger crossing
+⭐	favorite night shine
+🌃	evening sky urban
+🌄	morning dawn peak
+🌅	morning dawn horizon
+🌈	colors pride lgbt
+🌉	infrastructure dark span
+🌋	eruption lava magma
+🌌	galaxy stars space
+🌑	dark phase invisible
+🌒	growing phase sliver
+🌓	half phase growing
+🌔	growing phase almost
+🌕	bright phase round
+🌖	shrinking phase gibbous
+🌗	half phase shrinking
+🌘	shrinking phase sliver
+🌚	cute dark mischief
+🌛	cute half growing
+🌜	cute half shrinking
+🌝	cute bright round
+🌡️	temperature hot fever
+🌤️	partly cloudy bright
+🌥️	mostly cloudy dim
+🌦️	showers sunshower passing
+🌧️	rainy showers wet
+🌨️	snowy winter cold
+🌩️	thunderbolt strike storm
+🌪️	twister whirlwind storm
+🌫️	mist haze visibility
+🌬️	blowing breeze gust
+🎠	fair amusement merry-go-round
+🎡	fair amusement giant
+🎢	ride amusement thrill
+🎪	carnival big-top performance
+🏍️	bike ride moto
+🏎️	formula speed race
+🏔️	alpine peak frozen
+🏕️	outdoors tent nature
+🏖️	vacation sand sea
+🏗️	site development crane
+🏘️	neighborhood suburb residential
+🏙️	urban skyline downtown
+🏚️	abandoned ruined empty
+🏛️	museum government greek
+🏜️	sand dune arid
+🏝️	tropical castaway alone
+🏞️	wilderness reserve nature
+🏟️	arena sports venue
+🏠	home residence dwelling
+🏡	home suburb cozy
+🏢	corporate workplace tower
+🏣	mail japan postal
+🏥	medical clinic emergency
+🏦	finance vault deposit
+🏨	accommodation lodging stay
+🏩	romance japan affair
+🏪	konbini 7eleven shop
+🏫	education classroom student
+🏬	mall shopping retail
+🏭	industrial smokestack plant
+🏯	shogun feudal pagoda
+💈	haircut salon striped
+💺	chair airplane reserved
+🕋	mecca islam pilgrimage
+🕌	islam worship muslim
+🕍	judaism worship jewish
+🕰️	vintage antique fancy
+🗺️	atlas geography globe
+🗻	japan iconic peak
+🗼	japan landmark eiffel
+🗽	america nyc landmark
+🗾	archipelago islands country
+🚁	chopper aircraft hover
+🚃	carriage train wagon
+🚇	subway underground tube
+🚈	tram urban transit
+🚉	terminal stop platform
+🚊	streetcar trolley urban
+🚌	coach transit public
+🚍	coach approaching public
+🚎	electric tram urban
+🚐	van shuttle small
+🚑	emergency medical hospital
+🚒	emergency truck firefighter
+🚓	cop emergency cruiser
+🚔	cop approaching cruiser
+🚕	cab fare yellow
+🚖	cab approaching yellow
+🚘	car approaching front
+🚚	shipping cargo van
+🚛	semi truck cargo
+🚜	farm agriculture rural
+🚝	elevated train futuristic
+🚞	scenic alpine train
+🚟	cable hanging transit
+🚠	gondola cable lift
+🚡	cable car skiing
+🚢	vessel ocean cargo
+🚥	signal stoplight intersection
+🛎️	hotel reception service
+🛑	halt octagon traffic
+🛢️	barrel petroleum fuel
+🛣️	highway interstate road
+🛤️	tracks rails crossing
+🛥️	speedboat watercraft engine
+🛩️	propeller private aviation
+🛰️	orbit space communications
+🛳️	cruise liner ocean
+🛴	push roller urban
+🛵	vespa moped urban
+🛶	kayak paddle river
+
+# --- Batch 9: flags (country flags via ISO + region) ---
+🇦🇨	ac africa country
+🇦🇩	ad europe country
+🇦🇪	ae asia country
+🇦🇫	af asia country
+🇦🇬	ag americas country
+🇦🇮	ai americas country
+🇦🇱	al europe country
+🇦🇲	am asia country
+🇦🇴	ao africa country
+🇦🇶	aq antarctica country
+🇦🇷	ar americas country
+🇦🇸	as oceania country
+🇦🇹	at europe country
+🇦🇺	au oceania country
+🇦🇼	aw americas country
+🇦🇽	ax europe country
+🇦🇿	az asia country
+🇧🇦	ba europe country
+🇧🇧	bb americas country
+🇧🇩	bd asia country
+🇧🇪	be europe country
+🇧🇫	bf africa country
+🇧🇬	bg europe country
+🇧🇭	bh asia country
+🇧🇮	bi africa country
+🇧🇯	bj africa country
+🇧🇱	bl americas country
+🇧🇲	bm americas country
+🇧🇳	bn asia country
+🇧🇴	bo americas country
+🇧🇶	bq americas country
+🇧🇷	br americas country
+🇧🇸	bs americas country
+🇧🇹	bt asia country
+🇧🇻	bv antarctica country
+🇧🇼	bw africa country
+🇧🇾	by europe country
+🇧🇿	bz americas country
+🇨🇦	ca americas country
+🇨🇨	cc oceania country
+🇨🇩	cd africa country
+🇨🇫	cf africa country
+🇨🇬	cg africa country
+🇨🇭	ch europe country
+🇨🇮	ci africa country
+🇨🇰	ck oceania country
+🇨🇱	cl americas country
+🇨🇲	cm africa country
+🇨🇳	cn asia country
+🇨🇴	co americas country
+🇨🇵	cp oceania country
+🇨🇶	cq europe country
+🇨🇷	cr americas country
+🇨🇺	cu americas country
+🇨🇻	cv africa country
+🇨🇼	cw americas country
+🇨🇽	cx oceania country
+🇨🇾	cy asia country
+🇨🇿	cz europe country
+🇩🇪	de europe country
+🇩🇬	dg africa country
+🇩🇯	dj africa country
+🇩🇰	dk europe country
+🇩🇲	dm americas country
+🇩🇴	do americas country
+🇩🇿	dz africa country
+🇪🇦	ea africa country
+🇪🇨	ec americas country
+🇪🇪	ee europe country
+🇪🇬	eg africa country
+🇪🇭	eh africa country
+🇪🇷	er africa country
+🇪🇸	es europe country
+🇪🇹	et africa country
+🇪🇺	eu europe country
+🇫🇮	fi europe country
+🇫🇯	fj oceania country
+🇫🇰	fk americas country
+🇫🇲	fm oceania country
+🇫🇴	fo europe country
+🇫🇷	fr europe country
+🇬🇦	ga africa country
+🇬🇧	gb europe country
+🇬🇩	gd americas country
+🇬🇪	ge asia country
+🇬🇫	gf americas country
+🇬🇬	gg europe country
+🇬🇭	gh africa country
+🇬🇮	gi europe country
+🇬🇱	gl americas country
+🇬🇲	gm africa country
+🇬🇳	gn africa country
+🇬🇵	gp americas country
+🇬🇶	gq africa country
+🇬🇷	gr europe country
+🇬🇸	gs antarctica country
+🇬🇹	gt americas country
+🇬🇺	gu oceania country
+🇬🇼	gw africa country
+🇬🇾	gy americas country
+🇭🇰	hk asia country
+🇭🇲	hm antarctica country
+🇭🇳	hn americas country
+🇭🇷	hr europe country
+🇭🇹	ht americas country
+🇭🇺	hu europe country
+🇮🇨	ic africa country
+🇮🇩	id asia country
+🇮🇪	ie europe country
+🇮🇱	il asia country
+🇮🇲	im europe country
+🇮🇳	in asia country
+🇮🇴	io africa country
+🇮🇶	iq asia country
+🇮🇷	ir asia country
+🇮🇸	is europe country
+🇮🇹	it europe country
+🇯🇪	je europe country
+🇯🇲	jm americas country
+🇯🇴	jo asia country
+🇯🇵	jp asia country
+🇰🇪	ke africa country
+🇰🇬	kg asia country
+🇰🇭	kh asia country
+🇰🇮	ki oceania country
+🇰🇲	km africa country
+🇰🇳	kn americas country
+🇰🇵	kp asia country
+🇰🇷	kr asia country
+🇰🇼	kw asia country
+🇰🇾	ky americas country
+🇰🇿	kz asia country
+🇱🇦	la asia country
+🇱🇧	lb asia country
+🇱🇨	lc americas country
+🇱🇮	li europe country
+🇱🇰	lk asia country
+🇱🇷	lr africa country
+🇱🇸	ls africa country
+🇱🇹	lt europe country
+🇱🇺	lu europe country
+🇱🇻	lv europe country
+🇱🇾	ly africa country
+🇲🇦	ma africa country
+🇲🇨	mc europe country
+🇲🇩	md europe country
+🇲🇪	me europe country
+🇲🇫	mf americas country
+🇲🇬	mg africa country
+🇲🇭	mh oceania country
+🇲🇰	mk europe country
+🇲🇱	ml africa country
+🇲🇲	mm asia country
+🇲🇳	mn asia country
+🇲🇴	mo asia country
+🇲🇵	mp oceania country
+🇲🇶	mq americas country
+🇲🇷	mr africa country
+🇲🇸	ms americas country
+🇲🇹	mt europe country
+🇲🇺	mu africa country
+🇲🇻	mv asia country
+🇲🇼	mw africa country
+🇲🇽	mx americas country
+🇲🇾	my asia country
+🇲🇿	mz africa country
+🇳🇦	na africa country
+🇳🇨	nc oceania country
+🇳🇪	ne africa country
+🇳🇫	nf oceania country
+🇳🇬	ng africa country
+🇳🇮	ni americas country
+🇳🇱	nl europe country
+🇳🇴	no europe country
+🇳🇵	np asia country
+🇳🇷	nr oceania country
+🇳🇺	nu oceania country
+🇳🇿	nz oceania country
+🇴🇲	om asia country
+🇵🇦	pa americas country
+🇵🇪	pe americas country
+🇵🇫	pf oceania country
+🇵🇬	pg oceania country
+🇵🇭	ph asia country
+🇵🇰	pk asia country
+🇵🇱	pl europe country
+🇵🇲	pm americas country
+🇵🇳	pn oceania country
+🇵🇷	pr americas country
+🇵🇸	ps asia country
+🇵🇹	pt europe country
+🇵🇼	pw oceania country
+🇵🇾	py americas country
+🇶🇦	qa asia country
+🇷🇪	re africa country
+🇷🇴	ro europe country
+🇷🇸	rs europe country
+🇷🇺	ru europe country
+🇷🇼	rw africa country
+🇸🇦	sa asia country
+🇸🇧	sb oceania country
+🇸🇨	sc africa country
+🇸🇩	sd africa country
+🇸🇪	se europe country
+🇸🇬	sg asia country
+🇸🇭	sh africa country
+🇸🇮	si europe country
+🇸🇯	sj europe country
+🇸🇰	sk europe country
+🇸🇱	sl africa country
+🇸🇲	sm europe country
+🇸🇳	sn africa country
+🇸🇴	so africa country
+🇸🇷	sr americas country
+🇸🇸	ss africa country
+🇸🇹	st africa country
+🇸🇻	sv americas country
+🇸🇽	sx americas country
+🇸🇾	sy asia country
+🇸🇿	sz africa country
+🇹🇦	ta africa country
+🇹🇨	tc americas country
+🇹🇩	td africa country
+🇹🇫	tf africa country
+🇹🇬	tg africa country
+🇹🇭	th asia country
+🇹🇯	tj asia country
+🇹🇰	tk oceania country
+🇹🇱	tl asia country
+🇹🇲	tm asia country
+🇹🇳	tn africa country
+🇹🇴	to oceania country
+🇹🇷	tr asia country
+🇹🇹	tt americas country
+🇹🇻	tv oceania country
+🇹🇼	tw asia country
+🇹🇿	tz africa country
+🇺🇦	ua europe country
+🇺🇬	ug africa country
+🇺🇲	um oceania country
+🇺🇳	un global country
+🇺🇸	us americas country
+🇺🇾	uy americas country
+🇺🇿	uz asia country
+🇻🇦	va europe country
+🇻🇨	vc americas country
+🇻🇪	ve americas country
+🇻🇬	vg americas country
+🇻🇮	vi americas country
+🇻🇳	vn asia country
+🇻🇺	vu oceania country
+🇼🇫	wf oceania country
+🇼🇸	ws oceania country
+🇽🇰	xk europe country
+🇾🇪	ye asia country
+🇾🇹	yt africa country
+🇿🇦	za africa country
+🇿🇲	zm africa country
+🇿🇼	zw africa country
+
+# --- Batch 9 cont: special non-ISO flags ---
+🎌	japan celebration banners
+🏳️	surrender peace truce
+🏳️‍⚧️	trans pride lgbt
+🏴	pirate anarchy mourning
+🏴‍☠️	pirate skull crossbones
+🏴󠁧󠁢󠁥󠁮󠁧󠁿	england britain stgeorge
+🏴󠁧󠁢󠁳󠁣󠁴󠁿	scotland britain saltire
+🏴󠁧󠁢󠁷󠁬󠁳󠁿	wales britain dragon
