@@ -25,7 +25,14 @@ if test -f $HOME/.secrets/environment.d/11-secrets.conf
         string match -qr '^\s*#' -- $line; and continue
         string match -qr '^\s*$' -- $line; and continue
         set -l parts (string split -m1 '=' -- $line)
-        test (count $parts) -eq 2; and set -gx $parts[1] $parts[2]
+        test (count $parts) -eq 2; or continue
+        set -l value $parts[2]
+        # Expand ${VAR} references (systemd environment.d syntax)
+        for ref in (string match -arg '\$\{([A-Za-z_][A-Za-z0-9_]*)\}' -- $value)
+            set -q $ref; or continue
+            set value (string replace -a "\${$ref}" $$ref -- $value)
+        end
+        set -gx $parts[1] $value
     end <$HOME/.secrets/environment.d/11-secrets.conf
 end
 
