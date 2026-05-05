@@ -58,10 +58,10 @@ ICON_MAP = {
     "obsidian":                "\ue2a6",
     # VLC
     "vlc":                     "\U000f057c",
-    # s45-panel
-    "s45-panel":               "\U000f0b5f",
-    # LibreWolf with custom profile (app_id = profile name)
-    "s45-blindando":           "\ue745",
+    # pessoa
+    "pessoa":        "\U000f0b5f",
+    # Firefox with custom profile (app_id = profile name)
+    "pessoa-blindando":        "\ue745",
     # MongoDB Compass
     "mongodb compass":         "\U000f032a",  # leaf (same as mongo-tunnel)
 }

@@ -170,8 +170,8 @@
             "class<claude>":                                       "\uDB82\uDDD1",
             // VLC  (U+F057C — surrogate pair)
             "class<vlc>":                                          "\uDB81\uDD7C",
-            // s45-panel  (U+F0B5F — surrogate pair)
-            "class<s45-panel>":                                    "\uDB82\uDF5F"
+            // pessoa  (U+F0B5F — surrogate pair)
+            "class<pessoa>":                                    "\uDB82\uDF5F"
         }
     },
     "sway/mode": {
