@@ -27,7 +27,7 @@
 
     (for s in {tmux-data.sessions}
       (button :class {s.attached ? "tmux-session attached" : "tmux-session"}
-              :onclick "foot fish -ic 'ssht selene ${s.name}' &"
+              :onclick "foot fish -ic 'mosht selene ${s.name}' &"
         (box :orientation "h" :space-evenly false
           (label :class "tmux-name" :text {s.name}
                  :halign "start" :hexpand true)
