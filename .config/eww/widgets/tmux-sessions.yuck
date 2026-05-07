@@ -40,6 +40,6 @@
 (defwindow tmux-sessions
   :monitor 0
   :geometry (geometry :x "570px" :y "240px" :anchor "top right")
-  :stacking "bg"
+  :stacking "bottom"
   :focusable false
   (tmux-sessions))

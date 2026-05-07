@@ -36,6 +36,6 @@
   :geometry (geometry :x "874px"
                       :y "624px"
                       :anchor "bottom left")
-  :stacking "bg"
+  :stacking "bottom"
   :focusable false
   (battery-widget))

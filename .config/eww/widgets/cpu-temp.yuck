@@ -24,7 +24,7 @@
                       :width "180px"
                       :height "300px"
                       :anchor "left center")
-  :stacking "bg"
+  :stacking "bottom"
   :windowtype "normal"
   :wm-ignore true
   (cpu-temperature))

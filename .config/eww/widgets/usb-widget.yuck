@@ -87,6 +87,6 @@
   :geometry (geometry :x "220px"
                       :y "250px"
                       :anchor "bottom left")
-  :stacking "bg"
+  :stacking "bottom"
   :focusable false
   (usb-widget))

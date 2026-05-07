@@ -13,6 +13,6 @@
 (defwindow selene-storage-window
   :monitor 0
   :geometry (geometry :width "320px" :anchor "bottom right" :x "8px" :y "8px")
-  :stacking "bg"
+  :stacking "bottom"
   :focusable false
   (selene-storage-widget))

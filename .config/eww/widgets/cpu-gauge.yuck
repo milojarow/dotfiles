@@ -31,7 +31,7 @@
                       :width "400px"
                       :height "600px"
                       :anchor "right center")
-  :stacking "bg"
+  :stacking "bottom"
   :windowtype "normal"
   :wm-ignore true
   (cpu-dashboard))

@@ -50,6 +50,6 @@
 (defwindow disk-widget
   :monitor 0
   :geometry (geometry :x "540px" :y "530px" :anchor "top left")
-  :stacking "bg"
+  :stacking "bottom"
   :focusable false
   (disk-widget))

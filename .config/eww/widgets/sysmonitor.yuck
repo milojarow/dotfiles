@@ -49,6 +49,6 @@
                       :y "560px"
                       :width "350px"
                       :anchor "bottom left")
-  :stacking "bg"
+  :stacking "bottom"
   :focusable false
   (sysmonitor))

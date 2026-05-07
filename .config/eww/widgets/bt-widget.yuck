@@ -22,7 +22,7 @@
   :geometry (geometry :x "1460px"
                       :y "910px"
                       :anchor "bottom left")
-  :stacking "bg"
+  :stacking "bottom"
   :focusable false
   (bt-trigger))
 

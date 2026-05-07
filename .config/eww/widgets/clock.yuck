@@ -12,6 +12,6 @@
   :geometry (geometry :x "24px"
                       :y "24px"
                       :anchor "top right")
-  :stacking "bg"
+  :stacking "bottom"
   :focusable false
   (clock))

@@ -20,6 +20,6 @@
   :geometry (geometry :x "0px"
                       :y "0px"
                       :anchor "center left")
-  :stacking "bg"
+  :stacking "bottom"
   :focusable false
   (temps))

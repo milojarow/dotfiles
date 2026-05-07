@@ -26,13 +26,16 @@ if not m:
 
 old_block = m.group(1)
 
-# Invert x delta for right-anchored windows so arrow directions match visual movement
-# Invert y delta for top-anchored windows (positive y moves down from top, so up arrow must subtract)
+# Invert deltas so arrow directions match visual movement.
+#   x axis: right-anchored windows have positive x growing leftward; invert.
+#   y axis: top-anchored AND center-anchored windows have positive y growing
+#           downward; the up arrow sends positive delta, so invert. Only
+#           bottom-anchored windows treat positive y as upward (no inversion).
 anchor_match = re.search(r':anchor\s+"([^"]+)"', old_block)
 anchor = anchor_match.group(1) if anchor_match else ''
 if axis == 'x' and 'right' in anchor:
     delta = -delta
-if axis == 'y' and 'top' in anchor:
+if axis == 'y' and 'bottom' not in anchor:
     delta = -delta
 
 val_match = re.search(rf':{axis} "(-?\d+)px"', old_block)
