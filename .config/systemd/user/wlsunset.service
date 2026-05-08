@@ -1,0 +1,14 @@
+[Unit]
+Description=wlsunset — automatic gamma correction by sunrise/sunset
+PartOf=graphical-session.target
+After=graphical-session.target
+Conflicts=wlsunset-warm.service
+
+[Service]
+Type=simple
+ExecStart=%h/.config/sway/scripts/wlsunset-launch.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

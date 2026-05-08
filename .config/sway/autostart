@@ -13,7 +13,6 @@ set $initialize_way_displays '[ -x "$(command -v way-displays)" ] && systemctl -
 
 set $autostart_dex '[ -x "$(command -v dex)" ] && gdbus wait --session org.kde.StatusNotifierWatcher && dex -a -e SWAY'
 set $flashfocus '[ -x "$(command -v flashfocus)" ] && flashfocus'
-set $wlsunset '[ -x "$(command -v wlsunset)" ] && ~/.config/sway/scripts/sunset.sh "on"'
 set $autotiling '[ -x "$(command -v autotiling)" ] && autotiling || [ -x "$(command -v autotiling-rs)" ] && autotiling-rs'
 set $kanshi '[ -x "$(command -v kanshi)" ] && pkill -x kanshi; exec kanshi'
 set $xdg-dirs '[ -x "$(command -v xdg-user-dirs-update)" ] && exec xdg-user-dirs-update'

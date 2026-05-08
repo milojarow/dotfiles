@@ -37,7 +37,6 @@ WINDOWS=(
     mongo-tunnel-window
     battery-window
     tmux-sessions
-    gamma-popup
     wallpaper-cycle
 )
 
