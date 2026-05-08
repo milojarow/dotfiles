@@ -23,9 +23,10 @@ fallback_longitude=${fallback_longitude:-"8.7"}
 fallback_latitude=${fallback_latitude:-"50.1"}
 
 # Force-warm mode: clamp the high temp down to the low temp so wlsunset stays
-# in warm regardless of the sun's position.
+# in warm regardless of the sun's position. wlsunset rejects equal temps with
+# "high must be higher than low", so we use +1 K — visually imperceptible.
 if [ "$force_warm" = "1" ]; then
-    temp_high=$temp_low
+    temp_high=$((temp_low + 1))
 fi
 
 if [ "$location" = "on" ]; then
