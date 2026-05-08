@@ -15,7 +15,7 @@
 
 ; ── Gamma correction data ────────────────────────────────────────────────────
 (deflisten gamma
-  :initial "{\"active\": false, \"icon\": \"\"}"
+  :initial "{\"active\": false, \"warm\": false, \"icon\": \"\"}"
   `~/.config/eww/scripts/gamma-subscribe.sh`)
 
 ; ── Idle inhibitor data ──────────────────────────────────────────────────────
@@ -153,11 +153,11 @@
 
 ; ── Gamma correction button (inside module groups) ───────────────────────────
 (defwidget bar-gamma []
-  (button :class "bar-module bar-gamma ${gamma.warm ? 'warm' : (gamma.active ? 'active' : '')}"
+  (button :class "bar-module bar-gamma ${(gamma.warm ?: false) ? 'warm' : ((gamma.active ?: false) ? 'active' : '')}"
           :onclick "echo t > /tmp/eww-gamma"
           :onrightclick "echo w > /tmp/eww-gamma"
-          :tooltip {gamma.warm ? "Gamma forced warm" : (gamma.active ? "Gamma correction on — auto schedule" : "Gamma correction off")}
-    (label :text {gamma.icon})))
+          :tooltip {(gamma.warm ?: false) ? "Gamma forced warm" : ((gamma.active ?: false) ? "Gamma correction on — auto schedule" : "Gamma correction off")}
+    (label :text {gamma.icon ?: ""})))
 
 ; ── Memory pressure indicator (inside module groups) ─────────────────────────
 (defwidget bar-mem-pressure []

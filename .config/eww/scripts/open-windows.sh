@@ -13,15 +13,31 @@
 #     every subsequent resume recovery. This is the true root cause behind
 #     "eww-bar missing after suspend" incidents.
 
-exec 9>/tmp/eww-open-windows.lock
-if ! flock -w 10 9; then
-    logger -t eww-open-windows "could not acquire lock within 10s, aborting"
-    exit 1
-fi
-
 EWW=/home/milo/.cargo/bin/eww
 LOG_TAG=eww-open-windows
 RESTART_GUARD=/tmp/eww-open-windows.restart-guard
+
+# Reap any 'eww open|close|update' CLI processes hung from prior runs. They
+# hold sockets to (possibly dead) daemons and are the seed for double-bar
+# orphans: a hung CLI auto-spawns a fresh daemon when its old socket is
+# unresponsive, and that rogue daemon creates its own layer-shell surfaces
+# that systemd's main daemon never tracks.
+pkill -f "^${EWW} (open|close|update)" 2>/dev/null || true
+sleep 0.2
+
+# Verify the daemon we're about to drive actually exists before any CLI call.
+# Without this guard a missed daemon causes the next 'eww open' CLI to
+# auto-spawn a rogue daemon — which is what produces orphan eww-bar surfaces.
+if ! "$EWW" ping >/dev/null 2>&1; then
+    logger -t "$LOG_TAG" "daemon not responding to ping, aborting"
+    exit 1
+fi
+
+exec 9>/tmp/eww-open-windows.lock
+if ! flock -w 10 9; then
+    logger -t "$LOG_TAG" "could not acquire lock within 10s, aborting"
+    exit 1
+fi
 
 WINDOWS=(
     eww-bar

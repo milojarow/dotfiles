@@ -2,11 +2,21 @@
 Description=eww widgets daemon
 PartOf=graphical-session.target
 After=graphical-session.target
+# If the daemon segfaults in a tight loop (e.g. libdbusmenu crash from a
+# malformed tray icon), stop retrying after 5 failures in 60s. Without this
+# systemd would keep restarting forever, accumulating orphan layer-shell
+# surfaces and rogue daemons.
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 Type=simple
 Environment="PATH=/home/milo/.cargo/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStartPre=-/bin/sh -c 'pkill -x eww 2>/dev/null; sleep 2; pkill -KILL -x eww 2>/dev/null; sleep 0.5'
+# Kill BOTH the daemon (matched by exact name 'eww') AND any 'eww open|close|
+# update' CLI processes that may have hung from a previous run. pkill -x only
+# matches the truncated 15-char comm field; we add -f with the absolute path
+# so long argv processes (CLIs) can't escape the cleanup.
+ExecStartPre=-/bin/sh -c 'pkill -x eww 2>/dev/null; pkill -f "^/home/milo/.cargo/bin/eww " 2>/dev/null; sleep 2; pkill -KILL -x eww 2>/dev/null; pkill -KILL -f "^/home/milo/.cargo/bin/eww " 2>/dev/null; sleep 0.5'
 ExecStart=/home/milo/.cargo/bin/eww daemon --no-daemonize
 ExecStartPost=/bin/sh -c 'elapsed=0; until /home/milo/.cargo/bin/eww ping 2>/dev/null; do sleep 0.1; elapsed=$((elapsed+1)); [ $elapsed -ge 100 ] && exit 1; done; /home/milo/.config/eww/scripts/open-windows.sh'
 ExecStop=/home/milo/.cargo/bin/eww kill
