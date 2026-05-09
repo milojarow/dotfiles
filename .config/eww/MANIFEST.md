@@ -183,6 +183,7 @@ their inline modules to the corresponding feature.
 - `scripts/wifi-connect.sh`  *(action)*
 - `scripts/wifi-disconnect.sh`  *(action)*
 - `scripts/wifi-forget.sh`  *(action)*
+- `scripts/wifi-public-ip.sh`  *(action)*
 - `scripts/wifi-rescan.sh`  *(action)*
 - `scripts/wifi-toggle-popup.sh`  *(action)*
 - `scripts/wifi-scan.py`  *(helper)*
@@ -213,4 +214,4 @@ their inline modules to the corresponding feature.
 
 ---
 
-**Summary:** 95 tagged files across 33 features. 0 orphans.
+**Summary:** 96 tagged files across 33 features. 0 orphans.

@@ -9,4 +9,5 @@ if [[ "$($EWW get wifi-popup-open 2>/dev/null)" == "1" ]]; then
 else
     $EWW open wifi-popup 2>/dev/null
     $EWW update wifi-popup-open=1
+    ~/.config/eww/scripts/wifi-public-ip.sh &
 fi

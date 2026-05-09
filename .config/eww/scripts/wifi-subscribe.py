@@ -12,7 +12,19 @@ Icons match waybar's network module (same codepoints).
 """
 
 import json
+import os
 import subprocess
+
+PUBLIC_IP_SCRIPT = os.path.expanduser("~/.config/eww/scripts/wifi-public-ip.sh")
+
+
+def trigger_public_ip():
+    """Fire-and-forget update of wifi-public-ip in the background."""
+    subprocess.Popen(
+        [PUBLIC_IP_SCRIPT],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 
 # Signal strength icons — same as waybar network format-icons
 ICONS = [
@@ -106,7 +118,10 @@ def emit(data):
 
 
 def main():
-    emit(get_state())
+    state = get_state()
+    emit(state)
+    prev_key = (state["ssid"], state["connected"])
+    trigger_public_ip()
 
     proc = subprocess.Popen(
         ["nmcli", "monitor"],
@@ -117,7 +132,12 @@ def main():
     )
     for line in proc.stdout:
         if line.strip():
-            emit(get_state())
+            state = get_state()
+            emit(state)
+            key = (state["ssid"], state["connected"])
+            if key != prev_key:
+                trigger_public_ip()
+                prev_key = key
 
 
 if __name__ == "__main__":

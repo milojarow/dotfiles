@@ -107,6 +107,20 @@
   font-family: "JetBrainsMono NF", "Roboto Mono", monospace;
 }
 
+.wifi-copy-btn {
+  font-size: 12px;
+  padding: 0 4px;
+  margin-left: 4px;
+  border-radius: 4px;
+  color: mix($theme-fg, $theme-bg, 50%);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.wifi-copy-btn:hover {
+  background-color: $theme-selection;
+  color: $theme-accent;
+}
+
 // Section heading
 .wifi-section-label {
   font-size: 11px;

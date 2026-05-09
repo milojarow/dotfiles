@@ -9,3 +9,4 @@ EWW=/home/milo/.cargo/bin/eww
 nmcli device wifi rescan 2>/dev/null || true
 result=$(python3 /home/milo/.config/eww/scripts/wifi-scan.py)
 $EWW update wifi-networks="$result"
+~/.config/eww/scripts/wifi-public-ip.sh &
