@@ -8,6 +8,7 @@ set $initialize_poweralert_daemon '[ -x "$(command -v poweralertd)" ] && systemc
 set $initialize_idle_daemon '[ -x "$(command -v swayidle)" ] && systemctl --now --user enable swayidle'  # [Lock Screen & Idle]
 set $initialize_mounting_daemon '[ -x "$(command -v pcmanfm-qt)" ] || [ -x "$(command -v pcmanfm)" ] && systemctl --now --user enable pcmanfm'
 set $initialize_way_displays '[ -x "$(command -v way-displays)" ] && systemctl --now --user enable way-displays'
+set $initialize_floating_placer 'systemctl --user enable --now floating-placer.service'  # [Floating Placer] auto-position floating windows
 
 # autostarts
 
