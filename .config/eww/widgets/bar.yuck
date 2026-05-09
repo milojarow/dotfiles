@@ -269,7 +269,7 @@
              :hexpand false)))
 
 ; ── Bar layout ────────────────────────────────────────────────────────────────
-(defwidget eww-bar-widget []
+(defwidget bar-widget []
   (centerbox :orientation "h"
              :class "bar"
     ; Left zone
@@ -288,7 +288,7 @@
       (bar-date))))
 
 ; ── Bar window ────────────────────────────────────────────────────────────────
-(defwindow eww-bar
+(defwindow bar
   :monitor 0
   :geometry (geometry :x "0%"
                       :y "0%"
@@ -297,4 +297,4 @@
                       :anchor "top center")
   :stacking "fg"
   :exclusive true
-  (eww-bar-widget))
+  (bar-widget))

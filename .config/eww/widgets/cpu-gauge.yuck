@@ -1,6 +1,6 @@
 ; feature: cpu-gauge
 ; role:    window
-(defwidget cpu-gauge [core value]
+(defwidget cpu-core-gauge [core value]
   (box :class "gauge-container"
        :orientation "vertical"
        :space-evenly false
@@ -14,7 +14,7 @@
       (label :class "core-label" :text "CPU ${core}")
       (label :class "value-label" :text "${value}%")))))
 
-(defwidget cpu-dashboard []
+(defwidget cpu-gauge []
   (box :class "dashboard" 
        :orientation "vertical"
        :space-evenly true
@@ -23,10 +23,10 @@
       (label :class "dashboard-subtitle" :text "(Usage %)"))
     (box :class "gauges-row" :orientation "horizontal" :space-evenly true
       (for core in "${EWW_CPU.cores}"
-        (cpu-gauge :core "${core.core + 1}" 
+        (cpu-core-gauge :core "${core.core + 1}" 
                    :value "${core.usage}")))))
 
-(defwindow cpu-dashboard
+(defwindow cpu-gauge
   :monitor 0
   :geometry (geometry :x "-20px"
                       :y "100px"
@@ -36,4 +36,4 @@
   :stacking "bottom"
   :windowtype "normal"
   :wm-ignore true
-  (cpu-dashboard))
+  (cpu-gauge))

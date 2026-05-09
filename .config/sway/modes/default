@@ -36,8 +36,8 @@ floating_modifier $mod normal
 ## Action // Reload Sway Configuration ##
 $bindsym $mod+Shift+c reload
 
-## Action // Toggle eww-bar ##
-$bindsym $mod+Shift+b exec ~/.cargo/bin/eww close eww-bar || ~/.cargo/bin/eww open eww-bar
+## Action // Toggle bar ##
+$bindsym $mod+Shift+b exec ~/.cargo/bin/eww close bar || ~/.cargo/bin/eww open bar
 
 # --locked flags allow the buttons to be used whilst the screen is locked.
 $bindsym --locked XF86AudioRaiseVolume exec $volume_up
