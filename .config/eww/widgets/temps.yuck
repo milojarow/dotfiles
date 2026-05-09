@@ -1,25 +1,40 @@
-(defpoll cpu-gauge-path :interval "3s" :initial ""
-  "~/.config/eww/scripts/cpu-gauge.sh")
+; CPU temp via libsensors (Package id 0). One awk fork every 3s.
+(defpoll cpu-temp :interval "3s" :initial "0"
+  "sensors coretemp-isa-0000 2>/dev/null | awk '/Package id 0:/{gsub(\"[+°C]\",\"\",$4); print int($4); exit}'")
 
-(defpoll gpu-gauge-path :interval "3s" :initial ""
-  "~/.config/eww/scripts/gpu-gauge.sh")
+; RAM percent used. Pure awk on /proc/meminfo, no extra processes.
+(defpoll ram-pct :interval "3s" :initial "0"
+  "awk '/MemTotal/{t=$2}/MemAvailable/{a=$2}END{printf \"%d\", (t-a)/t*100}' /proc/meminfo")
 
-(defpoll ram-gauge-path :interval "3s" :initial ""
-  "~/.config/eww/scripts/ram-gauge.sh")
+; GPU temp via nvidia-smi. Slower poll because nvidia-smi takes ~150ms.
+(defpoll gpu-temp :interval "5s" :initial "0"
+  "nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null || echo 0")
+
+(defwidget temps-gauge [val unit name icon thresh1 thresh2]
+  (overlay
+    (circular-progress :class "temps-gauge ${val <= thresh1 ? 'safe' : val <= thresh2 ? 'warning' : 'danger'}"
+                       :value val
+                       :thickness 14
+                       :start-at 75
+                       :clockwise true
+                       :width 180 :height 180)
+    (box :orientation "v" :halign "center" :valign "center" :space-evenly false
+      (label :class "gauge-icon"  :text icon)
+      (label :class "gauge-value" :text "${val}${unit}")
+      (label :class "gauge-name"  :text name))))
 
 (defwidget temps []
-  (box :orientation "v"
-       :space-evenly true
-       :spacing 0
-    (image :path cpu-gauge-path :image-width 200 :image-height 210)
-    (image :path gpu-gauge-path :image-width 200 :image-height 210)
-    (image :path ram-gauge-path :image-width 200 :image-height 210)))
+  (box :class "temps" :orientation "v" :space-evenly false :spacing 12
+    (temps-gauge :val cpu-temp :unit "°C" :name "CPU" :icon ""
+                 :thresh1 60 :thresh2 80)
+    (temps-gauge :val ram-pct :unit "%"  :name "RAM" :icon ""
+                 :thresh1 60 :thresh2 85)
+    (temps-gauge :val gpu-temp :unit "°C" :name "GPU" :icon "󰺷"
+                 :thresh1 60 :thresh2 80)))
 
 (defwindow temps-window
   :monitor 0
-  :geometry (geometry :x "0px"
-                      :y "0px"
-                      :anchor "center left")
+  :geometry (geometry :x "0px" :y "0px" :anchor "center left")
   :stacking "bottom"
   :focusable false
   (temps))
