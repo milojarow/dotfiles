@@ -23,12 +23,14 @@ BORDER = 16   # margin from workspace edges
 INTER = 12    # margin between floating windows
 CASCADE = 40  # offset step when no slot fits
 
-# Floatings whose app_id matches any of these patterns are ignored entirely:
-# the daemon does not move them and treats them as invisible when placing
-# other windows. These are decorative overlays that don't behave like real
-# user-managed floating windows (image previews, terminal-embedded thumbnails).
-IGNORE_APP_ID_PATTERNS = (
+# Floatings whose app_id (Wayland) or window class (XWayland) matches any of
+# these patterns are ignored entirely: the daemon does not move them and
+# treats them as invisible when placing other windows. These are either
+# decorative overlays that don't behave like normal floatings, or apps that
+# expect to draw themselves at a fixed position (e.g. screenshot editors).
+IGNORE_PATTERNS = (
     re.compile(r"^ueberzugpp_"),  # ranger image previews via ueberzugpp
+    re.compile(r"^swappy$", re.IGNORECASE),  # screenshot editor — keep centered
 )
 
 PIDFILE = f"/tmp/floating-placer-{os.environ.get('USER', 'user')}.pid"
@@ -36,7 +38,8 @@ PIDFILE = f"/tmp/floating-placer-{os.environ.get('USER', 'user')}.pid"
 
 def is_ignored(con):
     app_id = con.get("app_id") or ""
-    return any(p.search(app_id) for p in IGNORE_APP_ID_PATTERNS)
+    wclass = (con.get("window_properties") or {}).get("class") or ""
+    return any(p.search(app_id) or p.search(wclass) for p in IGNORE_PATTERNS)
 
 
 def log(msg):
