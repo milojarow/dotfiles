@@ -8,12 +8,12 @@ Outputs a single JSON object with all networks (available + saved-only):
   {"networks": [
     {"ssid": "MyNet", "signal": 72, "security": "WPA2",
      "in_use": true, "known": true, "available": true, "icon": "󰤥",
-     "band": "5G", "bssid": "C2:68:CC:91:9E:87"},
+     "band": "5G", "bssid": "C2:68:CC:91:9E:87", "last_used": 1778248937},
     ...
   ]}
 
 Same SSID on different bands (2.4G / 5G) appears as separate entries.
-Sort order: in_use first → available by signal desc → saved-only at bottom.
+Sort order: in_use first → available by signal desc → saved-only by last_used desc.
 """
 
 import json
@@ -51,21 +51,25 @@ def freq_to_band(freq_str):
     return "6G"
 
 
-def get_known_ssids():
-    """Return set of SSIDs with a saved wifi connection."""
+def get_known_connections():
+    """Return dict {ssid: last_used_unix_timestamp} for saved wifi connections."""
     r = subprocess.run(
-        ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"],
+        ["nmcli", "-t", "-f", "NAME,TYPE,TIMESTAMP", "connection", "show"],
         capture_output=True, text=True
     )
-    known = set()
+    known = {}
     for line in r.stdout.splitlines():
-        parts = line.split(":")
-        if len(parts) >= 2 and parts[1] == "802-11-wireless":
-            known.add(parts[0])
+        parts = line.replace("\\:", "\x00").split(":")
+        parts = [p.replace("\x00", ":") for p in parts]
+        if len(parts) >= 3 and parts[1] == "802-11-wireless":
+            try:
+                known[parts[0]] = int(parts[2])
+            except ValueError:
+                known[parts[0]] = 0
     return known
 
 
-def get_available_networks(known_ssids):
+def get_available_networks(known_connections):
     """Parse nmcli wifi list output into a deduplicated dict keyed by (SSID, band)."""
     r = subprocess.run(
         ["nmcli", "-t", "-f", "BSSID,SSID,SIGNAL,SECURITY,IN-USE,FREQ",
@@ -96,23 +100,24 @@ def get_available_networks(known_ssids):
                 "signal":    signal,
                 "security":  security,
                 "in_use":    in_use,
-                "known":     ssid in known_ssids,
+                "known":     ssid in known_connections,
                 "available": True,
                 "icon":      signal_icon(signal),
                 "band":      band,
                 "bssid":     bssid,
+                "last_used": known_connections.get(ssid, 0),
             }
     return networks
 
 
 def main():
     try:
-        known_ssids = get_known_ssids()
-        networks = get_available_networks(known_ssids)
+        known_connections = get_known_connections()
+        networks = get_available_networks(known_connections)
 
         # Add saved-only entries (known but not visible in scan)
         visible_ssids = {k[0] for k in networks}
-        for ssid in known_ssids:
+        for ssid, ts in known_connections.items():
             if ssid not in visible_ssids:
                 networks[(ssid, "")] = {
                     "ssid":      ssid,
@@ -124,11 +129,12 @@ def main():
                     "icon":      ICON_SAVED,
                     "band":      "",
                     "bssid":     "",
+                    "last_used": ts,
                 }
 
         result = sorted(
             networks.values(),
-            key=lambda n: (not n["in_use"], not n["available"], -n["signal"])
+            key=lambda n: (not n["in_use"], not n["available"], -n["signal"], -n["last_used"])
         )
         print(json.dumps({"networks": result}, ensure_ascii=False), flush=True)
 
