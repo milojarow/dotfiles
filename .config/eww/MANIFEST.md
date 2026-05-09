@@ -118,7 +118,6 @@ their inline modules to the corresponding feature.
 ## selene-storage
 
 - `styles/selene-storage.scss`  *(style)*
-- `scripts/vps-storage.sh`  *(subscribe)*
 - `widgets/selene-storage.yuck`  *(window)*
 
 ## sway-mode
@@ -203,18 +202,17 @@ their inline modules to the corresponding feature.
 
 ## _shared
 
+- `scripts/_vps-storage.sh`  *(helper)*
 - `scripts/_manifest.sh`  *(shared)*
 - `scripts/move-widget.sh`  *(shared)*
 - `scripts/open-windows.sh`  *(shared)*
-- `scripts/_tag-files.sh`  *(shared)*
 - `styles/theme.scss`  *(shared)*
 
 ## ⚠ Naming dissonances (filename does not start with declared feature)
 
-- `scripts/vps-storage.sh` declares feature `selene-storage` but filename does not start with `selene-storage-`
 - `scripts/watch-brightness.sh` declares feature `sysmonitor` but filename does not start with `sysmonitor-`
 - `scripts/workspace-subscribe.py` declares feature `workspaces` but filename does not start with `workspaces-`
 
 ---
 
-**Summary:** 96 tagged files across 32 features. 0 orphans.
+**Summary:** 95 tagged files across 32 features. 0 orphans.
