@@ -134,7 +134,7 @@
               (label :text "forget"))))))))
 
 ; ── Wifi manager window ────────────────────────────────────────────────────────
-(defwindow eww-wifi-popup
+(defwindow wifi-popup
   :monitor 0
   :geometry (geometry :x "28px"
                       :y "38px"
