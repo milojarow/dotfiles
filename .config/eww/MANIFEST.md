@@ -23,6 +23,10 @@ their inline modules to the corresponding feature.
 - `widgets/battery.yuck`  *(window)*
 - referenced as module `bar-battery` in `widgets/bar.yuck:240`
 
+## brightness
+
+- `scripts/brightness-subscribe.sh`  *(subscribe)*
+
 ## bt
 
 - `scripts/bt-close-popup.sh`  *(action)*
@@ -127,7 +131,6 @@ their inline modules to the corresponding feature.
 ## sysmonitor
 
 - `styles/sysmonitor.scss`  *(style)*
-- `scripts/watch-brightness.sh`  *(subscribe)*
 - `widgets/sysmonitor.yuck`  *(window)*
 
 ## temps
@@ -197,7 +200,7 @@ their inline modules to the corresponding feature.
 
 ## workspaces
 
-- `scripts/workspace-subscribe.py`  *(subscribe)*
+- `scripts/workspaces-subscribe.py`  *(subscribe)*
 - referenced as module `bar-workspaces` in `widgets/bar.yuck:57`
 
 ## _shared
@@ -208,11 +211,6 @@ their inline modules to the corresponding feature.
 - `scripts/open-windows.sh`  *(shared)*
 - `styles/theme.scss`  *(shared)*
 
-## ⚠ Naming dissonances (filename does not start with declared feature)
-
-- `scripts/watch-brightness.sh` declares feature `sysmonitor` but filename does not start with `sysmonitor-`
-- `scripts/workspace-subscribe.py` declares feature `workspaces` but filename does not start with `workspaces-`
-
 ---
 
-**Summary:** 95 tagged files across 32 features. 0 orphans.
+**Summary:** 95 tagged files across 33 features. 0 orphans.

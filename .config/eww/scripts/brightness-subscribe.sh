@@ -1,5 +1,5 @@
 #!/bin/bash
-# feature: sysmonitor
+# feature: brightness
 # role:    subscribe
 # Emits brightness percentage on start and on every hardware brightness change.
 # Uses udevadm to react to kernel backlight uevents — zero polling delay.

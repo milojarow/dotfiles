@@ -1,7 +1,7 @@
 ; feature: sysmonitor
 ; role:    window
 (deflisten sysmon-brightness :initial "50"
-  "~/.config/eww/scripts/watch-brightness.sh")
+  "~/.config/eww/scripts/brightness-subscribe.sh")
 
 (defvar gauge-offset -0.5)
 

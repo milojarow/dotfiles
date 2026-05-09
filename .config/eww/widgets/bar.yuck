@@ -51,7 +51,7 @@
 ; ── Workspace data ───────────────────────────────────────────────────────────
 (deflisten workspaces
   :initial "[]"
-  `~/.config/eww/scripts/workspace-subscribe.py`)
+  `~/.config/eww/scripts/workspaces-subscribe.py`)
 
 ; ── Workspace widget ─────────────────────────────────────────────────────────
 (defwidget bar-workspaces []
