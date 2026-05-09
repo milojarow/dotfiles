@@ -11,7 +11,7 @@
 #           ~/.config/sway/themes/<name>/theme.conf      (palette source)
 #           ~/.config/sway/themes/<name>/foot-theme.ini  (terminal palette)
 #           ~/.config/sway/definitions.d/theme.conf      (active sway theme, symlink)
-#           ~/.config/foot/foot-theme.ini                (active foot theme, cp)
+#           ~/.config/foot/foot-theme.ini                (active foot theme, symlink)
 #           ~/.config/sway/templates/foot.ini            (shared foot template)
 #           ~/.config/waybar/theme.css                   (auto-generated CSS)
 #           ~/.config/rofi/cachyos.rasi                  (auto-generated rofi colors)
@@ -54,8 +54,7 @@ apply_theme() {
     
     # Update foot theme and apply colors to all running terminals via OSC sequences
     if [ -f "$foot_theme_file" ]; then
-        rm -f "$CURRENT_FOOT_THEME_LINK"
-        cp "$foot_theme_file" "$CURRENT_FOOT_THEME_LINK"
+        ln -sf "$foot_theme_file" "$CURRENT_FOOT_THEME_LINK"
         ~/.config/sway/scripts/theme-apply-foot.sh "$foot_theme_file" || true
         ~/.config/sway/scripts/apply-theme-terminals.sh "$foot_theme_file" || true
     fi
@@ -90,21 +89,29 @@ apply_theme() {
     pkill -RTMIN+17 waybar
 }
 
-# Initialize theme if not exists
+# Initialize theme if not exists, or if any of the runtime links are missing.
+# Runtime symlinks (e.g., the foot theme) are gitignored, so a fresh clone
+# arrives with a tracked theme.conf symlink but no foot link — re-applying
+# the current theme (or a default) repairs the inconsistent state.
 initialize_theme() {
-    if [ ! -e "$CURRENT_THEME_LINK" ]; then
-        # Use dracula as the default if no theme is set
-        if [ -d "$THEMES_DIR/dracula" ]; then
-            apply_theme "dracula"
-        else
-            # Or use the first available theme
-            local first_theme=$(get_themes | head -1)
-            if [ -n "$first_theme" ]; then
-                apply_theme "$first_theme"
+    if [ ! -e "$CURRENT_THEME_LINK" ] || [ ! -e "$CURRENT_FOOT_THEME_LINK" ]; then
+        # If sway theme link exists, reuse its theme; otherwise pick a default.
+        local theme=""
+        if [ -L "$CURRENT_THEME_LINK" ]; then
+            theme=$(readlink -f "$CURRENT_THEME_LINK" | grep -o "[^/]\+/theme.conf" | cut -d/ -f1)
+        fi
+        if [ -z "$theme" ]; then
+            if [ -d "$THEMES_DIR/dracula" ]; then
+                theme="dracula"
             else
-                echo "Error: No themes found"
-                exit 1
+                theme=$(get_themes | head -1)
             fi
+        fi
+        if [ -n "$theme" ]; then
+            apply_theme "$theme"
+        else
+            echo "Error: No themes found"
+            exit 1
         fi
     fi
 }
