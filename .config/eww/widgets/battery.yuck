@@ -1,3 +1,5 @@
+; feature: battery
+; role:    window
 (deflisten bat-live :initial '{"capacity":0,"status":"Unknown"}'
   "~/.config/eww/scripts/battery-subscribe.sh")
 

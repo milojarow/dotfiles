@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: window-title
+# role:    action
 # Left-click handler for eww window title — flashes the app name for 3 seconds.
 # Writes the app name to a file watched by window-title-flash-watch.sh (deflisten).
 # Expiry is handled here via a background sleep+rm — no polling needed.

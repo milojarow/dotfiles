@@ -1,3 +1,5 @@
+; feature: bt
+; role:    window
 (defvar bt-popup-open 0)
 (defvar bt-scan-done false)
 (defvar bt-scan-requested false)

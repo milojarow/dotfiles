@@ -1,3 +1,5 @@
+; feature: widget-de-las-flechas
+; role:    window
 ;; Arrow widget for repositioning other eww windows.
 ;; To target a different widget, edit the defwindow instance below:
 ;;   :window — the defwindow name to move

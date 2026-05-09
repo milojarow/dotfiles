@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: usb
+# role:    subscribe
 # usb-monitor.sh — eww deflisten script for USB management.
 # Emits one JSON line per event: {"devices":[...],"count":N}
 # Detection logic mirrors waybar usb-monitor.sh (HOTPLUG+RM flags).

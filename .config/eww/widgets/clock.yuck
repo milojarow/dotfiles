@@ -1,3 +1,5 @@
+; feature: clock
+; role:    window
 (defpoll clock-time :interval "10s"
                     :initial "00:00"
   `date +%H:%M`)

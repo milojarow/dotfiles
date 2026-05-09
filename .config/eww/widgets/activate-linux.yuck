@@ -1,3 +1,5 @@
+; feature: activate-linux
+; role:    window
 (defwidget activate-linux []
   (box
     :orientation "v"

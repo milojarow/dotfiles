@@ -1,3 +1,18 @@
+; feature: bar
+; role:    container
+; modules:
+;   - bar-workspaces      (feature: workspaces)
+;   - bar-date            (feature: date)
+;   - bar-idle-inhibitor  (feature: idle-inhibitor)
+;   - bar-dnd             (feature: dnd)
+;   - bar-gamma           (feature: gamma)
+;   - bar-mem-pressure    (feature: mem-pressure)
+;   - bar-volume          (feature: volume)
+;   - bar-clipboard       (feature: clipboard)
+;   - bar-wifi            (feature: wifi)
+;   - bar-recorder        (feature: recorder)
+;   - bar-meeting-notes   (feature: meeting-notes)
+;   - bar-battery         (feature: battery)
 ; ── Clipboard data ───────────────────────────────────────────────────────────
 (deflisten clipboard
   :initial "{\"icon\": \"\", \"count\": 0}"

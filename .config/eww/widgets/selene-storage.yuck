@@ -1,3 +1,5 @@
+; feature: selene-storage
+; role:    window
 (deflisten selene-storage
   :initial `{"used":"?","total":"?","pct":0}`
   `~/.config/eww/scripts/vps-storage.sh selene`)

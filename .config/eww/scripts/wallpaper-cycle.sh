@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: wallpaper-cycle
+# role:    helper
 # wallpaper-cycle.sh — backend for the wallpaper-cycle eww widget.
 #
 # Performance: each eww CLI call is a fork+exec+IPC roundtrip (~50-150ms).

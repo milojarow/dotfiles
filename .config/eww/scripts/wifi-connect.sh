@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: wifi
+# role:    action
 # wifi-connect.sh — connect to a wifi network with visual feedback.
 # Args: <ssid> <known:true|false> <security>
 # Spawned via swaymsg exec so eww does not kill it while rofi blocks.

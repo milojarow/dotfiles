@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: bt
+# role:    action
 # Toggle bluetooth scan. If already scanning: stop. Otherwise: start for 15s.
 if bluetoothctl show 2>/dev/null | grep -q "Discovering: yes"; then
     bluetoothctl scan off 2>/dev/null

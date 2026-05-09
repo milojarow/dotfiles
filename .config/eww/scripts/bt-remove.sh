@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: bt
+# role:    action
 trap 'eww update bt-forgetting=""' EXIT
 eww update bt-forgetting="$1"
 bluetoothctl remove "$1" 2>/dev/null

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: wifi
+# role:    action
 EWW=/home/milo/.cargo/bin/eww
 
 if [[ "$($EWW get wifi-popup-open 2>/dev/null)" == "1" ]]; then

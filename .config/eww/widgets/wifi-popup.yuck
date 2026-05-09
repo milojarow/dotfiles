@@ -1,3 +1,5 @@
+; feature: wifi
+; role:    window
 ; ── Wifi manager state ────────────────────────────────────────────────────────
 (defvar wifi-connecting "")   ; SSID currently being connected — empty = idle
 (defvar wifi-error "")        ; Error message string — empty = no error

@@ -1,4 +1,6 @@
 #!/bin/bash
+# feature: disk
+# role:    helper
 #
 # disk-usage.sh - Compute disk usage percentages for home directories
 # Outputs JSON with each category's share of total disk (percentage)

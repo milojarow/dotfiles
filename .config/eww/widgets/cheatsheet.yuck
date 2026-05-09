@@ -1,3 +1,5 @@
+; feature: cheatsheet
+; role:    window
 (defpoll cs-left  :interval "999h" :initial "" "cat ~/.config/eww/cheatsheet/cheatsheet-left.pango")
 (defpoll cs-right :interval "999h" :initial "" "cat ~/.config/eww/cheatsheet/cheatsheet-right.pango")
 

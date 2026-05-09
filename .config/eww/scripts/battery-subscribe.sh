@@ -1,4 +1,6 @@
 #!/bin/bash
+# feature: battery
+# role:    subscribe
 # Event-driven battery monitor via upower
 # Emits JSON on every battery state change — instant charging detection
 

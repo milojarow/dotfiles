@@ -1,3 +1,5 @@
+; feature: temps
+; role:    window
 ; CPU temp via libsensors (Package id 0). One awk fork every 3s.
 (defpoll cpu-temp :interval "3s" :initial "0"
   "sensors coretemp-isa-0000 2>/dev/null | awk '/Package id 0:/{gsub(\"[+°C]\",\"\",$4); print int($4); exit}'")

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: selene-storage
+# role:    subscribe
 # vps-storage.sh -- eww deflisten for VPS disk usage via SSH
 # Usage: vps-storage.sh <hostname>
 # Emits JSON: {"used":"4.5G","total":"25.0G","pct":18}

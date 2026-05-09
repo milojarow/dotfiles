@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: clipboard
+# role:    subscribe
 # clipboard-subscribe.sh — eww deflisten for clipboard state.
 # Watches ~/.cache/cliphist/ via inotifywait for real-time count updates.
 

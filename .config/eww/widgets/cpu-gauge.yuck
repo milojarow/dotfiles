@@ -1,3 +1,5 @@
+; feature: cpu-gauge
+; role:    window
 (defwidget cpu-gauge [core value]
   (box :class "gauge-container"
        :orientation "vertical"

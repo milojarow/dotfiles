@@ -1,3 +1,5 @@
+; feature: usb
+; role:    window
 (defvar panel-open 0)
 (defvar usb-tab 0)
 

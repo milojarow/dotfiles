@@ -1,3 +1,5 @@
+; feature: mongo-tunnel
+; role:    window
 ; ── MongoDB tunnel data ──────────────────────────────────────────────────────
 (deflisten mongo-tunnel
   :initial '{"active": false, "status": "disconnected"}'

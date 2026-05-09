@@ -1,3 +1,5 @@
+// feature: volume
+// role:    style
 @import "./theme";
 
 $volume-color: adjust-hue($theme-accent, 120deg);

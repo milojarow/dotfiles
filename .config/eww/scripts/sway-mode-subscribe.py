@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# feature: sway-mode
+# role:    subscribe
 """
 sway-mode-subscribe.py — eww deflisten for the sway mode indicator.
 

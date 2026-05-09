@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# feature: wifi
+# role:    subscribe
 """
 wifi-subscribe.py — eww deflisten source for the wifi bar module.
 

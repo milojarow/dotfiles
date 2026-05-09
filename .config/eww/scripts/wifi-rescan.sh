@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: wifi
+# role:    action
 # wifi-rescan.sh — force a hardware wifi rescan and immediately update eww.
 # Spawned via swaymsg exec from the rescan button.
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: bt
+# role:    action
 if eww active-windows 2>/dev/null | grep -q "bt-popup"; then
     eww close bt-popup
     eww update bt-popup-open=0

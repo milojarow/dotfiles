@@ -1,4 +1,6 @@
 #!/bin/bash
+# feature: _shared
+# role:    shared
 # Opens all persistent eww windows at daemon startup and after resume.
 #
 # Concurrency control:

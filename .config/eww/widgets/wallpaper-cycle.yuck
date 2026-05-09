@@ -1,3 +1,5 @@
+; feature: wallpaper-cycle
+; role:    window
 (defvar wp-revealed false)
 (defvar wp-index 0)
 (defvar wp-applied-index 0)

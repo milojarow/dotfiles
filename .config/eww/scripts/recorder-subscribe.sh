@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: recorder
+# role:    subscribe
 # recorder-subscribe.sh — eww deflisten for screen recording indicator.
 #
 # Architecture:

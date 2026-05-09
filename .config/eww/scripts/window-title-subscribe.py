@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# feature: window-title
+# role:    subscribe
 """
 window-title-subscribe.py — eww deflisten source for the bar window-title widget.
 

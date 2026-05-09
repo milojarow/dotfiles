@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# feature: wifi
+# role:    helper
 """
 wifi-scan.py — eww defpoll source for the wifi manager widget.
 

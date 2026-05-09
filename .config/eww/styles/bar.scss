@@ -1,3 +1,5 @@
+// feature: bar
+// role:    style
 @import "./theme";
 
 .bar {
@@ -178,4 +180,3 @@ $bar-date-cycle: 176px;
 .bar-battery.charging {
   color: #facc15;
 }
-

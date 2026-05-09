@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# feature: volume
+# role:    subscribe
 """
 volume-subscribe.py — eww deflisten for volume/mic state.
 

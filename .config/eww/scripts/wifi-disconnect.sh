@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: wifi
+# role:    action
 # wifi-disconnect.sh — disconnect the active wifi device.
 
 device=$(nmcli -t -f device,type,state dev \

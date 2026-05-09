@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: dnd
+# role:    subscribe
 # dnd-subscribe.sh — eww deflisten for do-not-disturb (mako) state.
 #
 # Named pipe receives toggle signals from the button onclick.

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: window-title
+# role:    action
 # Right-click handler for eww window title — opens rofi to rename the focused
 # window. Empty submit clears the custom name. Signals subscribe.py to re-emit.
 

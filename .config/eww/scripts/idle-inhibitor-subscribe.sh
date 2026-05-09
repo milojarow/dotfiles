@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: idle-inhibitor
+# role:    subscribe
 # idle-inhibitor-subscribe.sh — eww deflisten for idle inhibitor state.
 #
 # Architecture: named pipe receives toggle signals from the button onclick.

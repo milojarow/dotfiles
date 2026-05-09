@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# feature: workspaces
+# role:    subscribe
 """
 workspace-subscribe.py — eww deflisten source for the bar workspace widget.
 

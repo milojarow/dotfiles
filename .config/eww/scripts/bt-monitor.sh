@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: bt
+# role:    subscribe
 # bt-monitor.sh — eww deflisten script for bluetooth management.
 # Emits one JSON line per state change: full bt state on every event.
 

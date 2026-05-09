@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: meeting-notes
+# role:    subscribe
 # meeting-notes-subscribe.sh — eww deflisten for meeting audio recording.
 #
 # Architecture:

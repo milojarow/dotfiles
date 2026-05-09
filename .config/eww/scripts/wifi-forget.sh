@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: wifi
+# role:    action
 # wifi-forget.sh — delete a saved wifi connection profile.
 # Args: <ssid>
 

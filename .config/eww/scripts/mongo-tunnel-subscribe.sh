@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: mongo-tunnel
+# role:    subscribe
 # mongo-tunnel-subscribe.sh — eww deflisten for MongoDB SSH tunnel toggle.
 #
 # Manages two tunnels as a single unit:

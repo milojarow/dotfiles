@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: gamma
+# role:    subscribe
 # gamma-subscribe.sh — eww deflisten for gamma correction state.
 #
 # Three states tracked via systemd services:

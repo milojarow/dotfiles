@@ -1,3 +1,5 @@
+; feature: tmux-sessions
+; role:    window
 (deflisten tmux-data :initial `{"sessions":[],"status":"loading","count":0}`
   "~/.config/eww/scripts/tmux-sessions-subscribe.sh")
 

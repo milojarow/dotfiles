@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: bt
+# role:    action
 # Pair and trust a device. Works for "Just Works" devices (headphones, speakers).
 # Devices requiring PIN confirmation will fail silently — use bluetuith for those.
 trap 'eww update bt-pairing=""' EXIT

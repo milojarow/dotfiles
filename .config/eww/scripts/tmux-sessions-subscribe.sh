@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: tmux-sessions
+# role:    subscribe
 ## Polls tmux sessions on selene every 60s and emits one line of JSON per
 ## iteration to stdout (eww deflisten pattern). On SSH failure, emits an
 ## "offline" payload so the widget can render a clear unreachable state.

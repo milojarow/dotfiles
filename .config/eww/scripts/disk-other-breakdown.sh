@@ -1,4 +1,6 @@
 #!/bin/bash
+# feature: disk
+# role:    helper
 # Find top 6 heaviest directories in $HOME excluding standard ones
 # Output: JSON array sorted by size descending
 

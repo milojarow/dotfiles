@@ -1,3 +1,5 @@
+; feature: cpu-temp
+; role:    window
 (defwidget temp-indicator [temp]
   (box :class "temp-indicator-container"
        :orientation "vertical"

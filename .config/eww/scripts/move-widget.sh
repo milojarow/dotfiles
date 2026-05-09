@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# feature: _shared
+# role:    shared
 # move-widget.sh <window-name> <yuck-file> <axis> <delta>
 #
 # Moves a defwindow's position by editing its geometry block in the yuck file.
