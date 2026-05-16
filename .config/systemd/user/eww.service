@@ -22,6 +22,12 @@ ExecStartPost=/bin/sh -c 'elapsed=0; until /home/milo/.cargo/bin/eww ping 2>/dev
 ExecStop=/home/milo/.cargo/bin/eww kill
 Restart=always
 RestartSec=3
+# Memory leak guard: baseline ~290 MB. After many reloads the daemon
+# bloats and its IPC socket stops responding ("zombie daemon"), leaving
+# popups stuck on screen. MemoryHigh applies soft pressure; MemoryMax is
+# the hard ceiling that triggers an OOM kill — Restart=always then revives.
+MemoryHigh=1G
+MemoryMax=1500M
 
 [Install]
 WantedBy=graphical-session.target

@@ -1,0 +1,8 @@
+[Unit]
+Description=Restart eww.service if its IPC socket has stopped responding
+# A bloated/zombie daemon keeps the systemd unit "active" but its socket
+# rejects commands — popups can no longer be closed. Hard-restart it.
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'if systemctl --user --quiet is-active eww.service && ! timeout 3 /home/milo/.cargo/bin/eww ping >/dev/null 2>&1; then echo "eww IPC unresponsive — restarting" | systemd-cat -t eww-watchdog -p warning; systemctl --user restart eww.service; fi'
