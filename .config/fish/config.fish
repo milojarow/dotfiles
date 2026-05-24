@@ -38,11 +38,31 @@ end
 
 # aliases
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
+
+# Override CachyOS's default `update` (sudo pacman -Syu) with topgrade — one entrypoint
+# for system + AUR (paru) + npm + cargo + zap AppImages. Defined after the cachyos-config
+# source on line 1, so this always wins; cachyos-fish-config package updates can't undo it.
+function update --wraps topgrade --description 'Update everything via topgrade'
+    topgrade $argv
+end
 # Wrapper: clear residual TUI lines Claude Code leaves after exiting
 function claude
     command claude --dangerously-skip-permissions --effort max $argv
     # Erase any ghost lines the TUI left below the cursor
     printf '\e[J'
+end
+
+# Hermes with approval prompts disabled by default
+function hermes
+    command hermes --yolo $argv
+end
+
+function codex
+    if test -x "$HOME/.codex/scripts/sync-agents-md.sh"
+        "$HOME/.codex/scripts/sync-agents-md.sh"; or echo "warning: failed to sync Codex AGENTS.md" >&2
+    end
+
+    command codex --ask-for-approval never --sandbox danger-full-access $argv
 end
 
 # SSH with tmux for persistent sessions
@@ -95,5 +115,3 @@ function fish_title
     # Use full path instead of abbreviated prompt_pwd for waybar clarity
     echo (pwd | sed "s|^$HOME|~|")$command_part" [$fish_pid]"
 end
-
-
