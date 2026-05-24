@@ -15,5 +15,13 @@ alias remote-exists='f(){
 # Alias to run Claude with skip permissions flag
 alias claude='claude --dangerously-skip-permissions'
 
+# Alias to run Hermes with approval prompts disabled by default
+alias hermes='hermes --yolo'
+
+# Wrapper to run Codex without approval prompts or sandboxing
+codex() {
+  command codex --ask-for-approval never --sandbox danger-full-access "$@"
+}
+
 # Alias to launch Firefox in isolated sandbox
 alias firefox-sandbox='firefox-sandbox'
