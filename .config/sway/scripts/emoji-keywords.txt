@@ -1516,3 +1516,8 @@
 🆗	approved fine ok
 ✅	done check approved
 ❌	wrong incorrect cancel
+
+# --- Refinement: ordinal medals (first/second/third) ---
+🥇	first winner champion
+🥈	second runner-up
+🥉	third
