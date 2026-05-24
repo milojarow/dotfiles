@@ -68,18 +68,6 @@ ICON_MAP = {
     "mongodb compass":         "\U000f032a",  # leaf (same as mongo-tunnel)
 }
 
-# TUI apps that run inside a terminal — identified by child process comm name.
-# When a terminal leaf has a descendant process whose comm matches a key here,
-# the mapped icon is shown instead of the terminal icon.
-TERMINAL_TUI_APPS = {
-    "ranger": "\uf114",  # file manager (same icon as nemo/nautilus)
-}
-
-_TERMINAL_APP_IDS = frozenset((
-    "foot", "kitty", "alacritty", "wezterm",
-    "com.mitchellh.ghostty", "ghostty",
-))
-
 ICON_UNKNOWN         = "\uebf2"
 ICON_SCRATCHPAD_ONE  = "\U000f05af"
 ICON_SCRATCHPAD_MANY = "\U000f05b2"
@@ -129,61 +117,9 @@ def icon_for(app_id):
     return ICON_UNKNOWN
 
 
-def _build_proc_children():
-    """Return {ppid: [(pid, comm), ...]} for all running processes."""
-    children = {}
-    try:
-        for entry in os.scandir("/proc"):
-            if not entry.name.isdigit():
-                continue
-            pid = int(entry.name)
-            try:
-                ppid = 0
-                with open(f"/proc/{pid}/status") as f:
-                    for line in f:
-                        if line.startswith("PPid:"):
-                            ppid = int(line.split()[1])
-                            break
-                with open(f"/proc/{pid}/comm") as f:
-                    comm = f.read().strip()
-            except OSError:
-                continue
-            children.setdefault(ppid, []).append((pid, comm))
-    except OSError:
-        pass
-    return children
-
-
-def _find_descendant_tui(root_pid, children_map, max_depth=4):
-    """BFS through process descendants; return TUI icon if a known app is found."""
-    queue = [root_pid]
-    visited = set()
-    for _ in range(max_depth):
-        next_queue = []
-        for pid in queue:
-            if pid in visited:
-                continue
-            visited.add(pid)
-            for child_pid, comm in children_map.get(pid, []):
-                if comm in TERMINAL_TUI_APPS:
-                    return TERMINAL_TUI_APPS[comm]
-                next_queue.append(child_pid)
-        queue = next_queue
-        if not queue:
-            break
-    return None
-
-
-def icon_for_leaf(leaf, proc_children):
-    """Resolve the icon for a sway leaf node, with TUI process override."""
-    app_id = get_app_id(leaf)
-    if app_id.lower() in _TERMINAL_APP_IDS:
-        pid = leaf.get("pid")
-        if pid:
-            override = _find_descendant_tui(int(pid), proc_children)
-            if override:
-                return override
-    return icon_for(app_id)
+def icon_for_leaf(leaf):
+    """Resolve the icon for a sway leaf node."""
+    return icon_for(get_app_id(leaf))
 
 
 def walk_leaves(node, results):
@@ -274,7 +210,6 @@ def update_last_focused(last_focused, tree):
 
 def build_output(last_focused, tree, ws_raw):
     ws_by_num = {ws["num"]: ws for ws in ws_raw}
-    proc_children = _build_proc_children()
 
     result = []
 
@@ -294,7 +229,7 @@ def build_output(last_focused, tree, ws_raw):
         has_windows = len(leaves) > 0
 
         if has_windows:
-            icon_list = [icon_for_leaf(leaf, proc_children) for leaf in leaves]
+            icon_list = [icon_for_leaf(leaf) for leaf in leaves]
             icon      = "".join(icon_list)
             top, mid, bot = compute_icon_lines(icon_list)
         else:
