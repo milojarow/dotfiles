@@ -1,4 +1,4 @@
-.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-02\-25" "dotfiles" "Clipboard Functionality Manual"
+.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-05\-24" "dotfiles" "Clipboard Functionality Manual"
 .SH NAME
 clipboard\-functionality \- persistent clipboard history system for sway/waybar
 .SH DESCRIPTION
@@ -10,35 +10,65 @@ converted to UTF\-8 so browser\-copied URLs always appear clean), and stored
 in a local SQLite database.
 A waybar icon reflects the history size and provides click\-based access to the
 history browser.
+.PP
+The history browser is a GTK 3 application
+.RI ( clipboard\-picker.py )
+with native multi\-select (shift/ctrl click, shift+arrows) for batch deletion and
+a per\-row clickable pin. Pinned entries are stored outside the cliphist database,
+so they survive clearing or purging the history, and appear in a "Fijados" section
+at the top of the picker.
 .SH KEYBINDINGS
 .TP
 .B $mod+Shift+p
-Opens the interactive clipboard history browser (rofi).
+Opens the interactive clipboard history browser (GTK picker).
 .RS
 .TP
-.B Enter
-Copy selected item back to the clipboard.
+.B Type
+Filter the list live.
+.TP
+.B Click / Shift+Click / Ctrl+Click / Shift+Arrows
+Select one or several rows (multi\-select).
+.TP
+.B Enter / Double\-click
+Copy the activated row back to the clipboard and close.
 .TP
 .B Delete
-Remove selected item from history (stays open for next action).
+Delete all selected rows (batch). With nothing selected, deletes nothing.
+.TP
+.B Click the pin icon
+Pin or unpin that row. Pinned rows move to the "Fijados" section on top.
 .TP
 .B Escape
-Close the picker without copying.
+Close the picker.
 .RE
 .TP
 .B Waybar left\-click
-Opens the clipboard history browser.
+Opens the clipboard history browser (GTK picker).
 .TP
 .B Waybar right\-click
-Opens a deletion picker (remove individual items).
+Opens a standalone deletion picker (rofi) for removing individual items.
 .TP
 .B Waybar middle\-click
-Clears the entire clipboard history.
+Clears the entire cliphist history. Pinned items survive (stored separately).
 .SH FILES
 .TP
 .I ~/.config/sway/scripts/clipboard\-manager.sh
-Interactive history browser (rofi UI).
-Entry point for keyboard and waybar interactions.
+Thin launcher that execs
+.IR clipboard\-picker.py .
+Kept as the stable entry point so waybar, eww and the keybind need no changes.
+.TP
+.I ~/.config/sway/scripts/clipboard\-picker.py
+GTK 3 history browser \(em the actual picker UI.
+Per\-row clickable pin, native multi\-select delete, and live filter; themes itself
+via embedded CSS and renders as a centered gtk\-layer\-shell overlay.
+.TP
+.I ~/.local/share/clipboard\-pins/
+Pin store: per pin, one content file
+.RB ( <hash> ,
+named by a sha256 prefix of the content) plus a
+.RB ( <hash>.pv )
+preview sidecar.
+Lives outside the cliphist DB, so pins survive history clears.
 .TP
 .I ~/.config/sway/scripts/clipboard\-utf16\-filter.py
 Storage middleware.
@@ -66,7 +96,10 @@ in
 .IR 99\-autostart\-applications.conf .
 .TP
 .I ~/.config/rofi/themes/coffee\-metal
-Rofi theme for the clipboard picker and deletion dialogs.
+Rofi theme for the standalone deletion dialog
+.RB ( $clipboard\-del ,
+the waybar right\-click).
+The GTK picker themes itself via embedded CSS instead.
 .TP
 .I ~/.config/waybar/config.jsonc
 Waybar module definition
@@ -114,8 +147,17 @@ preventing "clipboard lost on window close".
 IPC utility.
 Sends POSIX signal RTMIN+9 to waybar to refresh the clipboard module.
 .TP
+.B python (PyGObject, GTK 3)
+Runtime for the GTK history picker
+.RB ( clipboard\-picker.py ).
+.TP
+.B gtk\-layer\-shell
+Positions the GTK picker as a centered overlay on the Wayland layer.
+.TP
 .B rofi
-Launcher used as the picker UI for history browsing and deletion.
+Launcher used by the standalone deletion picker
+.RB ( $clipboard\-del ,
+the waybar right\-click).
 .SH DAEMONS
 Three background processes run continuously,
 all started by
@@ -164,6 +206,12 @@ or by running:
 .RS
 .B rm \-f ~/.cache/cliphist/db
 .RE
+.PP
+Pinned items are stored separately in
+.I ~/.local/share/clipboard\-pins/
+and are
+.B not
+affected by clearing or purging the history.
 .SH CONFIGURATION
 .TP
 .B Max history size
@@ -183,10 +231,11 @@ to
 .I true
 in your sway config.
 .TP
-.B Picker theme
-Edit
-.I ~/.config/rofi/themes/coffee\-metal
-to change the picker appearance.
+.B Picker appearance
+The GTK picker themes itself via the embedded CSS in
+.IR clipboard\-picker.py .
+The standalone deletion dialog uses
+.IR ~/.config/rofi/themes/coffee\-metal .
 .SH SEE ALSO
 .BR cliphist (1),
 .BR wl\-paste (1),
