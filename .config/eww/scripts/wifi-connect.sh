@@ -2,17 +2,30 @@
 # feature: wifi
 # role:    action
 # wifi-connect.sh — connect to a wifi network with visual feedback.
-# Args: <ssid> <known:true|false> <security>
-# Spawned via swaymsg exec so eww does not kill it while rofi blocks.
+# Args: <ssid> <known:true|false> <security> <bssid> [password]
+# Spawned via swaymsg exec / setsid so eww does not kill it mid-connection.
+#
+# For an unknown secured network with no password yet, this opens the eww
+# password prompt and exits. The prompt's submit (wifi-pw-submit.sh) re-invokes
+# this script with the typed password as the 5th arg.
 
 EWW=/home/milo/.cargo/bin/eww
 SSID="$1"
 KNOWN="$2"
 SECURITY="$3"
 BSSID="$4"
+PASSWORD="$5"
 ERROR_PID_FILE=/tmp/eww-wifi-error-pid
 
 [ -z "$SSID" ] && exit 1
+
+# Unknown secured network with no password yet -> ask via the eww prompt window.
+# (Replaces the old rofi prompt: too small, field overflowed, no middle-click paste.)
+if [ "$KNOWN" != "true" ] && [ -n "$SECURITY" ] && [ -z "$PASSWORD" ]; then
+    $EWW update wifi-pw-ssid="$SSID" wifi-pw-bssid="$BSSID" wifi-pw-security="$SECURITY"
+    $EWW open wifi-password-prompt 2>/dev/null
+    exit 0
+fi
 
 # Kill any pending error-clear timer from a previous connection attempt
 [ -f "$ERROR_PID_FILE" ] && kill "$(cat "$ERROR_PID_FILE")" 2>/dev/null
@@ -26,21 +39,11 @@ if [ "$KNOWN" = "true" ]; then
     output=$(nmcli connection up id "$SSID" 2>&1)
     rc=$?
 elif [ -n "$SECURITY" ]; then
-    # Unknown secured network — ask for password
-    password=$(rofi \
-        -dmenu \
-        -theme-str 'window {location: north; anchor: north; y-offset: 40px; width: 360px;}' \
-        -theme-str 'listview {lines: 0;}' \
-        -theme-str 'inputbar {padding: 10px 14px;}' \
-        -p "Password for ${SSID}:")
-    if [ -z "$password" ]; then
-        $EWW update wifi-connecting=""
-        exit 0
-    fi
+    # Secured network with a password supplied by the prompt
     if [ -n "$BSSID" ]; then
-        output=$(nmcli device wifi connect "$SSID" bssid "$BSSID" password "$password" 2>&1)
+        output=$(nmcli device wifi connect "$SSID" bssid "$BSSID" password "$PASSWORD" 2>&1)
     else
-        output=$(nmcli device wifi connect "$SSID" password "$password" 2>&1)
+        output=$(nmcli device wifi connect "$SSID" password "$PASSWORD" 2>&1)
     fi
     rc=$?
 else

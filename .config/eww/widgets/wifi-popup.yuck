@@ -5,6 +5,10 @@
 (defvar wifi-error "")        ; Error message string — empty = no error
 (defvar wifi-popup-open 0)    ; Popup visibility state — 0 = closed, 1 = open
 (defvar wifi-public-ip "—")   ; Public IP — refreshed on popup open / rescan / connection change
+(defvar wifi-password "")     ; Connected PSK; empty = hidden, lazy via eye toggle
+(defvar wifi-pw-ssid "")      ; Password prompt target SSID
+(defvar wifi-pw-bssid "")     ; Password prompt target BSSID
+(defvar wifi-pw-security "")  ; Password prompt target security
 
 ; ── Wifi manager data ─────────────────────────────────────────────────────────
 (defpoll wifi-networks :interval "30s"
@@ -69,7 +73,15 @@
         (label :class "wifi-detail-value" :text {wifi.freq}))
       (box :orientation "h" :space-evenly false :spacing 6
         (label :class "wifi-detail-label" :xalign 0.0 :text "Security")
-        (label :class "wifi-detail-value" :text {wifi.security})))
+        (label :class "wifi-detail-value" :text {wifi.security}))
+      (box :orientation "h" :space-evenly false :spacing 6
+           :visible {wifi.connected && wifi.security != ""}
+        (label :class "wifi-detail-label" :xalign 0.0 :text "Password")
+        (label :class "wifi-detail-value" :text {wifi-password != "" ? wifi-password : "••••••••"})
+        (button :class "wifi-copy-btn"
+                :tooltip {wifi-password != "" ? "Hide password" : "Show password"}
+                :onclick "~/.config/eww/scripts/wifi-password-toggle.sh"
+          (label :text {wifi-password != "" ? "󰈉" : "󰈈"}))))
     ; ── Connection status feedback ──────────────────────────────────────────
     (revealer :reveal {wifi-connecting != "" || wifi-error != ""}
               :transition "slidedown"
@@ -151,3 +163,35 @@
   :stacking "fg"
   :focusable false
   (wifi-manager-widget))
+
+; ----- Wifi password prompt (new secured network) -----------------------------
+(defwidget wifi-password-prompt-widget []
+  (box :orientation "v"
+       :class "wifi-pw-prompt"
+       :space-evenly false
+       :spacing 12
+    (label :class "wifi-pw-title"
+           :halign "start"
+           :truncate true
+           :text "Password for ${wifi-pw-ssid}")
+    (input :class "wifi-pw-input"
+           :password true
+           :onaccept "~/.config/eww/scripts/wifi-pw-submit.sh '{}'")
+    (box :orientation "h"
+         :space-evenly false
+         :spacing 8
+      (label :class "wifi-pw-hint"
+             :halign "start"
+             :hexpand true
+             :text "Enter to connect")
+      (button :class "wifi-pw-cancel"
+              :onclick "${EWW_CMD} close wifi-password-prompt"
+        (label :text "Cancel")))))
+
+(defwindow wifi-password-prompt
+  :monitor 0
+  :geometry (geometry :anchor "center"
+                      :width "380px")
+  :stacking "overlay"
+  :focusable "ondemand"
+  (wifi-password-prompt-widget))

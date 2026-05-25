@@ -249,3 +249,52 @@
   color: mix($theme-fg, $theme-bg, 50%);
   border: 1px solid $theme-selection;
 }
+
+// ── Wifi password prompt (new secured network) ─────────────────────────────────
+.wifi-pw-prompt {
+  background-color: rgba($theme-bg, 0.98);
+  border: 1px solid $theme-selection;
+  border-radius: 10px;
+  padding: 18px 20px;
+  min-width: 340px;
+}
+
+.wifi-pw-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: $theme-fg;
+}
+
+.wifi-pw-input {
+  font-size: 13px;
+  color: $theme-fg;
+  font-family: "JetBrainsMono NF", "Roboto Mono", monospace;
+  background-color: mix($theme-fg, $theme-bg, 8%);
+  border: 1px solid $theme-selection;
+  border-radius: 6px;
+  padding: 8px 12px;
+  min-width: 300px;
+}
+
+.wifi-pw-input:focus {
+  border-color: $theme-accent;
+}
+
+.wifi-pw-hint {
+  font-size: 10px;
+  color: mix($theme-fg, $theme-bg, 50%);
+}
+
+.wifi-pw-cancel {
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 5px;
+  color: mix($theme-fg, $theme-bg, 60%);
+  border: 1px solid $theme-selection;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.wifi-pw-cancel:hover {
+  color: #BF616A;
+  border-color: #BF616A;
+}
