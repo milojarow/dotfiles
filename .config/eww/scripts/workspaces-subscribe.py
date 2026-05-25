@@ -10,8 +10,11 @@ Tracks the last-focused window per workspace to determine the displayed icon.
 
 import json
 import os
+import socket
+import struct
 import subprocess
 import sys
+import time
 
 # ── Icon map ──────────────────────────────────────────────────────────────────
 # Keys are lowercase app_id or window class (substring match as fallback).
@@ -92,9 +95,79 @@ ALWAYS_SHOW = set(range(1, 10))  # workspaces 1-9 always visible
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+# ── sway IPC over a persistent socket (no per-event subprocess) ────────────────
+# Querying via a long-lived UNIX socket instead of spawning `swaymsg` each event
+# keeps the event path off fork()/execve() — the costly syscalls that stall the
+# bar under memory pressure (binary + libs paged out to swap -> disk reads on the
+# critical path). This is the same approach waybar uses to stay responsive.
+# Protocol: 6-byte magic + u32 length + u32 type, native byte order.
+_IPC_MAGIC = b"i3-ipc"
+_MSG_GET_WORKSPACES = 1
+_MSG_SUBSCRIBE = 2
+_MSG_GET_TREE = 4
+# Event message types (high bit set). Classify the event by type, not by
+# payload, so a "focus" change can be told apart workspace-vs-window.
+_EVT_WORKSPACE = 0x80000000
+_EVT_WINDOW = 0x80000003
+_SWAYSOCK = os.environ.get("SWAYSOCK", "")
+
+
+def _ipc_connect():
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.connect(_SWAYSOCK)
+    return s
+
+
+def _recv_exact(sock, n):
+    buf = b""
+    while len(buf) < n:
+        chunk = sock.recv(n - len(buf))
+        if not chunk:
+            raise OSError("sway IPC socket closed")
+        buf += chunk
+    return buf
+
+
+def _ipc_send(sock, msg_type, payload=b""):
+    sock.sendall(_IPC_MAGIC + struct.pack("=II", len(payload), msg_type) + payload)
+
+
+def _ipc_read(sock):
+    hdr = _recv_exact(sock, 14)
+    length, msg_type = struct.unpack("=II", hdr[6:14])
+    return msg_type, _recv_exact(sock, length)
+
+
+_query_sock = None
+
+
 def swaymsg(args):
-    r = subprocess.run(["swaymsg"] + args, capture_output=True, text=True)
-    return json.loads(r.stdout)
+    """Drop-in replacement for the old subprocess helper. Routes get_tree /
+    get_workspaces over a persistent socket; reconnects once if it has died."""
+    global _query_sock
+    if "get_tree" in args:
+        msg_type = _MSG_GET_TREE
+    elif "get_workspaces" in args:
+        msg_type = _MSG_GET_WORKSPACES
+    else:
+        raise ValueError("unsupported swaymsg args: {}".format(args))
+    for attempt in range(2):
+        try:
+            if _query_sock is None:
+                _query_sock = _ipc_connect()
+            _ipc_send(_query_sock, msg_type)
+            _, data = _ipc_read(_query_sock)
+            return json.loads(data)
+        except OSError:
+            if _query_sock is not None:
+                try:
+                    _query_sock.close()
+                except OSError:
+                    pass
+            _query_sock = None
+            if attempt == 1:
+                raise
+    return None
 
 
 def get_app_id(node):
@@ -305,58 +378,117 @@ def emit(data):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+_LAG_LOG = os.path.expanduser("~/.cache/eww/workspaces-lag.log")
+_LAG_MS = 80.0
+
+
+def _log_lag(change, ms):
+    """Record an event whose cycle exceeded the lag threshold, with memory
+    pressure at that moment. Only runs when already slow, so it costs nothing on
+    the hot path. Capped to the last 200 lines so it never grows unbounded.
+
+    This is the net that catches the freeze without having to reproduce it: if
+    the bar ever stalls again, the line says which event, how long, and under
+    what memory/swap pressure."""
+    try:
+        mem_av = "?"
+        swap_total = swap_free = 0
+        with open("/proc/meminfo") as f:
+            for line in f:
+                parts = line.split()
+                if line.startswith("MemAvailable:"):
+                    mem_av = parts[1]
+                elif line.startswith("SwapTotal:"):
+                    swap_total = int(parts[1])
+                elif line.startswith("SwapFree:"):
+                    swap_free = int(parts[1])
+        ts = time.strftime("%Y-%m-%dT%H:%M:%S")
+        entry = "{}  change={:<8}  cycle={:.0f}ms  MemAvailable={}kB  SwapUsed={}kB\n".format(
+            ts, change or "-", ms, mem_av, swap_total - swap_free)
+        os.makedirs(os.path.dirname(_LAG_LOG), exist_ok=True)
+        lines = []
+        try:
+            with open(_LAG_LOG) as f:
+                lines = f.readlines()
+        except OSError:
+            pass
+        lines.append(entry)
+        with open(_LAG_LOG, "w") as f:
+            f.writelines(lines[-200:])
+    except OSError:
+        pass
+
+
 def main():
     last_focused = {}
 
+    # Initial full build over the tree.
     tree   = swaymsg(["-t", "get_tree"])
     ws_raw = swaymsg(["-t", "get_workspaces"])
     update_last_focused(last_focused, tree)
     emit(build_output(last_focused, tree, ws_raw))
 
-    # Subscribe to workspace + window events, pipe through jq for compact lines
-    swaymsg_proc = subprocess.Popen(
-        ["swaymsg", "-t", "subscribe", "-m", '["workspace", "window"]'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-    )
-    jq_proc = subprocess.Popen(
-        ["jq", "--unbuffered", "-c", "."],
-        stdin=swaymsg_proc.stdout,
-        stdout=subprocess.PIPE,
-        text=True,
-        bufsize=1,
-    )
-    swaymsg_proc.stdout.close()
+    # Subscribe over a dedicated persistent socket — no `swaymsg`/`jq` subprocess
+    # per event. The event path is now socket I/O + in-RAM compute only.
+    sub_payload = b'["workspace", "window"]'
 
-    for line in jq_proc.stdout:
-        line = line.strip()
-        if not line:
-            continue
+    def subscribe():
+        s = _ipc_connect()
+        _ipc_send(s, _MSG_SUBSCRIBE, sub_payload)
+        _ipc_read(s)  # consume the {"success": true} reply
+        return s
+
+    sub = subscribe()
+
+    while True:
         try:
-            event = json.loads(line)
+            msg_type, raw = _ipc_read(sub)
+        except OSError:
+            # sway restarted or the socket dropped — reconnect and resume.
+            try:
+                sub.close()
+            except OSError:
+                pass
+            sub = subscribe()
+            continue
+
+        try:
+            event = json.loads(raw)
         except json.JSONDecodeError:
             continue
 
+        t0 = time.perf_counter()
         change = event.get("change", "")
 
-        # On window focus: update last_focused from event data directly
+        # A title change never alters the app-id icon — skip the render entirely.
+        if msg_type == _EVT_WINDOW and change == "title":
+            continue
+
         if change == "focus":
-            container = event.get("container", {})
-            app = get_app_id(container)
-            if app:
-                # Find focused workspace from get_workspaces (cheap call)
-                ws_raw = swaymsg(["-t", "get_workspaces"])
-                for ws in ws_raw:
-                    if ws.get("focused"):
-                        last_focused[ws["num"]] = app
-                        break
-            tree = swaymsg(["-t", "get_tree"])
+            # waybar's trick: a focus change moves no windows, so the per-workspace
+            # app icons are unchanged. Do NOT re-read/parse the heavy tree — refresh
+            # the focused/urgent flags from the small get_workspaces object and
+            # rebuild over the CACHED tree. This is what keeps super+tab instant.
+            ws_raw = swaymsg(["-t", "get_workspaces"])
+            if msg_type == _EVT_WINDOW:
+                app = get_app_id(event.get("container", {}))
+                if app:
+                    for ws in ws_raw:
+                        if ws.get("focused"):
+                            last_focused[ws["num"]] = app
+                            break
+            emit(build_output(last_focused, tree, ws_raw))
         else:
+            # Structural change (new/close/move/init/empty/rename/urgent): the
+            # window set or workspace layout changed — rebuild from a fresh tree.
             tree   = swaymsg(["-t", "get_tree"])
             ws_raw = swaymsg(["-t", "get_workspaces"])
             update_last_focused(last_focused, tree)
+            emit(build_output(last_focused, tree, ws_raw))
 
-        emit(build_output(last_focused, tree, ws_raw))
+        dt = (time.perf_counter() - t0) * 1000.0
+        if dt > _LAG_MS:
+            _log_lag(change, dt)
 
 
 if __name__ == "__main__":
