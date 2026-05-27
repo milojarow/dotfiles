@@ -81,7 +81,11 @@
         (button :class "wifi-copy-btn"
                 :tooltip {wifi-password != "" ? "Hide password" : "Show password"}
                 :onclick "~/.config/eww/scripts/wifi-password-toggle.sh"
-          (label :text {wifi-password != "" ? "󰈉" : "󰈈"}))))
+          (label :text {wifi-password != "" ? "󰈉" : "󰈈"}))
+        (button :class "wifi-copy-btn"
+                :tooltip "Copy password"
+                :onclick "~/.config/eww/scripts/wifi-password-copy.sh"
+          (label :text "󰆏"))))
     ; ── Connection status feedback ──────────────────────────────────────────
     (revealer :reveal {wifi-connecting != "" || wifi-error != ""}
               :transition "slidedown"
