@@ -24,7 +24,10 @@ ICON_IDLE=''
 ICON_ACTIVE=''
 
 emit_idle() {
-    printf '{"active": false, "icon": "%s", "elapsed": "", "tooltip": "Start meeting recording"}\n' "$ICON_IDLE"
+    # Dual format: eww keys (active/icon/elapsed) + waybar keys (text/class/tooltip),
+    # so BOTH bars render correctly during the migration. Each side ignores the
+    # other's extra keys.
+    printf '{"active": false, "icon": "%s", "elapsed": "", "text": "%s", "class": "idle", "tooltip": "Start meeting recording"}\n' "$ICON_IDLE" "$ICON_IDLE"
 }
 
 emit_active() {
@@ -33,8 +36,9 @@ emit_active() {
     elapsed=$(( now - START_TIME ))
     mins=$(( elapsed / 60 ))
     secs=$(( elapsed % 60 ))
-    printf '{"active": true, "icon": "%s", "elapsed": "%02d:%02d", "tooltip": "Recording: %s (%02d:%02d) — click to stop"}\n' \
-        "$ICON_ACTIVE" "$mins" "$secs" "$NAME" "$mins" "$secs"
+    # Dual format: eww keys (active/icon/elapsed) + waybar keys (text/class/tooltip).
+    printf '{"active": true, "icon": "%s", "elapsed": "%02d:%02d", "text": "%s %02d:%02d", "class": "active", "tooltip": "Recording: %s (%02d:%02d) — click to stop"}\n' \
+        "$ICON_ACTIVE" "$mins" "$secs" "$ICON_ACTIVE" "$mins" "$secs" "$NAME" "$mins" "$secs"
 }
 
 start_recording() {

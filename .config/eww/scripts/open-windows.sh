@@ -42,7 +42,6 @@ if ! flock -w 10 9; then
 fi
 
 WINDOWS=(
-    bar
     disk-widget
     activate-linux
     sysmonitor-window
@@ -99,24 +98,7 @@ for w in "${WINDOWS[@]}"; do
     done
 done
 
-# Phase 3: last-resort recovery for bar. If the exclusive bar still isn't
-# alive after retries, restart the whole service — ExecStartPost re-runs this
-# script against a fresh daemon, which resolves stale layer-shell state.
-# A guard file prevents infinite restart loops when something structural is
-# broken: only restart if we haven't already done so in the last 60 seconds.
-# flock must be released before 'systemctl restart' or ExecStartPost (which
-# re-invokes this script) would deadlock waiting for the lock we still hold.
-if ! is_active bar; then
-    now=$(date +%s)
-    last_restart=0
-    [ -f "$RESTART_GUARD" ] && last_restart=$(cat "$RESTART_GUARD" 2>/dev/null || echo 0)
-    if [ $((now - last_restart)) -gt 60 ]; then
-        logger -t "$LOG_TAG" "bar missing after retries; restarting eww.service"
-        echo "$now" > "$RESTART_GUARD"
-        flock -u 9
-        exec 9>&-
-        systemctl --user --no-block restart eww.service
-    else
-        logger -t "$LOG_TAG" "bar still missing but restart guard is active; giving up"
-    fi
-fi
+# Phase 3 (bar auto-restart) removed during the waybar migration: the bar moved
+# to waybar, so there is no eww 'bar' window to recover anymore. The old logic
+# restarted eww.service whenever 'bar' was missing — which would now loop forever.
+# See bar.yuck.deprecated.

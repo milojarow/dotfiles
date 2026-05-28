@@ -40,7 +40,12 @@ def make_payload(avg60):
         cls, active = "warning", 1
     else:
         cls, active = "normal", 0
-    return json.dumps({"avg60": val, "class": cls, "active": active})
+    # waybar format: "text" carries the warning glyph (U+F071) only under pressure,
+    # empty otherwise so the module collapses/hides. "class" drives CSS coloring.
+    text = "" if active else ""
+    tooltip = f"Memory pressure: {val}% (PSI avg60)"
+    # Dual format: eww keys (avg60/class/active) + waybar keys (text/class/tooltip).
+    return json.dumps({"avg60": val, "class": cls, "active": active, "text": text, "tooltip": tooltip})
 
 
 def main():

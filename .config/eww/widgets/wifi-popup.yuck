@@ -11,6 +11,13 @@
 (defvar wifi-pw-security "")  ; Password prompt target security
 (defvar wifi-pw-mode "connect") ; Password prompt mode: "connect" (new net) | "edit" (change saved PSK)
 
+; ── Wifi state (moved here from bar.yuck during the waybar migration) ──────────
+; The popup needs `wifi` to survive after the eww bar is deprecated. waybar shows
+; the signal icon natively (network module); this deflisten only feeds the popup.
+(deflisten wifi
+  :initial "{\"icon\": \"\", \"ssid\": \"\", \"signal\": 0, \"ip\": \"\", \"freq\": \"\", \"security\": \"\", \"class\": \"disconnected\", \"connected\": false}"
+  `~/.config/eww/scripts/wifi-subscribe.py`)
+
 ; ── Wifi manager data ─────────────────────────────────────────────────────────
 (defpoll wifi-networks :interval "30s"
   `~/.config/eww/scripts/wifi-scan.py`)
