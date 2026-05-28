@@ -154,12 +154,12 @@
         // Multiple apps sharing an icon are grouped with | alternation.
         "window-rewrite": {
             // Terminals
-            "class<foot>":                                          "\ue285",
+            "class<foot>":                                          "\uf489",
             "class<kitty|alacritty|wezterm>":                      "\uea85",
             "class<com\\.mitchellh\\.ghostty|ghostty>":            "\ue007",
             // Browsers
             "class<firefox|librewolf>":                            "\ue745",
-            "class<brave-browser|brave>":                          "\ue639",
+            "class<brave-browser|brave>":                          "\uf268",
             // Messaging
             "class<altus>":                                        "\uf232",
             "class<org\\.telegram\\.desktop|telegramdesktop>":     "\uf2c6",
