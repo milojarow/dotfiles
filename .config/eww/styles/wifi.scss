@@ -207,6 +207,17 @@
   border-color: #cc241d;
 }
 
+.edit-btn {
+  color: mix($theme-fg, $theme-bg, 55%);
+  border: 1px solid transparent;
+  margin-left: 2px;
+}
+
+.edit-btn:hover {
+  color: $theme-accent;
+  background-color: mix($theme-accent, $theme-bg, 15%);
+}
+
 .forget-btn {
   color: mix($theme-fg, $theme-bg, 40%);
   border: 1px solid transparent;

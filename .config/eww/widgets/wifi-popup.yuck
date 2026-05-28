@@ -9,6 +9,7 @@
 (defvar wifi-pw-ssid "")      ; Password prompt target SSID
 (defvar wifi-pw-bssid "")     ; Password prompt target BSSID
 (defvar wifi-pw-security "")  ; Password prompt target security
+(defvar wifi-pw-mode "connect") ; Password prompt mode: "connect" (new net) | "edit" (change saved PSK)
 
 ; ── Wifi manager data ─────────────────────────────────────────────────────────
 (defpoll wifi-networks :interval "30s"
@@ -152,6 +153,10 @@
                     :visible {net.in_use}
                     :onclick "~/.config/eww/scripts/wifi-disconnect.sh"
               (label :text "disconnect"))
+            (button :class "wifi-action-btn edit-btn"
+                    :visible {net.known}
+                    :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-edit.sh \"${net.ssid}\" \"${net.security}\" \"${net.bssid}\"'"
+              (label :text "edit"))
             (button :class "wifi-action-btn forget-btn"
                     :visible {net.known}
                     :onclick "swaymsg -q exec '~/.config/eww/scripts/wifi-forget.sh \"${net.ssid}\"'"
@@ -177,7 +182,7 @@
     (label :class "wifi-pw-title"
            :halign "start"
            :truncate true
-           :text "Password for ${wifi-pw-ssid}")
+           :text {wifi-pw-mode == "edit" ? "Edit password for ${wifi-pw-ssid}" : "Password for ${wifi-pw-ssid}"})
     (input :class "wifi-pw-input"
            :password true
            :onaccept "~/.config/eww/scripts/wifi-pw-submit.sh '{}'")
@@ -189,7 +194,7 @@
              :hexpand true
              :text "Enter to connect")
       (button :class "wifi-pw-cancel"
-              :onclick "${EWW_CMD} close wifi-password-prompt"
+              :onclick "${EWW_CMD} close wifi-password-prompt && ${EWW_CMD} update wifi-pw-mode=connect"
         (label :text "Cancel")))))
 
 (defwindow wifi-password-prompt
