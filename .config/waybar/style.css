@@ -83,6 +83,8 @@ window#waybar {
 #custom-playerctl,
 #custom-weather,
 #custom-theme,
+#custom-meeting-notes,
+#custom-mem-pressure,
 #tray {
     padding-left: 8px;
     padding-right: 8px;
@@ -137,6 +139,13 @@ window#waybar {
 #battery.critical.discharging {
     animation-name: blink-critical;
     animation-duration: 2s;
+}
+
+/* Amber bolt while plugged in / charging / full (mirrors eww .bar-battery.charging) */
+#battery.charging,
+#battery.plugged,
+#battery.full {
+    color: #facc15;
 }
 
 #clock {
@@ -218,6 +227,28 @@ window#waybar {
 
 #workspaces button:hover {
     color: @theme_bg_color;
+}
+
+/* Workspace 10 = secret/hidden workspace (mirrors the eww bar): collapsed to a
+ * near-zero footprint unless you are focused on it. GTK CSS has no display:none,
+ * so we shrink metrics + font-size to 0. Focused restores a normal button.
+ * NOTE: waybar's global "{windows}" format means the focused ws10 shows its app
+ * icons (or nothing when empty), not eww's fixed U+F153C glyph — a per-workspace
+ * icon isn't possible with a global format without breaking the 1-9 app icons. */
+#workspaces button#sway-workspace-10 {
+    min-width: 0;
+    padding: 0;
+    border-top-width: 0;
+    font-size: 0;
+}
+
+#workspaces button#sway-workspace-10.focused {
+    min-width: 18px;
+    padding-bottom: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-top: 2px solid @theme_selected_bg_color;
+    font-size: 14px;
 }
 
 #custom-pacman {
@@ -320,4 +351,22 @@ separator {
     opacity: 0.3;
     margin: 4px 8px;
     min-height: 1px;
+}
+
+/* Extra gap between clipboard and meeting-notes (user request) */
+#custom-clipboard {
+    margin-left: 6px;
+}
+
+/* Empty workspaces: number in off-white/bone (user request).
+ * Applies even when the selector (focus) is over it — bone number stays. */
+#workspaces button.empty {
+    color: #f0ead6;
+}
+
+/* [Method 1] native sway/window (replaces #custom-window-title) */
+#window {
+    padding-left: 10px;
+    padding-right: 10px;
+    color: @theme_text_color;
 }

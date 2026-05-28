@@ -23,65 +23,60 @@
         "sway/mode",
         "custom/window-title"
     ],
+    // Order replicates the eww-bar: read right→left the core modules match
+    // exactly (clock · tray · gamma · volume · dnd · no-idle · wifi · clipboard
+    // · meeting · mem · battery). Waybar-only extras sit to the left of the core.
     "modules-right": [
+        // ── extras (left of the eww core) ──
         // security
         "privacy",
         // informational
-        "custom/keyboard-layout",
         "custom/github",
-        "custom/clipboard",
-        "custom/usb",
+        "custom/pacman",
+        "custom/weather",
         "cpu",
-        // "temperature",
-        // "memory",
-        "battery",
-        // connecting
-        "network",
-        "bluetooth",
-        "custom/valent",
-        // media
-        "custom/playerctl",
-        "idle_inhibitor",
-        "custom/dnd",
-        "custom/audio",
-        "backlight",
+        "custom/usb",
         // system
         "custom/theme",
         "custom/adaptive-light",
+        "bluetooth",
+        // ── eww core (eww-bar order) ──
+        "battery",
+        "custom/mem-pressure",
+        "custom/meeting-notes",
+        "custom/clipboard",
+        "network",
+        "idle_inhibitor",
+        "custom/dnd",
+        "custom/audio",
         "custom/sunset",
-        "custom/pacman",
-        "custom/weather",
+        // ── right edge: tray + clock (same as eww) ──
         "tray",
         "clock"
     ],
     // -------------------------------------------------------------------------
     // Modules
     // -------------------------------------------------------------------------
+    // battery → matches eww: bolt while charging/plugged/full, %% on battery.
+    // Per-level icons kept for future use — to show a level glyph instead, set
+    //   "format": "{icon} {capacity}%"  and restore the array below:
+    //   "format-icons": ["󱃍","󰁺","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"]
     "battery": {
         "interval": 30,
         "states": {
             "warning": 30,
             "critical": 15
         },
-        "format-charging": "󰂄 {capacity}%",
-        "format": "{icon} {capacity}%",
-        "format-icons": [
-            "󱃍",
-            "󰁺",
-            "󰁼",
-            "󰁽",
-            "󰁾",
-            "󰁿",
-            "󰂀",
-            "󰂁",
-            "󰂂",
-            "󰁹"
-        ],
-        "tooltip": true
+        "format": "{capacity}%",
+        "format-charging": "\uf0e7",
+        "format-plugged": "\uf0e7",
+        "format-full": "\uf0e7",
+        "format-not charging": "\uf0e7",
+        "tooltip-format": "{capacity}% — {timeTo}"
     },
     "clock": {
         "interval": 60,
-        "format": "{:%e %b %Y %H:%M}",
+        "format": "{:%a %e %b %Y %H:%M}",
         "tooltip": true,
         "tooltip-format": "<big>{:%B %Y}</big>\n<tt>{calendar}</tt>",
         "on-click": "swaymsg exec \\$calendar"
@@ -127,7 +122,7 @@
         "tooltip-format-linked": "{icon} {ifname} (No IP)",
         "tooltip-format-disconnected": "{icon} disconnected",
         "tooltip-format-disabled": "{icon} disabled",
-        "on-click": "swaymsg exec \\$once \\$term_float nmtui connect"
+        "on-click": "~/.config/eww/scripts/wifi-toggle-popup.sh"
     },
     "sway/workspaces": {
         // Show workspaces 1-9 persistently (even when empty).
@@ -139,7 +134,19 @@
         // {windows} renders the app icons of every window in the workspace.
         // Empty workspaces show a blank button (styled via .empty CSS class).
         // Note: shows ALL windows' icons, not only the focused one.
-        "format": "{windows}",
+        "format": "{icon} {windows}",
+        // {icon} = workspace number as the eww-style subscript glyph (U+F0B3A..U+F0B42).
+        "format-icons": {
+            "1": "\udb82\udf3a",
+            "2": "\udb82\udf3b",
+            "3": "\udb82\udf3c",
+            "4": "\udb82\udf3d",
+            "5": "\udb82\udf3e",
+            "6": "\udb82\udf3f",
+            "7": "\udb82\udf40",
+            "8": "\udb82\udf41",
+            "9": "\udb82\udf42"
+        },
         // Fallback icon for apps not in window-rewrite (matches eww ICON_UNKNOWN U+EBF2).
         "window-rewrite-default": "\uebf2",
         // Regex keys use class<> prefix to match app_id (Wayland) / WM_CLASS (X11).
@@ -193,7 +200,7 @@
         "return-type": "json",
         "interval": 1,
         "signal": 3,
-        "on-click": "swaymsg exec \\$pulseaudio",
+        "on-click": "pavucontrol",
         "on-click-middle": "swaymsg exec \\$volume_mute",
         "on-scroll-up": "swaymsg exec \\$volume_up",
         "on-scroll-down": "swaymsg exec \\$volume_down"
@@ -255,17 +262,21 @@
         "on-click": "swaymsg 'scratchpad show'",
         "signal": 7
     },
+    // custom/sunset → gamma correction. click = auto schedule on/off,
+    // right-click = forced warm (max warmth). Mirrors the eww gamma module.
     "custom/sunset": {
         "interval": "once",
         "tooltip": true,
         "return-type": "json",
         "format": "{icon}",
         "format-icons": {
-            "on": "󰌵",
-            "off": "󰌶"
+            "off": "󰌶",
+            "auto": "󰌵",
+            "warm": "󱩌"
         },
-        "exec": "fallback_latitude=50.1 fallback_longitude=8.7 latitude= longitude= ~/.config/sway/scripts/sunset.sh",
-        "on-click": "~/.config/sway/scripts/sunset.sh toggle",
+        "exec": "~/.config/sway/scripts/sunset.sh status",
+        "on-click": "~/.config/sway/scripts/sunset.sh toggle; pkill -RTMIN+6 waybar",
+        "on-click-right": "~/.config/sway/scripts/sunset.sh force-warm; pkill -RTMIN+6 waybar",
         "exec-if": "~/.config/sway/scripts/sunset.sh check",
         "signal": 6
     },
@@ -331,7 +342,6 @@
         "on-click-right": "swaymsg -q exec '$clipboard-del'; waybar-signal clipboard",
         "on-click-middle": "rm -f ~/.cache/cliphist/db; waybar-signal clipboard",
         "exec": "printf '{\"tooltip\":\"%s\"}' $(cliphist list | wc -l)' item(s) in the clipboard\r(Mid click to clear)'",
-        "exec-if": "[ -x \"$(command -v cliphist)\" ] && [ $(cliphist list | wc -l) -gt 0 ]",
         "signal": 9
     },
     // [USB Management] — requires: lsblk, udisksctl, udisks2, signal RTMIN+15
@@ -364,14 +374,13 @@
         "signal": 16
     },
     // [Window Title]
+    // [Method 3] window-title-stream.py — persistent-socket IPC stream (no /proc,
+    // no cache, no signal round-trip). on-click-right = custom name (rename.py).
     "custom/window-title": {
-        "interval": "once",
         "return-type": "json",
         "format": "{}",
-        "exec": "~/.config/sway/scripts/window-title-output.sh",
-        "on-click": "~/.config/sway/scripts/window-title-click.sh",
-        "on-click-right": "~/.config/sway/scripts/window-title-rename.sh",
-        "signal": 10,
+        "exec": "~/.config/sway/scripts/window-title-stream.py",
+        "on-click-right": "~/.config/sway/scripts/window-title-rename.py",
         "tooltip": true,
         "max-length": 70
     },
@@ -387,6 +396,24 @@
         "on-click-right": "~/.config/sway/scripts/dnd.sh restore",
         "exec": "~/.config/sway/scripts/dnd.sh status",
         "signal": 11
+    },
+    // custom/meeting-notes → meeting AUDIO recorder (sink + mic). Streamed JSON
+    // with a live timer, from the same script the eww bar used. on-click toggles
+    // via the named pipe /tmp/eww-meeting-notes. NOT the screen recorder.
+    "custom/meeting-notes": {
+        "return-type": "json",
+        "format": "{}",
+        "exec": "~/.config/eww/scripts/meeting-notes-subscribe.sh",
+        "on-click": "echo toggle > /tmp/eww-meeting-notes",
+        "on-click-right": "xdg-open $HOME/recordings/meetings"
+    },
+    // custom/mem-pressure → PSI memory-pressure indicator. Hidden unless under
+    // pressure (the script emits empty text when idle). Streamed JSON.
+    "custom/mem-pressure": {
+        "return-type": "json",
+        "format": "{}",
+        "exec": "~/.config/eww/scripts/mem-pressure-watch.py",
+        "tooltip": true
     },
     "custom/adaptive-light": {
         "interval": "once",
