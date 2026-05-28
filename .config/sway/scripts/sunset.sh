@@ -35,6 +35,17 @@ case $1'' in
         systemctl --user start wlsunset-warm.service
     fi
     ;;
+'status')
+    # Emit JSON for the waybar custom/sunset module. The "alt" value selects the
+    # format-icon (off/auto/warm). Mirrors eww's gamma-subscribe.sh state logic.
+    if unit_on wlsunset-warm.service; then
+        printf '{"alt":"warm","tooltip":"Gamma: máxima calidez (forzado)"}\n'
+    elif unit_on wlsunset.service; then
+        printf '{"alt":"auto","tooltip":"Gamma: horario automático día/noche"}\n'
+    else
+        printf '{"alt":"off","tooltip":"Gamma: corrección apagada"}\n'
+    fi
+    ;;
 'check')
     command -v wlsunset
     exit $?

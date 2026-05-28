@@ -36,8 +36,8 @@ floating_modifier $mod normal
 ## Action // Reload Sway Configuration ##
 $bindsym $mod+Shift+c reload
 
-## Action // Toggle bar ##
-$bindsym $mod+Shift+b exec ~/.cargo/bin/eww close bar || ~/.cargo/bin/eww open bar
+## Action // Toggle bar (waybar — SIGUSR1 toggles visibility) ##
+$bindsym $mod+Shift+b exec pkill -SIGUSR1 waybar
 
 # --locked flags allow the buttons to be used whilst the screen is locked.
 $bindsym --locked XF86AudioRaiseVolume exec $volume_up
