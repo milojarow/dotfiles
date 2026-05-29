@@ -127,6 +127,10 @@
     "sway/workspaces": {
         // Show workspaces 1-9 persistently (even when empty).
         // Workspace 10 is intentionally excluded — stays hidden when not in use.
+        // The flicker that used to plague the empty buttons (the .empty↔non-empty
+        // GTK theme transition firing on every bar re-layout, upstream issue
+        // Alexays/Waybar#3865) is killed by `transition: none` on .empty buttons
+        // in style.css — not by removing persistent workspaces.
         "persistent-workspaces": {
             "1": [], "2": [], "3": [], "4": [], "5": [],
             "6": [], "7": [], "8": [], "9": []

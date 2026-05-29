@@ -223,6 +223,10 @@ window#waybar {
     border-top-color: alpha(@theme_selected_bg_color, 0.25);
     padding-left: 4px;
     padding-right: 4px;
+    /* Kill the GTK theme transition that fires on every bar re-layout —
+     * makes the empty↔non-empty state change instant instead of animated.
+     * Fix from upstream Alexays/Waybar#3865 (closed). */
+    transition: none;
 }
 
 #workspaces button:hover {
@@ -369,4 +373,11 @@ separator {
     padding-left: 10px;
     padding-right: 10px;
     color: @theme_text_color;
+}
+
+/* Stabilize workspaces width so the window-title's live indicators
+ * (Claude Code braille spinner, etc.) do not propagate a centerbox
+ * reflow into the workspaces module on every title tick. */
+#workspaces {
+    min-width: 360px;
 }
