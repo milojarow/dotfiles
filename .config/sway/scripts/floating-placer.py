@@ -31,6 +31,11 @@ CASCADE = 40  # offset step when no slot fits
 IGNORE_PATTERNS = (
     re.compile(r"^ueberzugpp_"),  # ranger image previews via ueberzugpp
     re.compile(r"^swappy$", re.IGNORECASE),  # screenshot editor — keep centered
+    # Managed by floating-memory.py, which restores their exact saved position —
+    # this daemon must not reposition them. Keep in sync with that file's
+    # TRACK_PATTERNS.
+    re.compile(r"^Altus$"),
+    re.compile(r"telegram", re.IGNORECASE),  # org.telegram.desktop / TelegramDesktop
 )
 
 PIDFILE = f"/tmp/floating-placer-{os.environ.get('USER', 'user')}.pid"
