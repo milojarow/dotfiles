@@ -22,3 +22,10 @@ border-radius=15
 # Do not disturb mode
 [mode=do-not-disturb]
 invisible=1
+
+# Click/tap an Altus notification -> bring Altus to the current workspace
+# (mirrors Telegram). Runs the helper instead of Altus' native "View" action,
+# which does not move it to the focused workspace.
+[app-name="Altus"]
+on-button-left=exec /home/milo/.config/sway/scripts/altus-to-current-ws.sh "$id"
+on-touch=exec /home/milo/.config/sway/scripts/altus-to-current-ws.sh "$id"
