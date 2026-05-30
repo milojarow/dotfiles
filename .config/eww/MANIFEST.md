@@ -182,8 +182,12 @@ their inline modules to the corresponding feature.
 - `scripts/wifi-close-popup.sh`  *(action)*
 - `scripts/wifi-connect.sh`  *(action)*
 - `scripts/wifi-disconnect.sh`  *(action)*
+- `scripts/wifi-edit.sh`  *(action)*
 - `scripts/wifi-forget.sh`  *(action)*
+- `scripts/wifi-password-copy.sh`  *(action)*
+- `scripts/wifi-password-toggle.sh`  *(action)*
 - `scripts/wifi-public-ip.sh`  *(action)*
+- `scripts/wifi-pw-submit.sh`  *(action)*
 - `scripts/wifi-rescan.sh`  *(action)*
 - `scripts/wifi-toggle-popup.sh`  *(action)*
 - `scripts/wifi-scan.py`  *(helper)*
@@ -210,8 +214,11 @@ their inline modules to the corresponding feature.
 - `scripts/_manifest.sh`  *(shared)*
 - `scripts/move-widget.sh`  *(shared)*
 - `scripts/open-windows.sh`  *(shared)*
-- `styles/theme.scss`  *(shared)*
+
+## ⚠ Orphans (no `feature:` header)
+
+- `styles/theme.scss`
 
 ---
 
-**Summary:** 96 tagged files across 33 features. 0 orphans.
+**Summary:** 99 tagged files across 33 features. 1 orphans.
