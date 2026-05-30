@@ -206,6 +206,11 @@ window#waybar {
     padding-left: 10px;
     padding-right: 10px;
     color: @theme_selected_bg_color;
+    /* Transition for the hover pop (font-size + padding) and color swap.
+     * GTK CSS has no transform/scale, so the "bigger" effect is a font-size
+     * bump. min-width:360 on #workspaces absorbs the reflow. */
+    transition: color 140ms ease, font-size 140ms ease,
+                padding-left 140ms ease, padding-right 140ms ease;
 }
 
 #workspaces button.focused {
@@ -217,20 +222,61 @@ window#waybar {
     color: @error_color;
 }
 
+/* Urgent state must stay error-red even on hover (the hover rule below would
+ * otherwise repaint it as text color, hiding the urgency signal). */
+#workspaces button.urgent:hover {
+    color: @error_color;
+}
+
 #workspaces button.empty {
     /* No app icon — keep button visible with minimal footprint */
     min-width: 18px;
     border-top-color: alpha(@theme_selected_bg_color, 0.25);
     padding-left: 4px;
     padding-right: 4px;
-    /* Kill the GTK theme transition that fires on every bar re-layout —
-     * makes the empty↔non-empty state change instant instead of animated.
-     * Fix from upstream Alexays/Waybar#3865 (closed). */
+    /* Visible against any waybar bg: complement (180°) of the accent.
+     * Derived per-theme by theme-cache-regen.sh — see man palette-theming. */
+    color: @theme_accent_complement;
+    /* CRITICAL: `transition: none` kills the GTK pulsating glitch on
+     * empty buttons. Cause: window-title spinner (Claude Code braille)
+     * reshuffles the centerbox on every tick → GTK re-evaluates every
+     * widget → any named transition on .empty fires falsely each tick
+     * → buttons pulse. Upstream issue Alexays/Waybar#3865 (closed).
+     * Do NOT put named transitions here — only on .empty:hover. */
     transition: none;
 }
 
-#workspaces button:hover {
+/* Empty workspace hover — same pop as non-empty buttons. Transition lives
+ * here (NOT on the base rule), so it only fires on hover state change, not
+ * on every centerbox re-layout from the window-title spinner. */
+#workspaces button.empty:hover {
+    color: @theme_text_color;
+    font-size: 16px;
+    padding-left: 12px;
+    padding-right: 12px;
+    transition: color 140ms ease, padding-left 140ms ease,
+                padding-right 140ms ease, font-size 140ms ease;
+}
+
+/* Empty + focused: the base .empty rule paints the number in
+ * @theme_accent_complement (180° rotation of the accent). When the workspace
+ * is also focused, the bg becomes the accent itself → complement on accent =
+ * max-clash 180° color collision. Repaint with @theme_bg_color so it matches
+ * how non-empty focused workspaces render. Specificity (1,2,1) beats the
+ * base .empty (1,1,1) AND the shared focused rule (1,1,1). */
+#workspaces button.empty.focused {
     color: @theme_bg_color;
+}
+
+/* Hover state: re-tint to the icon color (@theme_text_color, same color the
+ * cpu/bt/clipboard/network/dnd glyphs use by default) and pop slightly with
+ * a font-size + padding bump. Fixes the blends-with-white bug on light
+ * themes where the previous color (@theme_bg_color) made hover invisible. */
+#workspaces button:hover {
+    color: @theme_text_color;
+    font-size: 16px;
+    padding-left: 12px;
+    padding-right: 12px;
 }
 
 /* Workspace 10 = secret/hidden workspace (mirrors the eww bar): collapsed to a
@@ -362,12 +408,6 @@ separator {
     margin-left: 6px;
 }
 
-/* Empty workspaces: number in off-white/bone (user request).
- * Applies even when the selector (focus) is over it — bone number stays. */
-#workspaces button.empty {
-    color: #f0ead6;
-}
-
 /* [Method 1] native sway/window (replaces #custom-window-title) */
 #window {
     padding-left: 10px;
@@ -377,7 +417,11 @@ separator {
 
 /* Stabilize workspaces width so the window-title's live indicators
  * (Claude Code braille spinner, etc.) do not propagate a centerbox
- * reflow into the workspaces module on every title tick. */
+ * reflow into the workspaces module on every title tick.
+ * GTK CSS does NOT support max-width — only min-width. The fix relies on
+ * min-width being larger than the natural content even with the hover pop
+ * applied: natural ~360px, hover adds ~6px to one button → still under 400.
+ * So min-width acts as the anchor and the container never grows. */
 #workspaces {
-    min-width: 360px;
+    min-width: 400px;
 }
