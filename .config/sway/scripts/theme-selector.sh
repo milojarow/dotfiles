@@ -37,56 +37,144 @@ get_themes() {
     find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort
 }
 
-# Apply selected theme
+# Apply selected theme — 3-phase pipeline optimized for reaction time:
+#   FASE 0 (~5ms, atomic): symlinks (theme.conf, foot, 4 pre-cached outputs)
+#                          + qt6ct sync (icon_theme + color_scheme_path).
+#   FASE 1 (~50-100ms blocking): foot OSC + eww reload in parallel + waybar/mako signals.
+#                                Visible apps catch up here.
+#   FASE 2 (background, no wait): swaymsg reload (propagates GTK/Kvantum via
+#                                 90-enable-theme.conf exec_always), terminal
+#                                 configs for alacritty/ghostty/wezterm, and
+#                                 papirus-folders (~800ms heaviest task).
+# Total perceived: ~50-150ms. Heavy work continues in background after return.
+# See ~/.claude/plans/fancy-plotting-snowflake.md for the full design rationale.
 apply_theme() {
     local theme="$1"
     local theme_file="$THEMES_DIR/$theme/theme.conf"
     local foot_theme_file="$THEMES_DIR/$theme/foot-theme.ini"
-    
-    # Link Sway theme
-    if [ -f "$theme_file" ]; then
-        rm -f "$CURRENT_THEME_LINK"
-        ln -sf "$theme_file" "$CURRENT_THEME_LINK"
-    else
-        echo "Error: Theme file not found at $theme_file"
+    local cache_dir="$HOME/.cache/sway-theming/$theme"
+
+    if [ ! -f "$theme_file" ]; then
+        echo "Error: Theme file not found at $theme_file" >&2
         exit 1
     fi
-    
-    # Update foot theme and apply colors to all running terminals via OSC sequences
+
+    # Lazy-regenerate the cache the first time a theme is used (or after the
+    # user clears the dir). theme-cache-regen.sh is idempotent.
+    if [ ! -d "$cache_dir" ]; then
+        ~/.config/sway/scripts/theme-cache-regen.sh "$theme" >/dev/null 2>&1 || true
+    fi
+
+    # ═══ FASE 0 — atomic config swaps (~5ms) ═════════════════════════════════
+    # After this point every consumer app sees the new theme on disk; the only
+    # thing left is signaling them so they actually re-read.
+    ln -sf "$theme_file" "$CURRENT_THEME_LINK"
     if [ -f "$foot_theme_file" ]; then
         ln -sf "$foot_theme_file" "$CURRENT_FOOT_THEME_LINK"
-        ~/.config/sway/scripts/theme-apply-foot.sh "$foot_theme_file" || true
-        ~/.config/sway/scripts/apply-theme-terminals.sh "$foot_theme_file" || true
     fi
-    
-    # Sync icon theme to qt6ct so Qt6 apps follow the active theme
-    local icon_theme
-    icon_theme=$(grep '^set \$icon-theme' "$theme_file" | awk '{print $3}')
-    if [[ -n "$icon_theme" && -f "$HOME/.config/qt6ct/qt6ct.conf" ]]; then
-        sed -i "s/^icon_theme=.*/icon_theme=${icon_theme}/" "$HOME/.config/qt6ct/qt6ct.conf"
-    fi
+    mkdir -p "$HOME/.config/waybar" "$HOME/.config/rofi" "$HOME/.config/wofi" "$HOME/.config/eww/styles"
+    ln -sf "$cache_dir/waybar.theme.css"  "$HOME/.config/waybar/theme.css"
+    ln -sf "$cache_dir/rofi.cachyos.rasi" "$HOME/.config/rofi/cachyos.rasi"
+    ln -sf "$cache_dir/wofi.style.css"    "$HOME/.config/wofi/style.css"
+    ln -sf "$cache_dir/eww.theme.scss"    "$HOME/.config/eww/styles/theme.scss"
 
-    # Update Papirus folder colors for catppuccin themes
-    if [[ "$theme" =~ ^catppuccin- ]]; then
-        local flavor="${theme#catppuccin-}"
+    # Sync qt6ct so Qt apps respect the theme. Pre-fix the file had
+    # `color_scheme_path=darker.conf` hardcoded, ignoring everything else.
+    if [ -f "$HOME/.config/qt6ct/qt6ct.conf" ]; then
+        local icon_theme qt6ct_scheme
+        icon_theme=$(grep '^set \$icon-theme' "$theme_file" | awk '{print $3}')
+        [ -n "$icon_theme" ] && sed -i "s|^icon_theme=.*|icon_theme=${icon_theme}|" "$HOME/.config/qt6ct/qt6ct.conf"
         if is_light_theme "$theme"; then
-            papirus-folders --color "cat-${flavor}-blue" --theme Papirus-Light 2>/dev/null || true
+            qt6ct_scheme="/usr/share/qt6ct/colors/airy.conf"
         else
-            papirus-folders --color "cat-${flavor}-blue" --theme Papirus-Dark 2>/dev/null || true
+            qt6ct_scheme="/usr/share/qt6ct/colors/darker.conf"
         fi
+        sed -i "s|^color_scheme_path=.*|color_scheme_path=${qt6ct_scheme}|" "$HOME/.config/qt6ct/qt6ct.conf"
     fi
 
-    # Reload Sway to apply the new theme
-    swaymsg reload
-    # Regenerate per-app theme files
-    ~/.config/sway/scripts/theme-waybar.sh
-    ~/.config/sway/scripts/theme-rofi.sh
-    ~/.config/sway/scripts/theme-wofi.sh
-    ~/.config/sway/scripts/theme-eww.sh
-    pkill -SIGUSR2 waybar
+    # Sync Kvantum (QT_STYLE_OVERRIDE=kvantum on this system → Kvantum dictates
+    # widget palette, not qt6ct's color_scheme_path). Without this, Kvantum
+    # would stay on whatever theme was last set manually.
+    local kvantum_theme
+    kvantum_theme=$(grep '^set \$kvantum-theme' "$theme_file" | awk '{print $3}')
+    if [ -n "$kvantum_theme" ] && [ -f "$HOME/.config/Kvantum/kvantum.kvconfig" ]; then
+        sed -i "s|^theme=.*|theme=${kvantum_theme}|" "$HOME/.config/Kvantum/kvantum.kvconfig"
+    fi
 
-    # Signal Waybar to update the theme icon
-    pkill -RTMIN+17 waybar
+    # Sync gtk-application-prefer-dark-theme flag in gtk-3.0/gtk-4.0 settings.ini.
+    # Without this, the flag is hardcoded and overrides gsettings color-scheme,
+    # making every new GTK/Qt-portal window dark regardless of the active theme.
+    local prefer_dark
+    if is_light_theme "$theme"; then prefer_dark=0; else prefer_dark=1; fi
+    for f in "$HOME/.config/gtk-3.0/settings.ini" "$HOME/.config/gtk-4.0/settings.ini"; do
+        if [ -f "$f" ] && grep -q '^gtk-application-prefer-dark-theme=' "$f"; then
+            sed -i "s|^gtk-application-prefer-dark-theme=.*|gtk-application-prefer-dark-theme=${prefer_dark}|" "$f"
+        fi
+    done
+
+    # ═══ FASE 1 — fast paths in parallel (~50-100ms blocking) ════════════════
+    # foot OSC (recolor running terminals) + eww reload run in parallel; we
+    # wait on these because they are the visible "instant" updates.
+    # waybar/mako signals are sync (instant, no wait needed).
+    local pids=()
+    if [ -f "$foot_theme_file" ]; then
+        ~/.config/sway/scripts/theme-apply-foot.sh "$foot_theme_file" >/dev/null 2>&1 &
+        pids+=($!)
+    fi
+    "$HOME/.cargo/bin/eww" reload >/dev/null 2>&1 &
+    pids+=($!)
+    pkill -SIGUSR2 waybar  2>/dev/null || true   # waybar CSS reload (fallback bar)
+    pkill -RTMIN+17 waybar 2>/dev/null || true   # waybar theme-icon refresh
+    pkill -SIGHUP   mako   2>/dev/null || true   # mako notification daemon reload
+
+    # ═══ FASE 2 — heavy work in background (does NOT block return) ═══════════
+    # theme-apply-runtime.sh replicates what `swaymsg reload` used to do (it
+    # triggered 90-enable-theme.conf exec_always → gsettings, enable-gtk-theme,
+    # client.* borders) but invokes everything directly via IPC. Avoiding the
+    # full reload keeps the waybar layer-shell alive — `swaymsg reload`
+    # destroyed and recreated the layer, leaving the bar invisible for ~3s.
+    ~/.config/sway/scripts/theme-apply-runtime.sh "$theme_file" >/dev/null 2>&1 &
+    if [ -f "$foot_theme_file" ]; then
+        ~/.config/sway/scripts/apply-theme-terminals.sh "$foot_theme_file" >/dev/null 2>&1 &
+    fi
+
+    # Papirus folder colors — heaviest task (~800ms cache rebuild). Maps each
+    # theme to a Papirus color: catppuccin → `cat-<flavor>-<accent>`, others via
+    # case statement. Fully backgrounded; folders update silently after return.
+    {
+        local papirus_color=""
+        if [[ "$theme" =~ ^catppuccin-(latte|frappe|macchiato|mocha)(-(.+))?$ ]]; then
+            local flavor="${BASH_REMATCH[1]}"
+            local accent="${BASH_REMATCH[3]:-blue}"
+            papirus_color="cat-${flavor}-${accent}"
+        else
+            case "$theme" in
+                adwaita-light)                       papirus_color="adwaita" ;;
+                high-contrast-light)                 papirus_color="black"   ;;
+                tokyo-night|tokyo-night-light)       papirus_color="blue"    ;;
+                matcha-light-sea|matcha-green)       papirus_color="teal"    ;;
+                matcha-light-azul|matcha-blue)       papirus_color="blue"    ;;
+                matcha-light-aliz|matcha-red)        papirus_color="red"     ;;
+                matcha-light-pueril|matcha-leaf)     papirus_color="green"   ;;
+                dracula)                             papirus_color="violet"  ;;
+                gruvbox-dark)                        papirus_color="orange"  ;;
+                nordic-bluish-accent)                papirus_color="nordic"  ;;
+                *)                                   papirus_color=""        ;;
+            esac
+        fi
+        if [ -n "$papirus_color" ]; then
+            if is_light_theme "$theme"; then
+                papirus-folders --color "$papirus_color" --theme Papirus-Light 2>/dev/null || true
+            else
+                papirus-folders --color "$papirus_color" --theme Papirus-Dark 2>/dev/null || true
+            fi
+        fi
+    } &
+
+    # Wait only on FASE 1 critical paths so visible apps are settled before
+    # apply_theme returns. set -e is active globally; `|| true` keeps the
+    # script alive even if a backgrounded pid already exited (race-safe).
+    wait "${pids[@]}" 2>/dev/null || true
 }
 
 # Initialize theme if not exists, or if any of the runtime links are missing.
@@ -126,22 +214,41 @@ get_current_theme() {
     fi
 }
 
-# Determine if a theme is light or dark (based on common naming patterns)
+# Determine if a theme is light or dark by reading its canonical gtk-color-scheme
+# (more robust than guessing from the theme name).
 is_light_theme() {
-    local theme="$1"
-    if [[ "$theme" =~ (light|latte|bright|white) ]]; then
-        return 0  # true in bash
-    else
-        return 1  # false in bash
-    fi
+    grep -q 'gtk-color-scheme prefer-light' "$THEMES_DIR/$1/theme.conf"
 }
 
-# Display menu and handle selection
+# Display menu (rofi, 2 columns: light themes left, dark themes right) and handle selection
 display_menu() {
     initialize_theme
     current=$(get_current_theme)
-    selected=$(get_themes | wofi --dmenu --prompt "Select theme (current: $current)" --insensitive)
-    
+
+    # Classify themes by their canonical gtk-color-scheme.
+    local light=() dark=() theme
+    while IFS= read -r theme; do
+        if is_light_theme "$theme"; then
+            light+=("$theme")
+        else
+            dark+=("$theme")
+        fi
+    done < <(get_themes)
+
+    # Column-major fill (rofi flow:vertical): the first $max entries fill the left
+    # column (light), the next $max fill the right (dark). Pad the shorter list with
+    # blank lines so each side stays pure. Blank picks are ignored by the guard below.
+    local nlight=${#light[@]} ndark=${#dark[@]} i
+    local max=$(( nlight > ndark ? nlight : ndark ))
+    local entries=()
+    for ((i=0; i<max; i++)); do entries+=("${light[i]:-}"); done
+    for ((i=0; i<max; i++)); do entries+=("${dark[i]:-}"); done
+
+    selected=$(printf '%s\n' "${entries[@]}" | rofi -dmenu \
+        -p "tema (actual: $current)" \
+        -mesg '☀  claros                              🌙  oscuros' \
+        -theme-str "listview { columns: 2; flow: vertical; lines: $max; fixed-columns: true; } window { width: 60%; }")
+
     if [ -n "$selected" ]; then
         apply_theme "$selected"
     fi

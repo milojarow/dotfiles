@@ -54,13 +54,12 @@ generate_theme_scss() {
     color2="${color2:-#3B758C}"
     color11="${color11:-#98971a}"
 
-    # Stop eww daemon before writing theme.scss.
-    # The daemon watches config files via inotify; writing while it runs triggers a
-    # concurrent hot-reload from the daemon AND from each persistent window manager
-    # process (eww open keeps a manager alive per window), causing duplicate windows.
-    # Stopping first guarantees exactly one startup with the new theme.
-    /usr/bin/systemctl --user stop eww.service
-
+    # Write the theme SCSS, then reload eww in place with `eww reload` (below).
+    # `eww reload` re-reads the SCSS WITHOUT restarting the systemd unit, so it does
+    # not count against the unit's StartLimit (5/min) — rapid theme switches no longer
+    # get rate-limited — and there is no daemon teardown, so no orphaned daemons /
+    # duplicate bars. (This previously did systemctl stop+start, which on rapid theme
+    # switches hit the StartLimit and left the bar stuck on the old theme.)
     cat > "$EWW_THEME_SCSS" << EOF
 // Auto-generated — do not edit manually.
 // Source: ~/.config/sway/definitions.d/theme.conf
@@ -74,8 +73,10 @@ generate_theme_scss() {
 \$color11:         $color11;
 EOF
 
-    # Start eww daemon fresh — reads the new theme.scss, ExecStartPost opens all windows.
-    /usr/bin/systemctl --user start eww.service
+    # Reload eww in place — re-reads the new theme.scss, applies it to the running
+    # windows, and does NOT restart the systemd unit (no StartLimit, no orphans).
+    # Absolute path: scripts spawned from sway/`exec` do not inherit ~/.cargo/bin.
+    "$HOME/.cargo/bin/eww" reload
 
     echo "Generated eww theme SCSS for theme: $theme_name"
 }
