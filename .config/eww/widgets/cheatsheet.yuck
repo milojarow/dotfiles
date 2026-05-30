@@ -2,17 +2,21 @@
 ; role:    window
 (defpoll cs-left  :interval "999h" :initial "" "cat ~/.config/eww/cheatsheet/cheatsheet-left.pango")
 (defpoll cs-right :interval "999h" :initial "" "cat ~/.config/eww/cheatsheet/cheatsheet-right.pango")
+(defpoll cs-mid   :interval "999h" :initial "" "cat ~/.config/eww/cheatsheet/cheatsheet-skills.pango")
 
 (defwidget cheatsheet-widget []
   (box :class "cs-container" :orientation "v" :space-evenly false
     (box :class "cs-header" :orientation "h" :space-evenly false
       (label :class "cs-title" :text "󰖬  Sway Cheatsheet")
       (label :class "cs-hint"  :text "Super+/  ·  scroll con rueda del mouse"))
-    (box :orientation "h" :space-evenly true :vexpand true
-      (scroll :vscroll true :hscroll false :vexpand true
+    (box :orientation "h" :space-evenly false :vexpand true
+      (scroll :hexpand true :vscroll true :hscroll false :vexpand true
         (label :class "cs-col" :markup cs-left :xalign 0 :valign "start"))
       (box :class "cs-divider")
-      (scroll :vscroll true :hscroll false :vexpand true
+      (scroll :hexpand true :vscroll true :hscroll false :vexpand true
+        (label :class "cs-col" :markup cs-mid :xalign 0 :valign "start"))
+      (box :class "cs-divider")
+      (scroll :hexpand true :vscroll true :hscroll false :vexpand true
         (label :class "cs-col" :markup cs-right :xalign 0 :valign "start")))))
 
 (defwindow cheatsheet
