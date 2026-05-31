@@ -200,6 +200,10 @@ window#waybar {
 }
 
 #workspaces button {
+    /* Uniform floor so every button is the same width (grid look). 9×32=288px,
+     * well under the #workspaces 400px anchor. GTK CSS has no max-width, so a
+     * workspace with many app icons can still grow past this floor. */
+    min-width: 32px;
     border-top: 2px solid transparent;
     /* To compensate for the top border and still have vertical centering */
     padding-bottom: 2px;
@@ -229,8 +233,8 @@ window#waybar {
 }
 
 #workspaces button.empty {
-    /* No app icon — keep button visible with minimal footprint */
-    min-width: 18px;
+    /* Same width as active buttons — uniform grid look */
+    min-width: 32px;
     border-top-color: alpha(@theme_selected_bg_color, 0.25);
     padding-left: 4px;
     padding-right: 4px;
@@ -293,7 +297,7 @@ window#waybar {
 }
 
 #workspaces button#sway-workspace-10.focused {
-    min-width: 18px;
+    min-width: 32px;
     padding-bottom: 2px;
     padding-left: 10px;
     padding-right: 10px;
