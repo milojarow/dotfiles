@@ -276,7 +276,14 @@ class Picker(Gtk.Application):
         return cliphist_decode(row.payload)
 
     def _on_activate(self, _listbox, row):
-        subprocess.run(["wl-copy"], input=self._row_content(row))
+        # With several rows selected, copy them as one payload joined by
+        # newlines — a single Ctrl+V then pastes the whole batch in order.
+        rows = self.listbox.get_selected_rows() or [row]
+        if len(rows) == 1:
+            payload = self._row_content(rows[0])
+        else:
+            payload = b"\n".join(self._row_content(r) for r in rows)
+        subprocess.run(["wl-copy"], input=payload)
         self.win.destroy()
 
     def _on_pin(self, _btn, row):
