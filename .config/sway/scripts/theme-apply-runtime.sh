@@ -73,3 +73,20 @@ while IFS= read -r line; do
     done
     swaymsg "${resolved% }" >/dev/null 2>&1 || true
 done < <(grep '^client\.' "$theme_file")
+
+# ── wob (on-screen volume/brightness bar) refresh ────────────────────────────
+# wob.sh writes ~/.config/wob.ini from its args and respawns the daemon. It
+# used to be re-invoked by sway's `exec_always $onscreen_bar --refresh` when
+# `swaymsg reload` ran — removing the reload from the pipeline broke that.
+# Replicate it here: resolve $accent-color and $background-color (2-level
+# indirection: $accent-color → $color12 → #hex) and call wob.sh --refresh.
+resolve_color() {
+    local v="${VARS[$1]:-}"
+    [[ "$v" == \$* ]] && v="${VARS[${v:1}]:-}"
+    echo "$v"
+}
+accent_hex=$(resolve_color "accent-color")
+bg_hex=$(resolve_color "background-color")
+if [ -n "$accent_hex" ] && [ -n "$bg_hex" ] && [ -x "$HOME/.config/sway/scripts/wob.sh" ]; then
+    "$HOME/.config/sway/scripts/wob.sh" "$accent_hex" "$bg_hex" --refresh >/dev/null 2>&1 || true
+fi
