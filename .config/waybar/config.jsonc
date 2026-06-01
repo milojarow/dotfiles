@@ -170,7 +170,7 @@
             // File managers
             "class<nemo|nautilus|thunar|pcmanfm>":                 "\uf4d3",
             // Email
-            "class<betterbird|thunderbird>":                       "\uf370",
+            "class<(eu\\.betterbird\\.Betterbird|betterbird|thunderbird)>": "\uf0e0",
             // Editors / IDEs  (U+F1A7C — surrogate pair)
             "class<code|vscodium|vscodium-url-handler|gedit|kate>": "\uDB86\uDE7C",
             // PDF viewers  (U+F0226 — surrogate pair)
@@ -182,7 +182,7 @@
             // VLC  (U+F057C — surrogate pair)
             "class<vlc>":                                          "\uDB81\uDD7C",
             // pessoa  (U+F0B5F — surrogate pair)
-            "class<pessoa>":                                    "\uDB82\uDF5F"
+            "class<Pessoa-[^>]*>":                                    "\uDB80\uDC09"
         }
     },
     "sway/mode": {
