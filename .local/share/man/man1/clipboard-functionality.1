@@ -1,4 +1,4 @@
-.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-05\-24" "dotfiles" "Clipboard Functionality Manual"
+.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-06\-01" "dotfiles" "Clipboard Functionality Manual"
 .SH NAME
 clipboard\-functionality \- persistent clipboard history system for sway/waybar
 .SH DESCRIPTION
@@ -30,7 +30,10 @@ Filter the list live.
 Select one or several rows (multi\-select).
 .TP
 .B Enter / Double\-click
-Copy the activated row back to the clipboard and close.
+Copy the activated row back to the clipboard and close. With multiple rows
+selected, copy them all joined by newlines so a single
+.B Ctrl+V
+pastes the whole batch in order.
 .TP
 .B Delete
 Delete all selected rows (batch). With nothing selected, deletes nothing.
