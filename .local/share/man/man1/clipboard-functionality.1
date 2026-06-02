@@ -1,4 +1,4 @@
-.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-06\-01" "dotfiles" "Clipboard Functionality Manual"
+.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-06\-02" "dotfiles" "Clipboard Functionality Manual"
 .SH NAME
 clipboard\-functionality \- persistent clipboard history system for sway/waybar
 .SH DESCRIPTION
@@ -17,6 +17,15 @@ with native multi\-select (shift/ctrl click, shift+arrows) for batch deletion an
 a per\-row clickable pin. Pinned entries are stored outside the cliphist database,
 so they survive clearing or purging the history, and appear in a "Fijados" section
 at the top of the picker.
+.PP
+The picker uses
+.B gtk\-layer\-shell
+in
+.B EXCLUSIVE
+keyboard mode, so it grabs keyboard focus the instant it maps \(em no extra click
+is needed after opening from the bar or the keybind. Typing, arrow navigation,
+and the Del/Enter actions work immediately.
+Sway intercepts its own keybindings first, so global shortcuts are unaffected.
 .SH KEYBINDINGS
 .TP
 .B $mod+Shift+p

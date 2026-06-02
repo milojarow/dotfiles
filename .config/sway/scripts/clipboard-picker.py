@@ -177,7 +177,10 @@ class Picker(Gtk.Application):
 
         GtkLayerShell.init_for_window(win)
         GtkLayerShell.set_layer(win, GtkLayerShell.Layer.OVERLAY)
-        GtkLayerShell.set_keyboard_mode(win, GtkLayerShell.KeyboardMode.ON_DEMAND)
+        # EXCLUSIVE so the picker grabs keyboard focus the instant it maps —
+        # no extra click needed after opening from the bar. Sway still handles
+        # its own keybindings first, so global shortcuts keep working.
+        GtkLayerShell.set_keyboard_mode(win, GtkLayerShell.KeyboardMode.EXCLUSIVE)
         win.connect("key-press-event", self._on_key)
         win.connect("destroy", lambda *_: self._on_destroy())
 
