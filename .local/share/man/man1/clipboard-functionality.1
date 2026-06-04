@@ -1,4 +1,4 @@
-.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-06\-02" "dotfiles" "Clipboard Functionality Manual"
+.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-06\-03" "dotfiles" "Clipboard Functionality Manual"
 .SH NAME
 clipboard\-functionality \- persistent clipboard history system for sway/waybar
 .SH DESCRIPTION
@@ -26,6 +26,16 @@ keyboard mode, so it grabs keyboard focus the instant it maps \(em no extra clic
 is needed after opening from the bar or the keybind. Typing, arrow navigation,
 and the Del/Enter actions work immediately.
 Sway intercepts its own keybindings first, so global shortcuts are unaffected.
+.PP
+On open, the focus lands on the most recently copied row (the top of the
+"Historial" section), so arrow navigation is ready out of the gate. The search
+entry does
+.B not
+grab focus by default \(em type any printable key and focus is forwarded to it
+automatically (via
+.BR Gtk.SearchEntry.handle_event ),
+starting a live filter. Non\-printable keys (arrows, Enter, Delete) keep
+acting on the list as usual.
 .SH KEYBINDINGS
 .TP
 .B $mod+Shift+p

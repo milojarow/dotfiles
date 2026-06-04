@@ -207,12 +207,14 @@ class Picker(Gtk.Application):
         self.listbox.connect("row-activated", self._on_activate)
         scroll.add(self.listbox)
 
-        self._populate()
+        # Focus the latest non-pinned row by default so arrow-nav works
+        # immediately and pins don't grab attention. Printable keys forward to
+        # the search entry via _on_key (type-to-search).
+        self._populate(initial=True)
         win.show_all()
-        self.search.grab_focus()
 
     # ── data → rows ──────────────────────────────────────────────────────────
-    def _populate(self):
+    def _populate(self, initial=False):
         for child in self.listbox.get_children():
             self.listbox.remove(child)
 
@@ -229,7 +231,17 @@ class Picker(Gtk.Application):
 
         self.listbox.show_all()
         rows = self.listbox.get_children()
-        if rows:
+        if not rows:
+            return
+        # First open: land on the latest copied item (first row of "Historial",
+        # since cliphist lists newest-first). Falls back to the first row if
+        # there's no history (pins-only). Re-populates after pin/delete keep
+        # the simpler "first row" behavior.
+        if initial:
+            target = next((r for r in rows if r.section == "history"), rows[0])
+            self.listbox.select_row(target)
+            target.grab_focus()
+        else:
             self.listbox.select_row(rows[0])
 
     def _make_row(self, section, payload, preview, pinned):
@@ -314,6 +326,12 @@ class Picker(Gtk.Application):
             return True
         if event.keyval == Gdk.KEY_Delete:
             self._delete_selected()
+            return True
+        # Type-to-search: when the focus is not on the search entry, hand the
+        # event to SearchEntry.handle_event — it focuses itself and starts
+        # filtering on printable keys, and returns False on non-printable ones
+        # (arrows, Enter, …) so they fall through to the listbox.
+        if not self.search.has_focus() and self.search.handle_event(event):
             return True
         return False
 
