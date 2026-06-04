@@ -1,4 +1,4 @@
-.TH SCREENSHOTS 1 "2026-03-01" "sway dotfiles" "User Commands"
+.TH SCREENSHOTS 1 "2026-06-04" "sway dotfiles" "User Commands"
 .SH NAME
 screenshots \- screenshot capture, editing, and notification system for sway
 .SH DESCRIPTION
@@ -54,13 +54,13 @@ Enter screenshot mode by pressing
 Inside the mode:
 .TP
 .B p
-Pick region — launches
+Pick region \(em launches
 .I screenshot-frozen.sh
 (frozen screen + slurp selection), pipes result into
 .BR swappy (1).
 .TP
 .B o
-Output — captures the current monitor with
+Output \(em captures the current monitor with
 .BR grimshot (1),
 pipes into
 .BR swappy (1).
@@ -207,8 +207,9 @@ piped into
 .B swappy -f -
 .IP \n+[step].
 .I screenshot-frozen.sh
-captures full screen \[->] displays with
+captures full screen \[->] displays it with
 .BR swayimg (1)
+under a dedicated app_id, forced tiled so the fullscreen covers the whole output
 \[->] user draws selection with
 .BR slurp (1)
 .IP \n+[step].
@@ -262,6 +263,48 @@ The swappy filename format is configured in
 .I ~/.config/swappy/config
 as
 .BR save_filename_format=%Y-%m-%d-%H%M%S_swappy.png .
+.SH GOTCHAS
+.TP
+.B The freeze overlay must be tiled, not floating
+.I screenshot-frozen.sh
+launches the
+.BR swayimg (1)
+freeze under a dedicated app_id
+.RB ( screenshot-freeze )
+and forces it tiled
+.RB ( "floating disable" )
+before
+.BR slurp (1)
+runs. On SwayFX a floating window that requests fullscreen keeps the offset the
+.I floating-placer.py
+/
+.I floating-memory.py
+daemons assign it, so its rect lands at e.g.\& 952,43 instead of 0,0 and no
+longer covers the output \(em the live desktop bleeds through the uncovered area
+(the "glitch" symptom). A tiled fullscreen window always covers the output at
+0,0. Keep the freeze out of the generic
+.RB ' swayimg '
+floating rule in
+.IR 98-application-defaults.conf .
+.TP
+.B swayimg 5.x renders the frozen image scaled-down by default
+swayimg 5.0 and newer default to
+.B optimal
+scale (not 1:1, even when image and window dimensions match). The
+.B \-e
+flag is a Lua script as of 5.0 (formerly a plain command API); pass
+.B "swayimg.viewer.set_default_scale('real')"
+in it or the frozen capture is visibly scaled.
+.BR swayimg.text.hide ()
+and
+.B set_default_scale
+both still exist in the 5.2 Lua API \(em the breakage was never the API.
+.TP
+.B Wait for the overlay to map, not a blind sleep
+The script polls the sway tree until the freeze window appears before forcing it
+tiled; a fixed
+.B sleep
+races swayimg's map and paint on a busy system.
 .SH SEE ALSO
 .BR grim (1),
 .BR slurp (1),
