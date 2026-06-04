@@ -28,12 +28,24 @@ trap cleanup EXIT
 # 1. Capture full screen to freeze it
 grim "$TEMP_SCREENSHOT"
 
-# 2. Display frozen screenshot in fullscreen without info overlay
-swayimg -F -e "swayimg.text.hide(); swayimg.viewer.set_default_scale('real')" "$TEMP_SCREENSHOT" &
+# 2. Display frozen screenshot in fullscreen without info overlay.
+#    Dedicated app_id: keeps us from disturbing any other swayimg window and
+#    from polluting floating-memory's saved-position cache for real viewers.
+swayimg -F --class screenshot-freeze \
+    -e "swayimg.text.hide(); swayimg.viewer.set_default_scale('real')" \
+    "$TEMP_SCREENSHOT" &
 VIEWER_PID=$!
 
-# Give swayimg time to render
-sleep 0.2
+# Wait for the viewer to map, then force it TILED. A *floating* fullscreen
+# window inherits the offset the floating-placer/floating-memory daemons assign
+# (rect lands at e.g. 952,43 instead of 0,0), so it stops covering the output
+# and the live desktop shows through — that is the "glitch". A *tiled*
+# fullscreen window always covers the whole output at 0,0.
+for _ in $(seq 1 40); do
+    swaymsg -t get_tree | grep -q '"app_id": "screenshot-freeze"' && break
+    sleep 0.025
+done
+swaymsg '[app_id="screenshot-freeze"] floating disable' >/dev/null 2>&1
 
 # 3. Let user select area on the frozen image
 GEOMETRY=$(slurp)
