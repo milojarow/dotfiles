@@ -29,3 +29,10 @@ invisible=1
 [app-name="Altus"]
 on-button-left=exec /home/milo/.config/sway/scripts/altus-to-current-ws.sh "$id"
 on-touch=exec /home/milo/.config/sway/scripts/altus-to-current-ws.sh "$id"
+
+# Click/tap an nchat (WhatsApp) notification -> bring nchat to the current
+# workspace + jump to the unread chat. nchat tags its notifications app-name
+# "nchat" via desktop_notify_command in ~/.config/nchat/ui.conf.
+[app-name="nchat"]
+on-button-left=exec /home/milo/.config/sway/scripts/nchat-show.sh "$id"
+on-touch=exec /home/milo/.config/sway/scripts/nchat-show.sh "$id"

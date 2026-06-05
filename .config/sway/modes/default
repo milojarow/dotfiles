@@ -10,8 +10,11 @@ $bindsym $mod+Return exec $term_cwd
 $bindsym $mod+Shift+Return exec $term_float_persistent
 # $bindsym $mod+Shift+Return exec $term
 
-## Action // Kill focused window ##
-$bindsym $mod+Shift+q kill
+## Action // Kill focused window (nchat → minimiza a scratchpad) ##
+$bindsym $mod+Shift+q exec ~/.config/sway/scripts/close-or-scratchpad.sh
+
+## Action // Mostrar/ocultar nchat (WhatsApp) ##
+$bindsym $mod+m exec ~/.config/sway/scripts/nchat-toggle.sh
 
 ## Action // Kill focused app (all windows) ##
 $bindsym $mod+Ctrl+Shift+q exec kill $(swaymsg -t get_tree | jq -r '.. | select(.focused? == true) | .pid // empty' | head -1)
