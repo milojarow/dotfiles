@@ -1,338 +1,270 @@
-.TH PALETTE-THEMING 1 "2026-03-11" "sway dotfiles" "User Commands"
+.TH PALETTE-THEMING 1 "2026-06-01" "sway dotfiles" "User Commands"
 .SH NAME
 palette-theming \- live color palette theming system for sway
 .SH DESCRIPTION
-The Palette Theming system provides coordinated color palette switching
-across sway window borders, the foot terminal, waybar, rofi, wofi, and
-the eww widget toolkit. GTK, Qt/Kvantum, icon, and cursor themes are
-applied simultaneously via
-.IR 90-enable-theme.conf .
+The Palette Theming system provides coordinated color palette switching across
+sway window borders, the foot terminal, waybar, rofi, wofi, the eww widget
+toolkit, the wob on-screen volume/brightness bar, and the GTK / Qt / Kvantum /
+icon / cursor stacks. All apply in a single keystroke (\fB$mod+t\fR) with no
+sway reload and no waybar restart.
 .PP
-The system consists of seven scripts and twelve palette theme definitions
-under
-.IR ~/.config/sway/themes/ .
-Each theme carries two files: a sway
-.I theme.conf
-(color variables and
-.B client.*
-window decoration rules) and a
-.I foot-theme.ini
-(16-color terminal palette for the foot terminal emulator).
+The system consists of ten scripts and twenty-three palette theme definitions
+under \fI~/.config/sway/themes/\fR (twelve light + eleven dark). Each theme
+carries two files: a sway \fItheme.conf\fR (color variables and \fBclient.*\fR
+window decoration rules) and a \fIfoot-theme.ini\fR (16-color terminal palette).
 .PP
-On every theme switch, the orchestrator
-.B theme-selector.sh
-(1) symlinks the chosen
-.I theme.conf
-as the active sway theme, (2) copies the
-.I foot-theme.ini
-to the runtime location read by foot, (3) pushes the new palette to all
-running terminal instances via OSC escape sequences (no restart needed),
-(4) syncs the icon theme to
-.IR qt6ct.conf ,
-(5) updates Papirus folder colors for catppuccin themes,
-(6) reloads sway so window decorations and GTK/Qt/Kvantum themes update,
-and (7) regenerates the waybar CSS, rofi color variables, wofi stylesheet,
-and eww SCSS, then signals waybar.
+On every theme switch, the orchestrator \fBtheme-selector.sh\fR runs a 3-phase
+\fIapply_theme\fR:
+.IP \[bu] 2
+\fBFASE 0 (atomic, ~5 ms)\fR \(em swap symlinks for the pre-generated per-app
+outputs from \fI~/.cache/sway-theming/<theme>/\fR; sync \fIqt6ct.conf\fR
+(icon_theme + color_scheme_path), \fIKvantum/kvantum.kvconfig\fR (theme=), and
+the \fIgtk-{3,4}.0/settings.ini\fR \fBgtk-application-prefer-dark-theme\fR flag.
+.IP \[bu]
+\fBFASE 1 (parallel, ~50\[en]100 ms)\fR \(em foot OSC live recolor + \fBeww
+reload\fR + signals to waybar (SIGUSR2 + RTMIN+17) and mako (SIGHUP).
+.IP \[bu]
+\fBFASE 2 (background, non-blocking)\fR \(em \fBtheme-apply-runtime.sh\fR
+replicates what \fI90-enable-theme.conf\fR used to do under
+\fBswaymsg reload\fR: \fBgsettings\fR, \fBenable-gtk-theme.sh\fR, sway
+\fBclient.*\fR borders via IPC, \fBwob.sh --refresh\fR; plus
+\fBpapirus-folders\fR runs concurrently.
 .PP
-A secondary script
-.BR theme-toggle.sh
-provides automatic light/dark switching based on local sunrise and sunset
-times obtained from
-.BR geoip.sh .
+Total wall-clock for a theme switch: \fB~200\[en]300 ms\fR with zero waybar
+flicker. The pre-refactor pipeline took 950 ms\[en]2 s and dropped the waybar
+layer-shell for ~3 s on every switch (see \fBGOTCHAS\fR).
+.PP
+A secondary script \fBtheme-toggle.sh\fR provides automatic light/dark
+switching based on local sunrise and sunset times obtained from \fBgeoip.sh\fR.
 .SH KEYBINDINGS
 .TP
 .B $mod+t
-Open the theme picker (wofi dmenu). Calls
-.IR theme-selector.sh\ menu .
+Open the theme picker (wofi dmenu). Calls \fItheme-selector.sh\ menu\fR.
 .TP
 .B Waybar custom/theme (left-click)
-Manually toggle light \[<>] dark palette. Calls
-.IR theme-toggle.sh\ toggle .
+Manually toggle light \[<>] dark palette. Calls \fItheme-toggle.sh\ toggle\fR.
 .TP
 .B Waybar custom/theme (right-click)
 Enable or disable automatic solar-time switching. Calls
-.IR theme-toggle.sh\ auto-toggle .
+\fItheme-toggle.sh\ auto-toggle\fR.
 .SH FILES
 .SS Core scripts
 .TP
 .I ~/.config/sway/scripts/theme-selector.sh
-Main orchestrator. Implements
-.B menu
-(wofi picker + apply) and
-.B status
-(waybar JSON icon) modes.
+Main orchestrator. Implements \fBmenu\fR (wofi picker + apply) and \fBstatus\fR
+(waybar JSON icon) modes. The \fBapply_theme\fR function is the 3-phase
+pipeline summarized in \fBDESCRIPTION\fR.
+.TP
+.I ~/.config/sway/scripts/theme-cache-regen.sh
+Pre-generates the per-theme outputs in \fI~/.cache/sway-theming/<theme>/\fR so
+\fBapply_theme\fR FASE 0 only swaps symlinks (atomic, ~5 ms) instead of
+regenerating CSS/SCSS each switch (~150 ms). Run as \fItheme-cache-regen.sh
+<theme>\fR or \fItheme-cache-regen.sh all\fR (warms the whole cache, ~1 s for
+23 themes). Also emits the accent-derived colors documented in
+\fBACCENT-DERIVED COLORS\fR. Invoked lazily by \fBapply_theme\fR if the cache
+for the target theme is missing.
+.TP
+.I ~/.config/sway/scripts/theme-apply-runtime.sh
+Replicates what \fI90-enable-theme.conf\fR used to do via \fBexec_always\fR on
+\fBswaymsg reload\fR, but invokes everything directly via IPC and gsettings to
+avoid the reload (which destroys the waybar layer-shell \(em see
+\fBGOTCHAS\fR). Parses the theme.conf for the active theme, then calls
+\fBenable-gtk-theme.sh\fR, six \fBgsettings set\fR calls (gtk-theme,
+icon-theme, cursor-theme, font, color-scheme \[mu]2), \fBfontconfig.sh\fR,
+pushes resolved \fBclient.focused / .focused_inactive / .unfocused / .urgent /
+\&.placeholder / .background\fR colors via \fIswaymsg\fR, and finally invokes
+\fBwob.sh "$accent" "$bg" --refresh\fR so the on-screen bar respawns with the
+new palette.
 .TP
 .I ~/.config/sway/scripts/theme-apply-foot.sh
-Parses a foot-theme.ini and writes OSC 10/11/4;N escape sequences to
-all writable
-.I /dev/pts/*
-PTY slave devices, applying colors to running terminals in real time.
+Parses a foot-theme.ini and writes OSC 10/11/4;N escape sequences to all
+writable \fI/dev/pts/*\fR PTY slave devices, applying colors to running
+terminals in real time.
 .TP
 .I ~/.config/sway/scripts/theme-waybar.sh
-Reads the active
-.I theme.conf
-symlink, resolves
-.BR $background-color ,
-.BR $text-color ,
-and
-.B $accent-color
-(one level of variable indirection supported), and generates
-.IR ~/.config/waybar/theme.css .
+Reads the active \fItheme.conf\fR symlink, resolves \fB$background-color\fR,
+\fB$text-color\fR, and \fB$accent-color\fR (one level of indirection), and
+generates \fI~/.config/waybar/theme.css\fR. Kept for compatibility and ad-hoc
+regeneration; the live path now uses the symlink to
+\fI~/.cache/sway-theming/<theme>/waybar.theme.css\fR generated by
+\fBtheme-cache-regen.sh\fR.
 .TP
 .I ~/.config/sway/scripts/theme-rofi.sh
-Reads the active
-.I theme.conf
-symlink, resolves
-.BR $background-color ,
-.BR $text-color ,
-.BR $accent-color ,
-and
-.B $selection-color
-(one level of variable indirection supported), and generates
-.IR ~/.config/rofi/cachyos.rasi .
-Called by
-.I theme-selector.sh
-on every theme switch and by
-.I $update_rofi_theme
-on every sway reload.
+Reads the active \fItheme.conf\fR, resolves \fB$background-color\fR,
+\fB$text-color\fR, \fB$accent-color\fR, \fB$selection-color\fR, and generates
+\fI~/.config/rofi/cachyos.rasi\fR. Same compat note as \fItheme-waybar.sh\fR
+\(em the live file is now a symlink to the cache.
 .TP
 .I ~/.config/sway/scripts/theme-wofi.sh
-Reads the active
-.I theme.conf
-symlink, resolves
-.BR $background-color ,
-.BR $text-color ,
-.BR $accent-color ,
-and
-.B $selection-color
-(one level of variable indirection supported), and generates
-.IR ~/.config/wofi/style.css .
-Called by
-.I theme-selector.sh
-on every theme switch.
+Reads the active \fItheme.conf\fR, resolves \fB$background-color\fR,
+\fB$text-color\fR, \fB$accent-color\fR, \fB$selection-color\fR, and generates
+\fI~/.config/wofi/style.css\fR. Same compat note.
 .TP
 .I ~/.config/sway/scripts/theme-eww.sh
-Reads the active
-.I theme.conf
-symlink, resolves
-.BR $background-color ,
-.BR $text-color ,
-.BR $accent-color ,
-and
-.B $selection-color
-(one level of variable indirection supported), and generates
-.IR ~/.config/eww/styles/theme.scss .
-eww watches its SCSS files and reloads automatically \[em] no eww
-restart is needed. Called by
-.I theme-selector.sh
-on every theme switch.
+Reads the active \fItheme.conf\fR, generates \fI~/.config/eww/styles/theme.scss\fR
+defining \fB$theme-bg\fR, \fB$theme-fg\fR, \fB$theme-accent\fR,
+\fB$theme-selection\fR, \fB$color2\fR, \fB$color11\fR. Uses \fBeww reload\fR
+(not \fBsystemctl restart eww.service\fR) so it doesn't hit the unit's
+StartLimit (5/min) on rapid switches and never leaves orphan daemons.
 .TP
 .I ~/.config/sway/scripts/theme-toggle.sh
-Light/dark palette toggle based on solar time. Uses geoip.sh for
-sunrise/sunset. Stashes the inactive variant as
-.I theme.dark.conf_
-/
-.I theme.light.conf_
-and swaps on request or automatically.
+Light/dark palette toggle based on solar time. Uses \fBgeoip.sh\fR for
+sunrise/sunset. Stashes the inactive variant as \fItheme.dark.conf_\fR /
+\fItheme.light.conf_\fR and swaps on request or automatically.
 .TP
 .I ~/.config/sway/scripts/wob.sh
-Wrapper script for the
-.BR wob (1)
-on-screen bar (volume/brightness indicator). Receives the active
-.B $accent-color
-and
-.B $background-color
-as arguments (injected by sway via
-.IR $onscreen_bar )
-and writes
-.IR ~/.config/wob.ini ,
-then spawns or reuses a running wob instance. Colors are therefore
-always in sync with the active palette without an explicit theme-switch
-step.
-.SS Theme picker
-.TP
-.I ~/.config/wofi/config
-Configures the wofi dmenu instance that renders the theme selection list
-on
-.BR $mod+t .
-Sets geometry (35\[tmu]45%, centered), dmenu mode, case-insensitive
-filtering, and icon display.
-.TP
-.I ~/.config/wofi/style.css
-GTK CSS stylesheet for the theme picker window rendered by
-.BR wofi (1).
-.B Auto-generated
-by
-.I theme-wofi.sh
-on every theme switch. Styles the border, background, entry list, and
-selection highlight using the active palette colors.
-.SS Theme data (one pair per theme)
+Wrapper for \fBwob\fR(1) on-screen bar (volume/brightness). Receives
+\fB$accent-color\fR and \fB$background-color\fR as args. Two callers feed it:
+sway keybindings (via \fI$onscreen_bar\fR defined in \fI01-definitions.conf\fR)
+and \fBtheme-apply-runtime.sh\fR with the \fB--refresh\fR flag, which rewrites
+\fI~/.config/wob.ini\fR and respawns the wob daemon so the OSD picks up the
+new palette without waiting for the next volume key.
+.SS Theme data (one trio per theme)
 .TP
 .I ~/.config/sway/themes/<name>/theme.conf
-Color variable definitions (
-.B $color0
-\[en]
-.BR $color15 ,
-or Catppuccin-named variables),
-.BR $background-color ,
-.BR $text-color ,
-.BR $accent-color ,
-.BR $selection-color ,
-.BR $gtk-theme ,
-.BR $icon-theme ,
-.BR $cursor-theme ,
-.BR $kvantum-theme ,
-.BR $gui-font ,
-.BR $term-font ,
-and
-.B $gtk-color-scheme
-) and sway
-.B client.*
-window decoration rules.
+Color variable definitions (\fB$color0\fR\[en]\fB$color15\fR, or catppuccin
+named variables), \fB$background-color\fR, \fB$text-color\fR,
+\fB$accent-color\fR, \fB$selection-color\fR, \fB$gtk-theme\fR,
+\fB$icon-theme\fR, \fB$cursor-theme\fR, \fB$kvantum-theme\fR, \fB$gui-font\fR,
+\fB$term-font\fR, and \fB$gtk-color-scheme\fR (the \fBprefer-light\fR /
+\fBprefer-dark\fR discriminator) \(em plus sway \fBclient.*\fR window
+decoration rules.
 .TP
 .I ~/.config/sway/themes/<name>/foot-theme.ini
 Terminal palette in foot config format. Includes
-.I ~/.config/sway/templates/foot.ini
-for shared non-color settings.
+\fI~/.config/sway/templates/foot.ini\fR for shared non-color settings. Foot
+1.27+ requires \fBcursor=\fR inside \fB[colors-dark]\fR / \fB[colors-light]\fR
+\(em the legacy \fB[cursor] color=\fR syntax is rejected (see \fBGOTCHAS\fR).
 .TP
 .I ~/.config/sway/themes/<name>/packages
-Plain-text list of AUR/pacman packages required by this theme (GTK
-theme, icon theme, cursor theme, Kvantum theme, fonts). Used as
-documentation; not parsed by any script.
+Plain-text list of AUR/pacman packages required by this theme (GTK theme, icon
+theme, cursor theme, Kvantum theme, fonts). Used as documentation; not parsed
+by any script.
 .PP
-Available themes:
-catppuccin-frappe, catppuccin-latte, catppuccin-macchiato, catppuccin-mocha,
-dracula, gruvbox-dark, matcha-blue, matcha-green, matcha-leaf, matcha-red,
-nordic-bluish-accent, tokyo-night.
+.B Available themes (23 total \(em 12 light, 11 dark):
+adwaita-light, catppuccin-frappe, catppuccin-latte, catppuccin-latte-mauve,
+catppuccin-latte-peach, catppuccin-latte-rosewater, catppuccin-latte-teal,
+catppuccin-macchiato, catppuccin-mocha, dracula, gruvbox-dark,
+high-contrast-light, matcha-blue, matcha-green, matcha-leaf, matcha-light-aliz,
+matcha-light-azul, matcha-light-pueril, matcha-light-sea, matcha-red,
+nordic-bluish-accent, tokyo-night, tokyo-night-light.
+.SS Per-theme cache (pre-generated outputs)
+.TP
+.I ~/.cache/sway-theming/<theme>/
+Per-theme directory created by \fBtheme-cache-regen.sh\fR containing the four
+files swapped in via symlink by \fBapply_theme\fR FASE 0. Total: ~92 files for
+the 23-theme set.
+.RS
+.IP \[bu] 2
+\fIwaybar.theme.css\fR \(em \fB@define-color\fR rules consumed by
+\fI~/.config/waybar/style.css\fR.
+.IP \[bu]
+\fIrofi.cachyos.rasi\fR \(em rofi color variables consumed by
+\fI~/.config/rofi/config.rasi\fR via \fB@import\fR.
+.IP \[bu]
+\fIwofi.style.css\fR \(em GTK CSS for the theme picker.
+.IP \[bu]
+\fIeww.theme.scss\fR \(em SCSS variables consumed by eww styles via
+\fB@import "./theme"\fR.
+.RE
 .SS Active theme (runtime \(em do not edit or track in git)
 .TP
 .I ~/.config/sway/definitions.d/theme.conf
-Symlink pointing to the selected theme's
-.IR theme.conf .
-Recreated by
-.I theme-selector.sh
-on each switch.
+Symlink pointing to the selected theme's \fItheme.conf\fR. Recreated by
+\fBapply_theme\fR on each switch.
 .TP
 .I ~/.config/foot/foot-theme.ini
-File copy (not a symlink) of the selected theme's
-.IR foot-theme.ini .
-Must be a copy so that foot can
-.B include=
-it without runtime-vs-source ambiguity.
-Updated by
-.I theme-selector.sh
-on each switch.
+File copy (not a symlink) of the selected theme's \fIfoot-theme.ini\fR. Must
+be a copy so that foot can \fBinclude=\fR it without runtime-vs-source
+ambiguity. Updated by \fBapply_theme\fR on each switch.
 .TP
 .I ~/.config/waybar/theme.css
-Auto-generated CSS with
-.B @define-color
-rules. Overwritten by
-.I theme-waybar.sh
-on each switch.
+Symlink to \fI~/.cache/sway-theming/<theme>/waybar.theme.css\fR. Swapped by
+\fBapply_theme\fR FASE 0.
 .TP
 .I ~/.config/rofi/cachyos.rasi
-Auto-generated rofi color variables. Defines
-.BR background-color ,
-.BR text-color ,
-.BR accent-color ,
-and
-.B selected-bg
-for rofi. Imported by
-.I ~/.config/rofi/config.rasi
-via
-.BR "@import \(dqcachyos\(dq" .
-Overwritten by
-.I theme-rofi.sh
-on each switch.
+Symlink to the cache equivalent.
 .TP
 .I ~/.config/wofi/style.css
-Auto-generated GTK CSS for the wofi theme picker. Overwritten by
-.I theme-wofi.sh
-on each switch.
+Symlink to the cache equivalent.
 .TP
 .I ~/.config/eww/styles/theme.scss
-Auto-generated SCSS defining
-.BR $theme-bg ,
-.BR $theme-fg ,
-.BR $theme-accent ,
-and
-.B $theme-selection
-variables. Overwritten by
-.I theme-eww.sh
-on each switch. eww reloads it automatically via filesystem watch.
+Symlink to the cache equivalent. eww watches its SCSS via inotify and reloads
+automatically.
 .TP
 .I ~/.config/wob.ini
-Auto-generated wob configuration. Written by
-.I wob.sh
-each time wob is launched or refreshed, using colors passed via
-.IR $onscreen_bar .
+Written by \fBwob.sh\fR with the current palette colors. Updated by
+\fBtheme-apply-runtime.sh\fR via \fBwob.sh --refresh\fR on every theme switch.
+.SS Configs mutated by apply_theme (orphan-override syncs)
+These files used to live outside the pipeline. They are now part of
+\fBapply_theme\fR FASE 0 \(em without the sync, they silently override the
+active palette.
+.TP
+.I ~/.config/qt6ct/qt6ct.conf
+\fBicon_theme\fR is set from \fI$icon-theme\fR; \fBcolor_scheme_path\fR is
+set to \fI/usr/share/qt6ct/colors/airy.conf\fR (light) or
+\fI/usr/share/qt6ct/colors/darker.conf\fR (dark). Affects Qt apps without
+\fBQT_STYLE_OVERRIDE=kvantum\fR (see \fBGOTCHAS\fR).
+.TP
+.I ~/.config/Kvantum/kvantum.kvconfig
+\fBtheme=\fR is set to \fI$kvantum-theme\fR via \fBsed\fR (no
+\fBkvantummanager\fR call needed \(em the helper just edits this file).
+.TP
+.I ~/.config/gtk-3.0/settings.ini
+.TQ
+.I ~/.config/gtk-4.0/settings.ini
+\fBgtk-application-prefer-dark-theme\fR is set to \fB0\fR (light theme) or
+\fB1\fR (dark). Without this sync, every GTK / Qt-portal app renders dark on a
+light theme because this flag overrides \fBgsettings color-scheme\fR.
 .SS Templates
 .TP
 .I ~/.config/sway/templates/foot.ini
-Shared foot settings (font, scrollback, key bindings, cursor, bell).
-Included by every
-.I foot-theme.ini
-via
-.BR include= .
+Shared foot settings (font, scrollback, key bindings, cursor style, bell).
+Included by every \fIfoot-theme.ini\fR via \fBinclude=\fR.
 .SS Configuration references (files that use but do not belong to this system)
 .TP
 .I ~/.config/sway/config
-Includes
-.I ~/.config/sway/definitions.d/theme.conf
-to inject color variables into the sway config tree.
+Includes \fI~/.config/sway/definitions.d/theme.conf\fR to inject color
+variables into the sway config tree.
 .TP
 .I ~/.config/sway/modes/default
-Binds
-.B $mod+t
-to
-.IR theme-selector.sh\ menu .
-.TP
-.I ~/.config/sway/config.d/90-enable-theme.conf
-Applied on every sway reload. Calls
-.I enable-gtk-theme.sh
-to apply the GTK theme to GTK3/4 apps, sets
-.BR gsettings (1)
-for icon theme, cursor theme, fonts, and color scheme, and calls
-.B "kvantummanager --set"
-to activate the Kvantum theme for Qt apps.
+Binds \fB$mod+t\fR to \fItheme-selector.sh menu\fR.
 .TP
 .I ~/.config/sway/config.d/01-definitions.conf
-Defines the
-.B $onscreen_bar
-sway variable as
-.IR "wob.sh \(dq$accent-color\(dq \(dq$background-color\(dq" ,
-so every keybinding that pipes a value to wob automatically uses
-the active palette.
+Defines the \fB$onscreen_bar\fR sway variable as
+\fIwob.sh "$accent-color" "$background-color"\fR, so every keybinding that
+pipes a value to wob uses the active palette.
 .TP
-.I ~/.config/qt6ct/qt6ct.conf
-Qt6 platform theme configuration. The
-.B icon_theme
-key is updated on every theme switch by
-.I theme-selector.sh
-to match
-.B $icon-theme
-from the active theme, so Qt6 apps use the correct icon set.
-.TP
-.I ~/.config/foot/foot.ini
-Includes
-.I foot-theme.ini
-and sets
-.B initial-color-theme=dark
-so new windows open with
-.BR [colors-dark] .
+.I ~/.config/sway/config.d/90-enable-theme.conf
+The original \fBexec_always\fR block that ran on every \fBswaymsg reload\fR to
+apply GTK / icon / cursor / font / color-scheme / Kvantum themes. Still
+present and functional, but no longer the live path \(em
+\fBtheme-apply-runtime.sh\fR replicates it without requiring a reload.
 .TP
 .I ~/.config/waybar/style.css
-Imports
-.I theme.css
-via
-.BR "@import \(dqtheme.css\(dq;" .
+Imports \fItheme.css\fR via \fB@import "theme.css";\fR. Uses
+\fB@theme_text_color\fR, \fB@theme_selected_bg_color\fR, and the
+accent-derived \fB@theme_accent_complement\fR for empty workspace styling.
 .TP
 .I ~/.config/waybar/config.jsonc
-Defines the
-.B custom/theme
-module which calls
-.I theme-toggle.sh
-for status, click, and right-click actions.
+Defines the \fBcustom/theme\fR module which calls \fBtheme-toggle.sh\fR for
+status, click, and right-click actions.
+.SH "ACCENT-DERIVED COLORS"
+\fBtheme-cache-regen.sh\fR emits three colors per theme, computed by rotating
+the accent hue in HSL space (saturation and lightness preserved). GTK CSS has
+no \fBhsl(from var() h s l)\fR or \fBcolor-mix\fR with hue rotation, so the
+math runs at cache-gen time and the results are emitted as static
+\fB@define-color\fR values in each \fIwaybar.theme.css\fR cache file.
+.TP
+.B @theme_accent_complement
+Accent rotated 180\[de] \(em maximum contrast. Used by \fIstyle.css\fR for the
+empty-workspace number color so it stands out against any waybar background.
+.TP
+.B @theme_accent_triad_a
+Accent rotated 120\[de] \(em harmonic triad leg A. Available for future use.
+.TP
+.B @theme_accent_triad_b
+Accent rotated 240\[de] \(em harmonic triad leg B. Available for future use.
 .SH PROGRAMS
 .BR wofi (1),
 .BR swaymsg (1),
@@ -340,189 +272,196 @@ for status, click, and right-click actions.
 .BR awk (1),
 .BR grep (1),
 .BR sed (1),
+.BR python3 (1),
 .BR foot (1),
 .BR jq (1),
-.BR mv (1),
 .BR gsettings (1),
-.BR kvantummanager (1),
 .BR papirus-folders (1),
-.BR wob (1)
+.BR wob (1),
+.BR eww (1)
 .SH FLOW
-.SS Theme switch (super+t)
+.SS Theme switch ($mod+t)
 .nr step 1 1
 .IP \n[step]. 3
-User presses
-.B $mod+t
-\[->]
-.I theme-selector.sh menu
-launches a wofi dmenu listing all directories under
-.I ~/.config/sway/themes/
+User presses \fB$mod+t\fR \[->] \fItheme-selector.sh menu\fR launches wofi
+listing all directories under \fI~/.config/sway/themes/\fR.
 .IP \n+[step].
-User selects a theme \[->]
-.I apply_theme()
-is called
+User selects a theme \[->] \fBapply_theme\fR is called with the theme name.
 .IP \n+[step].
-.I theme.conf
-for the chosen theme is symlinked to
-.I ~/.config/sway/definitions.d/theme.conf
+\fBLazy cache check\fR: if \fI~/.cache/sway-theming/<theme>/\fR does not
+exist, run \fItheme-cache-regen.sh <theme>\fR (first-use cost is one-shot,
+~50 ms).
 .IP \n+[step].
-.I foot-theme.ini
-is copied (not symlinked) to
-.I ~/.config/foot/foot-theme.ini
+\fBFASE 0 \(em atomic (~5 ms):\fR symlink \fItheme.conf\fR, copy
+\fIfoot-theme.ini\fR, swap symlinks for the four cached outputs
+(waybar/rofi/wofi/eww). Then sync \fIqt6ct.conf\fR (icon + color_scheme_path),
+\fIkvantum.kvconfig\fR (theme=), and \fIgtk-{3,4}.0/settings.ini\fR
+(\fBgtk-application-prefer-dark-theme\fR).
 .IP \n+[step].
-.I theme-apply-foot.sh
-writes OSC payloads to all
-.I /dev/pts/*
-\[->] running foot instances change colors instantly
+\fBFASE 1 \(em parallel (~50\[en]100 ms):\fR \fItheme-apply-foot.sh\fR writes
+OSC payloads to \fI/dev/pts/*\fR (running terminals recolor instantly) AND
+\fBeww reload\fR re-reads the new SCSS symlink, run in parallel. Synchronous
+signals fire: \fBpkill -SIGUSR2 waybar\fR (CSS reload),
+\fBpkill -RTMIN+17 waybar\fR (theme icon), \fBpkill -SIGHUP mako\fR.
 .IP \n+[step].
-.B $icon-theme
-is read from
-.I theme.conf
-and written to
-.B icon_theme
-in
-.I ~/.config/qt6ct/qt6ct.conf
-\[->] Qt6 apps use the correct icon set on next launch
+\fBFASE 2 \(em background (non-blocking):\fR \fItheme-apply-runtime.sh\fR
+runs in the background; it calls \fBenable-gtk-theme.sh\fR, six
+\fBgsettings\fR calls, \fBfontconfig.sh\fR, pushes \fBclient.*\fR borders via
+\fIswaymsg\fR (no reload \(em see \fBGOTCHAS\fR), and invokes
+\fBwob.sh ... --refresh\fR to respawn wob with the new palette. Concurrently,
+\fBpapirus-folders\fR runs with a per-theme color mapping (catppuccin themes
+get \fIcat-<flavor>-<accent>\fR; others use a case-statement fallback).
 .IP \n+[step].
-For catppuccin themes:
-.B papirus-folders
-is called with the matching
-.I cat-<flavor>-blue
-color and Papirus-Dark or Papirus-Light \[->] Papirus folder icons
-update immediately
-.IP \n+[step].
-.BR "swaymsg reload"
-\[->] sway re-reads theme.conf \[->] window borders update and
-.I 90-enable-theme.conf
-applies GTK theme, icon theme, cursor theme, fonts, color scheme,
-and Kvantum theme
-.IP \n+[step].
-.IR theme-waybar.sh ,
-.IR theme-rofi.sh ,
-.IR theme-wofi.sh ,
-and
-.I theme-eww.sh
-regenerate their respective output files
-.IP \n+[step].
-.B "pkill -SIGUSR2 waybar"
-reloads waybar CSS \[->]
-.B "pkill -RTMIN+17 waybar"
-refreshes the theme icon
+\fBapply_theme\fR returns. Total wall-clock: \fB~200\[en]300 ms\fR; background
+tasks finish within ~1 s without blocking the user.
 .SS New terminal window (any time)
-Foot reads
-.I ~/.config/foot/foot.ini
-\[->] includes
-.I foot-theme.ini
-\[->] loads
-.B [colors-dark]
-\[->] opens with the palette that was active when the last theme switch happened.
+Foot reads \fI~/.config/foot/foot.ini\fR \[->] includes \fIfoot-theme.ini\fR
+\[->] loads \fB[colors-dark]\fR \[->] opens with the palette active at the
+last theme switch.
 .SS Wob on-screen bar (volume/brightness)
-Any keybinding that triggers wob calls
-.I $onscreen_bar
-(defined in
-.IR 01-definitions.conf )
-which expands to
-.IR "wob.sh \(dq$accent-color\(dq \(dq$background-color\(dq <value>" .
-.I wob.sh
-generates
-.I ~/.config/wob.ini
-with the current accent/background colors, then pipes the value to the
-running wob instance (or spawns a new one). No explicit theme-switch
-step is needed \[em] wob always inherits the live sway variables.
+Two paths feed wob colors:
+.IP \[bu] 2
+\fBLive (volume/brightness key)\fR: sway keybinding invokes
+\fI$onscreen_bar <value>\fR \(em expands to
+\fIwob.sh "$accent-color" "$background-color" <value>\fR. \fBwob.sh\fR
+writes \fI~/.config/wob.ini\fR if missing, pipes the value to the wob daemon.
+.IP \[bu]
+\fBTheme switch refresh\fR: \fBtheme-apply-runtime.sh\fR (FASE 2) resolves
+\fB$accent-color\fR and \fB$background-color\fR directly from the active
+\fItheme.conf\fR (two-level variable indirection) and invokes
+\fIwob.sh "$accent" "$bg" --refresh\fR. \fBwob.sh\fR rewrites the ini and
+respawns the daemon \(em without this, wob keeps the colors from boot until
+the next volume key (which would still use stale sway variables anyway).
 .SH SIGNALS
 .TP
 .B SIGUSR2
-Sent to
-.BR waybar (1)
-to trigger a CSS stylesheet reload.
+Sent to \fBwaybar\fR(1) to trigger a CSS stylesheet reload.
 .TP
 .B SIGRTMIN+17
-Sent to
-.BR waybar (1)
-to refresh the
-.B custom/theme
-module output (icon and tooltip).
-.SH WAYBAR INTEGRATION
-The
-.B custom/theme
-module in
-.I ~/.config/waybar/config.jsonc
-shows a moon/sun icon and the active theme name. It calls
-.IR theme-toggle.sh\ status
-periodically, and on left/right click calls
-.I toggle
-and
-.I auto-toggle
-respectively.
+Sent to \fBwaybar\fR(1) to refresh the \fBcustom/theme\fR module output (icon
+and tooltip).
+.TP
+.B SIGHUP
+Sent to \fBmako\fR(1) to reload its configuration (picks up the new accent
+via the GTK theme integration).
+.SH "WAYBAR INTEGRATION"
+The \fBcustom/theme\fR module in \fI~/.config/waybar/config.jsonc\fR shows a
+moon/sun icon and the active theme name. It calls \fItheme-toggle.sh status\fR
+periodically; on left-click it calls \fBtoggle\fR; on right-click,
+\fBauto-toggle\fR.
 .PP
-All waybar module colors derive from the CSS variables defined in
-.I ~/.config/waybar/theme.css
-(imported by
-.IR style.css ).
-The three primary variables are:
-.BR @theme_base_color ,
-.BR @theme_text_color ,
-and
-.BR @theme_selected_bg_color .
+All waybar module colors derive from the CSS variables in
+\fI~/.config/waybar/theme.css\fR (imported by \fIstyle.css\fR). Variables in
+use:
+.IP \[bu] 2
+\fB@theme_base_color\fR, \fB@theme_text_color\fR,
+\fB@theme_selected_bg_color\fR \(em base palette.
+.IP \[bu]
+\fB@theme_accent_complement\fR \(em the empty-workspace number color (see
+\fBACCENT-DERIVED COLORS\fR).
+.IP \[bu]
+\fB@theme_accent_triad_a\fR, \fB@theme_accent_triad_b\fR \(em reserved.
+.IP \[bu]
+\fB@warning_color\fR, \fB@error_color\fR, \fB@success_color\fR \(em semantic.
+.SH GOTCHAS
+.IP \[bu] 2
+\fBDo NOT call \fIswaymsg reload\fB from the theme pipeline.\fR It re-emits
+outputs; waybar tries to recreate its layer-shell surface and times out with
+\fITimed out waiting for initial .configure\fR. The waybar process stays alive
+but the bar is invisible for ~3 s on every switch. The pipeline now uses
+\fBtheme-apply-runtime.sh\fR (IPC + scripts) to avoid this entirely. If you
+ever do need to recover from a stuck reload-loss, run
+\fBsystemctl --user restart waybar.service\fR \(em \fBRestart=on-failure\fR
+does NOT help (the process didn't die, only its surface).
+.IP \[bu]
+\fBeww must be reloaded with \fIeww reload\fB, not \fIsystemctl restart
+eww.service\fB.\fR The unit has \fIStartLimitBurst=5\fR /
+\fIStartLimitIntervalUSec=1min\fR; rapid theme switches hit the limit and
+leave the bar stuck on the old SCSS. \fIeww reload\fR is in-place, no
+StartLimit, no orphan daemons.
+.IP \[bu]
+\fB"hardcoded" gtk-application-prefer-dark-theme was an orphan override.\fR
+For months \fIgtk-3.0/4.0/settings.ini\fR carried \fB=1\fR with no script
+touching it, overriding \fBgsettings color-scheme=prefer-light\fR. Every
+GTK / Qt-portal app rendered dark on a light theme. FASE 0 now syncs both
+files. Audit pipelines by what the consumer \fIreads\fR, not just what the
+pipeline \fIwrites\fR.
+.IP \[bu]
+\fBQT_STYLE_OVERRIDE=kvantum makes qt6ct\[aq]s color_scheme_path irrelevant
+for Kvantum-themed apps.\fR On this machine the env is set, so Kvantum
+dictates the palette and the sync to \fIqt6ct.conf\fR only matters for Qt
+apps that don\[aq]t use Kvantum. Kvantum sync (\fIkvantum.kvconfig\fR) is the
+load-bearing one for Qt apps.
+.IP \[bu]
+\fBQt apps do NOT hot-reload theme.\fR The instance of pcmanfm-qt already open
+keeps its palette until restart. \fIapply_theme\fR ensures new instances open
+in the right palette; live ones need relaunch. This is a Qt limitation, not
+the pipeline\[aq]s.
+.IP \[bu]
+\fBwob.ini needs an explicit --refresh on theme switch.\fR Before the
+refactor, \fBexec_always $onscreen_bar --refresh\fR fired on every
+\fBswaymsg reload\fR. With reload removed, wob would keep its boot-time
+colors forever \(em \fBtheme-apply-runtime.sh\fR now resolves
+\fB$accent-color\fR / \fB$background-color\fR from the active theme.conf
+(two-level indirection) and invokes \fBwob.sh ... --refresh\fR.
+.IP \[bu]
+\fBfoot 1.27+ rejects the legacy \fI[cursor] color=\fB syntax.\fR Catppuccin
+themes imported from upstream use it; they were patched to put
+\fBcursor=\fR inside \fB[colors-dark]\fR (or \fB[colors-light]\fR). Validate
+new theme additions with \fBfoot --check-config\fR.
+.IP \[bu]
+\fBwaybar \fI#workspaces button.empty\fB needs \fItransition: none\fB on the
+base rule.\fR Upstream Alexays/Waybar#3865: when another centerbox module
+changes width continuously (Claude Code spinner in \fBcustom/window-title\fR),
+GTK fires every named transition on every empty button each tick \(em they
+pulse. Named transitions for hover MUST live on \fB:hover\fR, not on the base
+selector.
+.IP \[bu]
+\fBGTK CSS supports only \fImin-width\fB; there is no \fImax-width\fR.\fR The
+workspaces module width is anchored with \fImin-width: 400px\fR \(em large
+enough that the hover pop (font-size + padding) fits without growing the
+container.
+.IP \[bu]
+\fBLazy cache regeneration must wait one round-trip.\fR \fBapply_theme\fR
+detects a missing cache dir and runs \fBtheme-cache-regen.sh\fR synchronously
+before swapping symlinks. After a fresh theme is added under
+\fI~/.config/sway/themes/\fR, the first switch to it includes the ~50 ms cache
+build; subsequent switches are instant.
 .SH NOTES
 .IP \[bu] 2
-Live terminal recoloring works because writing to a
-.I /dev/pts/N
-slave device sends data to the terminal master's read buffer.
-Foot (the master) processes OSC sequences as program output and updates
-its palette without a restart.
+\fBLight vs dark count.\fR The current set is 12 light + 11 dark, classified
+by the \fB$gtk-color-scheme\fR value in each theme.conf. Light themes set
+\fBprefer-light\fR; \fIapply_theme\fR uses the same value to derive Qt scheme
++ GTK dark flag.
 .IP \[bu]
-Foot does not support a
-.B SIGHUP
-config reload (the developer explicitly rejected it), so the OSC
-mechanism is the only way to recolor running instances.
+\fBLive terminal recoloring\fR works because writing to \fI/dev/pts/N\fR
+sends data to the terminal master\[aq]s read buffer. Foot processes OSC
+sequences as program output and updates its palette without a restart.
 .IP \[bu]
-GTK apps pick up theme changes instantly via the
-.BR gsettings (1)
-bus (GSettings notification). GTK4/libadwaita apps may require a
-restart in some cases.
+\fBFoot does not support \fBSIGHUP\fR config reload\fR (the developer
+explicitly rejected it), so the OSC mechanism is the only way to recolor
+running instances.
 .IP \[bu]
-Qt/Kvantum apps require a restart to pick up Kvantum theme changes.
-.B kvantummanager --set
-updates the active theme on disk; running Qt processes do not reload it.
-Qt6 icon theme changes (via
-.IR qt6ct.conf )
-also require a restart.
+\fBGTK apps\fR pick up theme changes instantly via \fBgsettings\fR
+notifications. GTK4/libadwaita apps may require a restart in some cases.
 .IP \[bu]
-Cursor theme changes apply to newly launched apps immediately.
-Existing windows may not update until restarted.
+\fBCursor theme\fR changes apply to newly launched apps. Existing windows may
+not update until restarted.
 .IP \[bu]
-GTK, Qt, and Kvantum theme application is performed by
-.I 90-enable-theme.conf
-(via
-.IR enable-gtk-theme.sh )
-on every sway reload. That system reads
-.BR $gtk-theme ,
-.BR $icon-theme ,
-.BR $cursor-theme ,
-and
-.B $kvantum-theme
-variables from
-.I theme.conf
-but its operation is independent of the palette scripts documented here.
+\fBMatcha-* and dracula themes\fR share the same Base16 Seti UI base palette.
+Their distinction comes from the accent and, for dracula, the Dracula purple
+(#bd93f9) in the ANSI blue slot (regular4/bright4).
 .IP \[bu]
-The matcha-* themes and dracula share the same Base16 Seti UI base
-palette. Their distinction comes from the accent color and, for dracula,
-the Dracula purple (#bd93f9) in the ANSI blue slot (regular4/bright4).
-.IP \[bu]
-Catppuccin themes use named palette variables (rosewater, flamingo,
-base, surface1, etc.) instead of $color0\[en]$color15. The four
-catppuccin flavors (frappe, latte, macchiato, mocha) share the same
-GTK, cursor, and Kvantum package families, differing only in palette
-values. Latte is the only light theme; it uses
-.B prefer-light
-and
-.IR Papirus-Light .
-.SH SEE ALSO
+\fBCatppuccin themes\fR use named palette variables (rosewater, flamingo,
+base, surface1, etc.) instead of \fB$color0\fR\[en]\fB$color15\fR. The four
+catppuccin flavors share GTK / cursor / Kvantum families and differ only in
+palette values. The catppuccin-latte-* variants share the latte palette but
+swap the accent color.
+.SH "SEE ALSO"
 .BR foot (1),
 .BR sway (5),
 .BR wofi (1),
 .BR wob (1),
-.BR kvantummanager (1),
+.BR eww (1),
 .BR papirus-folders (1),
 .BR gsettings (1)
