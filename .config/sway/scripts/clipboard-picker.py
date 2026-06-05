@@ -214,7 +214,7 @@ class Picker(Gtk.Application):
         win.show_all()
 
     # ── data → rows ──────────────────────────────────────────────────────────
-    def _populate(self, initial=False):
+    def _populate(self, initial=False, focus_index=None):
         for child in self.listbox.get_children():
             self.listbox.remove(child)
 
@@ -237,9 +237,20 @@ class Picker(Gtk.Application):
         # since cliphist lists newest-first). Falls back to the first row if
         # there's no history (pins-only). Re-populates after pin/delete keep
         # the simpler "first row" behavior.
-        if initial:
+        if focus_index is not None:
+            # After a delete: land on whatever row now occupies the slot the
+            # user was working on (or the new last row if we cut the tail),
+            # so the cursor never jumps back to the top. grab_focus only —
+            # a leftover selection would silently join the next Enter.
+            rows[min(focus_index, len(rows) - 1)].grab_focus()
+        elif initial:
+            # Land the cursor on the latest non-pinned row but do NOT add it to
+            # the selection set. Gtk.ListBox in MULTIPLE mode accumulates
+            # selections, so a row left "selected" here leaks into the batch
+            # whenever the user filters, hits Down, and Enters a different
+            # row — Enter then concatenates the latest copy onto whatever they
+            # actually wanted. grab_focus is enough to show the cursor.
             target = next((r for r in rows if r.section == "history"), rows[0])
-            self.listbox.select_row(target)
             target.grab_focus()
         else:
             self.listbox.select_row(rows[0])
@@ -312,13 +323,17 @@ class Picker(Gtk.Application):
         rows = self.listbox.get_selected_rows()
         if not rows:
             return
+        # Snapshot the topmost deleted row's index so the cursor can land on
+        # the row that takes its slot after the rebuild.
+        children = self.listbox.get_children()
+        target_index = min(children.index(r) for r in rows)
         for row in rows:
             if row.section == "pinned":
                 remove_pin(Path(row.payload))
             else:
                 cliphist_delete(row.payload)
         waybar_refresh()
-        self._populate()
+        self._populate(focus_index=target_index)
 
     def _on_key(self, _win, event):
         if event.keyval == Gdk.KEY_Escape:
@@ -340,6 +355,10 @@ class Picker(Gtk.Application):
         if event.keyval == Gdk.KEY_Down:
             rows = [r for r in self.listbox.get_children() if r.get_mapped()]
             if rows:
+                # Drop any prior selection so jumping from the search box into
+                # a filtered list always lands on a clean single row, never
+                # bundled with whatever was previously highlighted.
+                self.listbox.unselect_all()
                 self.listbox.select_row(rows[0])
                 rows[0].grab_focus()
             return True
