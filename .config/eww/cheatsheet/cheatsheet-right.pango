@@ -1,6 +1,6 @@
 <span font_family="monospace">
 <span foreground="#bd93f9" weight="bold">  TOOLS &amp; SCRIPTS</span>
-Location: <span foreground="#50fa7b">~/.scripts/</span>
+<span foreground="#6272a4">escríbelos en la terminal</span>
 <span foreground="#50fa7b">clipardo</span>              Copy files to clipboard (markdown fmt)
 <span foreground="#50fa7b">hyprpicker</span>            Pick colors from screen
 <span foreground="#50fa7b">ssht &lt;host&gt; [session]</span>  SSH with persistent tmux sessions
@@ -10,7 +10,7 @@ Location: <span foreground="#50fa7b">~/.scripts/</span>
 <span foreground="#50fa7b" weight="bold">  TMUX  (prefix = Ctrl+B)</span>
 New Window               <span foreground="#8be9fd">Prefix  c</span>
 Next / Prev Window       <span foreground="#8be9fd">Prefix  n / p</span>
-Go to Window N           <span foreground="#8be9fd">Prefix  0–9</span>
+Go to Window N           <span foreground="#8be9fd">Prefix  1–9</span>
 Split Vertical           <span foreground="#8be9fd">Prefix  %</span>
 Split Horizontal         <span foreground="#8be9fd">Prefix  "</span>
 Move Between Panes       <span foreground="#8be9fd">Prefix  ←↓↑→</span>
@@ -23,6 +23,7 @@ List Sessions            <span foreground="#8be9fd">tmux ls</span>
 
 <span foreground="#ffb86c" weight="bold">󰛓  CLIPBOARD</span>
 Open Clipboard           <span foreground="#8be9fd">Mod+Shift+P</span>
+Upload Image to selene   <span foreground="#8be9fd">Mod+Shift+V</span>
 
 <span foreground="#f1fa8c" weight="bold">  AUDIO &amp; BRIGHTNESS</span>
 Volume Up / Down         <span foreground="#8be9fd">XF86AudioRaiseVolume / LowerVolume</span>
