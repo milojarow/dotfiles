@@ -44,6 +44,27 @@ alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
 # source on line 1, so this always wins; cachyos-fish-config package updates can't undo it.
 function update --wraps topgrade --description 'Update everything via topgrade'
     topgrade $argv
+    set -l rc $status
+    # Post-update: surface local/AUR packages left stale by a dependency's soname bump
+    # (e.g. protobuf 34→35 breaking mosh-osc52). checkrebuild's pacman hook fires per
+    # transaction but drowns in topgrade's output; this makes it the last thing on screen.
+    # See memory reference_mosh_osc52_local_rebuild. No sudo, ~seconds for the foreign set.
+    if type -q checkrebuild
+        set -l stale (checkrebuild 2>/dev/null | awk '{print $2}')
+        if test -n "$stale"
+            echo ''
+            set_color yellow
+            echo '⚠  Locales/AUR que piden rebuild (una lib cambió de soname bajo ellos):'
+            set_color normal
+            for pkg in $stale
+                echo "     • $pkg"
+            end
+            set_color brblack
+            echo '   Rebuild manual. Ej. mosh-osc52 → makepkg -fC en ~/.local/src/mosh-osc52/ + sudo pacman -U'
+            set_color normal
+        end
+    end
+    return $rc
 end
 # Wrapper: clear residual TUI lines Claude Code leaves after exiting
 function claude
