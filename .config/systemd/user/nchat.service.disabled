@@ -1,0 +1,18 @@
+[Unit]
+Description=nchat WhatsApp TUI (foot)
+PartOf=graphical-session.target
+After=graphical-session.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+Environment="PATH=/usr/bin:/bin"
+# foot hosts the nchat TUI under a dedicated app_id so sway rules/keybinds can target it.
+ExecStart=/usr/bin/foot --app-id=nchat -e /usr/bin/nchat
+# on-failure: revive on crash/OOM (the Altus failure mode), but NOT on a clean Ctrl-q exit.
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target
