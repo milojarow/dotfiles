@@ -10,6 +10,7 @@
 (defvar wifi-pw-bssid "")     ; Password prompt target BSSID
 (defvar wifi-pw-security "")  ; Password prompt target security
 (defvar wifi-pw-mode "connect") ; Password prompt mode: "connect" (new net) | "edit" (change saved PSK)
+(defvar wifi-qr-ssid "")        ; SSID for the QR share window label (PSK never stored here)
 
 ; ── Wifi state (moved here from bar.yuck during the waybar migration) ──────────
 ; The popup needs `wifi` to survive after the eww bar is deprecated. waybar shows
@@ -90,6 +91,10 @@
                 :tooltip {wifi-password != "" ? "Hide password" : "Show password"}
                 :onclick "~/.config/eww/scripts/wifi-password-toggle.sh"
           (label :text {wifi-password != "" ? "󰈉" : "󰈈"}))
+        (button :class "wifi-copy-btn"
+                :tooltip "Mostrar QR"
+                :onclick "~/.config/eww/scripts/wifi-qr-show.sh"
+          (label :text "󰐲"))
         (button :class "wifi-copy-btn"
                 :tooltip "Copy password"
                 :onclick "~/.config/eww/scripts/wifi-password-copy.sh"
@@ -211,3 +216,34 @@
   :stacking "overlay"
   :focusable "ondemand"
   (wifi-password-prompt-widget))
+
+; ----- Wifi share QR (centered window) ----------------------------------------
+(defwidget wifi-qr-widget []
+  (box :orientation "v"
+       :class "wifi-qr-frame"
+       :space-evenly false
+       :halign "center"
+    (box :class "wifi-qr-card"
+         :halign "center"
+      (image :path "/run/user/1000/wifi-qr.png"
+             :image-width 240
+             :image-height 240))
+    (label :class "wifi-qr-ssid"
+           :halign "center"
+           :truncate true
+           :text "Escanea para unirte a ${wifi-qr-ssid}")
+    (label :class "wifi-qr-hint"
+           :halign "center"
+           :text "Android · iOS — apunta la cámara")
+    (button :class "wifi-qr-close"
+            :halign "center"
+            :onclick "${EWW_CMD} close wifi-qr"
+      (label :text "Cerrar"))))
+
+(defwindow wifi-qr
+  :monitor 0
+  :geometry (geometry :anchor "center"
+                      :width "300px")
+  :stacking "overlay"
+  :focusable false
+  (wifi-qr-widget))

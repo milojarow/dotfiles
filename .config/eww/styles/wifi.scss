@@ -309,3 +309,45 @@
   color: #BF616A;
   border-color: #BF616A;
 }
+
+// ── Wifi share QR (centered window) ────────────────────────────────────────────
+.wifi-qr-frame {
+  background-color: rgba($theme-bg, 0.98);
+  border: 1px solid $theme-selection;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.wifi-qr-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.wifi-qr-ssid {
+  font-size: 13px;
+  font-weight: bold;
+  color: $theme-fg;
+  margin-top: 14px;
+}
+
+.wifi-qr-hint {
+  font-size: 10px;
+  color: mix($theme-fg, $theme-bg, 50%);
+  margin-top: 2px;
+}
+
+.wifi-qr-close {
+  font-size: 11px;
+  padding: 4px 14px;
+  border-radius: 5px;
+  color: mix($theme-fg, $theme-bg, 60%);
+  border: 1px solid $theme-selection;
+  margin-top: 16px;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.wifi-qr-close:hover {
+  background-color: $theme-selection;
+  color: $theme-accent;
+}
