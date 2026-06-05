@@ -1,4 +1,4 @@
-.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-06\-03" "dotfiles" "Clipboard Functionality Manual"
+.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-06\-05" "dotfiles" "Clipboard Functionality Manual"
 .SH NAME
 clipboard\-functionality \- persistent clipboard history system for sway/waybar
 .SH DESCRIPTION
@@ -56,6 +56,9 @@ pastes the whole batch in order.
 .TP
 .B Delete
 Delete all selected rows (batch). With nothing selected, deletes nothing.
+After the rebuild the cursor lands on whatever row now occupies the topmost
+deleted slot (or the new last row if the tail was cut), so navigation
+continues from the same height instead of jumping back to the top.
 .TP
 .B Click the pin icon
 Pin or unpin that row. Pinned rows move to the "Fijados" section on top.
