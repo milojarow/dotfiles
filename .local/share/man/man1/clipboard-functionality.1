@@ -1,4 +1,4 @@
-.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-06\-05" "dotfiles" "Clipboard Functionality Manual"
+.TH CLIPBOARD\-FUNCTIONALITY 1 "2026\-06\-06" "dotfiles" "Clipboard Functionality Manual"
 .SH NAME
 clipboard\-functionality \- persistent clipboard history system for sway/waybar
 .SH DESCRIPTION
@@ -43,7 +43,12 @@ Opens the interactive clipboard history browser (GTK picker).
 .RS
 .TP
 .B Type
-Filter the list live.
+Filter the list live. The first visible match is highlighted automatically as
+you type, so pressing
+.B Enter
+from inside the search box copies that match without first stepping into the
+list with
+.BR Down .
 .TP
 .B Click / Shift+Click / Ctrl+Click / Shift+Arrows
 Select one or several rows (multi\-select).

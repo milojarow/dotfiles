@@ -190,9 +190,12 @@ class Picker(Gtk.Application):
 
         self.search = Gtk.SearchEntry()
         self.search.set_placeholder_text("Buscar…")
-        self.search.connect("search-changed", lambda *_: self.listbox.invalidate_filter())
+        self.search.connect("search-changed", self._on_search_changed)
         # Down from the search box moves focus into the list.
         self.search.connect("key-press-event", self._search_key)
+        # Enter inside the search box copies the first visible match — no need
+        # to step into the list with Down first.
+        self.search.connect("activate", self._on_search_activate)
         root.pack_start(self.search, False, False, 0)
 
         scroll = Gtk.ScrolledWindow()
@@ -349,6 +352,28 @@ class Picker(Gtk.Application):
         if not self.search.has_focus() and self.search.handle_event(event):
             return True
         return False
+
+    def _on_search_changed(self, _entry):
+        # Re-apply the filter, then highlight the first visible match so the
+        # user can SEE which row Enter would copy. Clear the prior selection
+        # first to avoid the multi-select bleed across query changes.
+        self.listbox.unselect_all()
+        self.listbox.invalidate_filter()
+        if not self.search.get_text():
+            return
+        for r in self.listbox.get_children():
+            if self._filter(r):
+                self.listbox.select_row(r)
+                return
+
+    def _on_search_activate(self, _entry):
+        # Enter inside the search entry: activate the first row that still
+        # matches the current filter, so a query + Enter copies that match in
+        # one go. Falls through silently if nothing matches.
+        for r in self.listbox.get_children():
+            if self._filter(r):
+                self.listbox.emit("row-activated", r)
+                return
 
     def _search_key(self, _entry, event):
         # Arrow-down out of the search box hands focus to the list.
