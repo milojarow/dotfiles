@@ -1,6 +1,6 @@
-.TH RECORDING 1 "2026-03-23" "sway dotfiles" "User Commands"
+.TH RECORDING 1 "2026-06-07" "sway dotfiles" "User Commands"
 .SH NAME
-recording \- screen recording with region selection, audio support, and bar indicator for sway
+recording \- screen recording with region selection, microphone or system audio, and bar indicator for sway
 .SH DESCRIPTION
 The Recording functionality covers the full pipeline from region selection to file output:
 interactive window-snapping region selection via
@@ -30,9 +30,11 @@ the word
 .BR Record ,
 the key
 .BR (r) ,
-and a note that
+and notes that
 .B Shift
-adds audio (microphone icon).
+adds microphone audio (microphone icon) and
+.B s
+adds system audio (speaker icon).
 Inside the mode:
 .TP
 .B r
@@ -45,9 +47,19 @@ file encoded with the VP8 codec (libvpx).
 .B Shift+r
 Select a region and start recording
 .B with
-audio. Output is a
+microphone audio. Output is a
 .B .mp4
 file.
+.TP
+.B s
+Select a region and start recording
+.B "with system audio"
+(the default sink's
+.IR .monitor ).
+Output is a
+.B -sysaudio.mp4
+file. It captures no microphone, and the recording level is independent
+of the master volume slider.
 .TP
 .B Escape
 Return to default mode without recording.
@@ -115,9 +127,14 @@ wf-recorder -g "$area" -c libvpx \e
     --file="$target_path/$timestamp.webm"
 .EE
 .TP
-.B With audio (Shift+r)
+.B With microphone audio (Shift+r)
 .EX
 wf-recorder --audio -g "$area" --file="$target_path/$timestamp.mp4"
+.EE
+.TP
+.B With system audio (s)
+.EX
+wf-recorder --audio="$(pactl get-default-sink).monitor" -g "$area" --file="$target_path/$timestamp-sysaudio.mp4"
 .EE
 .RE
 .IP \n+[step].
@@ -261,7 +278,7 @@ referenced in the pango markup of
 .IR $mode_recording .
 The active theme is symlinked at runtime to
 .I ~/.config/sway/definitions.d/theme.conf
-(generated — not tracked in git).
+(generated \(em not tracked in git).
 See
 .BR palette-theming (1)
 for the full theming system.
@@ -284,7 +301,8 @@ colors the recording icon with
 .BR pgrep (1),
 .BR pkill (1),
 .BR notify-send (1),
-.BR xdg-user-dir (1)
+.BR xdg-user-dir (1),
+.BR pactl (1)
 .SH STORAGE
 Recordings are saved to
 .I ~/Videos/
@@ -301,10 +319,48 @@ Filenames follow the format:
 Region recording without audio (VP8 codec).
 .TP
 .B recording_YYYYMMDD-HHMMSS.mp4
-Region recording with audio.
+Region recording with microphone audio.
+.TP
+.B recording_YYYYMMDD-HHMMSS-sysaudio.mp4
+Region recording with system audio (the default sink's monitor).
 .RE
+.SH GOTCHAS
+.TP
+.B System audio is the default sink's monitor, resolved at record time
+The
+.B s
+variant records
+.BR "$(pactl get-default-sink).monitor" .
+Because the default sink is resolved when recording starts, the capture
+always follows the current default sink. If a USB audio device has hijacked
+the default sink (a known WirePlumber behavior on this machine), the
+recording captures that device's output instead of the built-in. Check
+.B "wpctl status"
+to confirm the default sink before recording.
+.TP
+.B Recording level is independent of the volume slider
+The PipeWire monitor is pre-fader
+.RB ( monitor.channel-volumes=false ,
+the default), so the captured level does
+.B not
+follow the master volume slider \(em recording at 33% master volume
+produces the same level as at 100% (measured identical). You can even
+record system audio with the speakers muted.
+.B Per-application
+stream volume (e.g.\& a browser tab's own volume) is upstream of the
+monitor tap and
+.B does
+affect the recording \(em that is expected.
+.TP
+.B The two audio modes never mix
+.B Shift+r
+captures the microphone only (the default source);
+.B s
+captures system audio only (the sink monitor). Neither variant captures both.
 .SH SEE ALSO
 .BR wf-recorder (1),
 .BR slurp (1),
 .BR swaymsg (1),
-.BR notify-send (1)
+.BR notify-send (1),
+.BR pactl (1),
+.BR wpctl (1)

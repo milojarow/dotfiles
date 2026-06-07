@@ -38,6 +38,10 @@ if [ $status != 0 ]; then
     if [ "$1" = "-a" ]; then
         file="$target_path/$timestamp.mp4"
         wf-recorder --audio -g "$area" --file="$file"
+    elif [ "$1" = "-s" ]; then
+        file="$target_path/$timestamp-sysaudio.mp4"
+        monitor="$(pactl get-default-sink).monitor"
+        wf-recorder --audio="$monitor" -g "$area" --file="$file"
     else
         file="$target_path/$timestamp.webm"
         wf-recorder -g "$area" -c libvpx --codec-param="qmin=0" --codec-param="qmax=25" --codec-param="crf=4" --codec-param="b:v=1M" --file="$file"
