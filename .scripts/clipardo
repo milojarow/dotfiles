@@ -16,25 +16,29 @@ Usage: clipardo [OPTIONS] [FILE|DIR...]
 Copy file(s) into the clipboard inside Markdown code fences.
 
 Options:
-  -h, --help        Show this help message and exit
-  -r, --recursive   Recurse into directories
-  -a, --all         Include hidden files
+  -h, --help          Show this help message and exit
+  -r, --recursive     Recurse into directories
+  -a, --all           Include hidden files
+  -c, --content-only  Copy only file contents (omit file locations)
 EOF
 }
 
 # ─── Parse flags ────────────────────────────────────────────────────────────────
 RECURSIVE=false
 INCLUDE_HIDDEN=false
-while getopts ":hra-:" opt; do
+CONTENT_ONLY=false
+while getopts ":hrac-:" opt; do
   case "$opt" in
     h) show_help; exit 0 ;;
     r) RECURSIVE=true ;;
     a) INCLUDE_HIDDEN=true ;;
+    c) CONTENT_ONLY=true ;;
     -)
       case "${OPTARG}" in
         help) show_help; exit 0 ;;
         recursive) RECURSIVE=true ;;
         all) INCLUDE_HIDDEN=true ;;
+        content-only) CONTENT_ONLY=true ;;
         *) echo "Unknown option --${OPTARG}" >&2; exit 1 ;;
       esac;;
     \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
@@ -191,7 +195,7 @@ for idx in "${!FILES[@]}"; do
   esac
 
   {
-    printf "%s\n" "$file"
+    [ "$CONTENT_ONLY" = true ] || printf "%s\n" "$file"
     printf '``` %s\n' "$lang"
     cat "$file"
     printf '\n```\n'
