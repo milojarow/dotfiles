@@ -104,13 +104,13 @@ apply_theme() {
     # Sync gtk-application-prefer-dark-theme flag in gtk-3.0/gtk-4.0 settings.ini.
     # Without this, the flag is hardcoded and overrides gsettings color-scheme,
     # making every new GTK/Qt-portal window dark regardless of the active theme.
-    local prefer_dark
-    if is_light_theme "$theme"; then prefer_dark=0; else prefer_dark=1; fi
-    for f in "$HOME/.config/gtk-3.0/settings.ini" "$HOME/.config/gtk-4.0/settings.ini"; do
-        if [ -f "$f" ] && grep -q '^gtk-application-prefer-dark-theme=' "$f"; then
-            sed -i "s|^gtk-application-prefer-dark-theme=.*|gtk-application-prefer-dark-theme=${prefer_dark}|" "$f"
-        fi
-    done
+    # Single source of truth: sync-gtk-dark-flag.sh is also called by the
+    # boot/reload path (90-enable-theme.conf) so both paths can't drift.
+    if is_light_theme "$theme"; then
+        ~/.config/sway/scripts/sync-gtk-dark-flag.sh prefer-light
+    else
+        ~/.config/sway/scripts/sync-gtk-dark-flag.sh prefer-dark
+    fi
 
     # ═══ FASE 1 — fast paths in parallel (~50-100ms blocking) ════════════════
     # foot OSC (recolor running terminals) + eww reload run in parallel; we
