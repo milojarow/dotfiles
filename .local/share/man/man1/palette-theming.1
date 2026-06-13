@@ -81,6 +81,17 @@ Parses a foot-theme.ini and writes OSC 10/11/4;N escape sequences to all
 writable \fI/dev/pts/*\fR PTY slave devices, applying colors to running
 terminals in real time.
 .TP
+.I ~/.config/sway/scripts/sync-gtk-dark-flag.sh
+Sets \fBgtk-application-prefer-dark-theme\fR in \fIgtk-3.0/settings.ini\fR and
+\fIgtk-4.0/settings.ini\fR to match the active palette (\fB0\fR for
+\fBprefer-light\fR, \fB1\fR otherwise). Takes the \fB$gtk-color-scheme\fR value
+as its only argument. Single source of truth for the flag, called by BOTH the
+interactive path (\fItheme-selector.sh\fR FASE 0) and the boot/login + reload
+path (\fI90-enable-theme.conf\fR). GTK3 apps (e.g. Electron / Altus) read this
+flag and it \fBoverrides\fR \fBgsettings color-scheme\fR; if they disagree,
+flag-gated built-in themes (Adwaita / HighContrast) render dark while the page
+stays light (split / white text). See \fBGOTCHAS\fR.
+.TP
 .I ~/.config/sway/scripts/theme-waybar.sh
 Reads the active \fItheme.conf\fR symlink, resolves \fB$background-color\fR,
 \fB$text-color\fR, and \fB$accent-color\fR (one level of indirection), and
@@ -236,10 +247,14 @@ Defines the \fB$onscreen_bar\fR sway variable as
 pipes a value to wob uses the active palette.
 .TP
 .I ~/.config/sway/config.d/90-enable-theme.conf
-The original \fBexec_always\fR block that ran on every \fBswaymsg reload\fR to
-apply GTK / icon / cursor / font / color-scheme / Kvantum themes. Still
-present and functional, but no longer the live path \(em
-\fBtheme-apply-runtime.sh\fR replicates it without requiring a reload.
+The \fBexec_always\fR block that runs at sway startup and on every
+\fBswaymsg reload\fR to apply GTK / icon / cursor / font / color-scheme /
+Kvantum themes. For interactive switches \fBtheme-apply-runtime.sh\fR
+replicates it without a reload, but this block remains the \fBboot/login
+path\fR. It calls \fBsync-gtk-dark-flag.sh "$gtk-color-scheme"\fR so the
+\fBgtk-application-prefer-dark-theme\fR flag is correct after a fresh login
+\(em without it a stale flag from the previous theme broke Electron / GTK3
+apps on adwaita-light / high-contrast-light (see \fBGOTCHAS\fR).
 .TP
 .I ~/.config/waybar/style.css
 Imports \fItheme.css\fR via \fB@import "theme.css";\fR. Uses
@@ -380,12 +395,28 @@ eww.service\fB.\fR The unit has \fIStartLimitBurst=5\fR /
 leave the bar stuck on the old SCSS. \fIeww reload\fR is in-place, no
 StartLimit, no orphan daemons.
 .IP \[bu]
-\fB"hardcoded" gtk-application-prefer-dark-theme was an orphan override.\fR
-For months \fIgtk-3.0/4.0/settings.ini\fR carried \fB=1\fR with no script
-touching it, overriding \fBgsettings color-scheme=prefer-light\fR. Every
-GTK / Qt-portal app rendered dark on a light theme. FASE 0 now syncs both
-files. Audit pipelines by what the consumer \fIreads\fR, not just what the
-pipeline \fIwrites\fR.
+\fBgtk-application-prefer-dark-theme overrides gsettings color-scheme \(em sync
+it on BOTH paths.\fR This flag in \fIgtk-3.0/4.0/settings.ini\fR overrides
+\fBgsettings color-scheme\fR for GTK3 / Qt-portal apps. It began as a hardcoded
+orphan (\fB=1\fR for months, every app dark on light themes); FASE 0 fixed the
+interactive path, but the \fBboot/login path\fR (\fI90-enable-theme.conf\fR)
+still did not sync it. After a fresh login with a flag-gated built-in light
+theme (\fBadwaita-light\fR / \fBhigh-contrast-light\fR \(em their GTK3
+\fIgtk.css\fR is a stub, so light vs dark is decided purely by this flag) a
+stale \fB=1\fR made Electron / GTK3 apps (Altus) compute dark while the portal
+color-scheme stayed light: a split / white-text render. Both paths now call
+\fBsync-gtk-dark-flag.sh\fR. Dedicated-CSS light themes were immune (their light
+colors are baked in). Audit pipelines by what the consumer \fIreads\fR, not just
+what the pipeline \fIwrites\fR.
+.IP \[bu]
+\fBenable-gtk-theme.sh must REMOVE a stale gtk-4.0/gtk.css, not only copy.\fR
+A theme whose \fB$gtk-theme\fR ships no
+\fI/usr/share/themes/<t>/gtk-4.0/gtk.css\fR (built-in \fBAdwaita\fR /
+\fBHighContrast\fR, and \fBgruvbox-dark\fR) used to leave the previous theme's
+\fI~/.config/gtk-4.0/gtk.css\fR orphaned, so GTK4 / libadwaita apps kept
+rendering that stale palette. The script now \fBrm\fRs the user copy and its
+\fI~\fR backup when the target ships none (mirroring the \fBgtk-dark.css\fR
+handling), letting GTK4 fall back to the built-in theme.
 .IP \[bu]
 \fBQT_STYLE_OVERRIDE=kvantum makes qt6ct\[aq]s color_scheme_path irrelevant
 for Kvantum-themed apps.\fR On this machine the env is set, so Kvantum
