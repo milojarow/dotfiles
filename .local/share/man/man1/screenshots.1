@@ -1,4 +1,4 @@
-.TH SCREENSHOTS 1 "2026-06-04" "sway dotfiles" "User Commands"
+.TH SCREENSHOTS 1 "2026-06-18" "sway dotfiles" "User Commands"
 .SH NAME
 screenshots \- screenshot capture, editing, and notification system for sway
 .SH DESCRIPTION
@@ -234,7 +234,9 @@ on the directory via
 Debounce check (100 ms) prevents duplicate events
 .IP \n+[step].
 .BR notify-send (1)
-fires "Screenshot saved" notification
+fires "Screenshot saved" notification with an explicit
+.B "\-t 5000"
+so it auto-dismisses after 5 s
 .SS Notification flow (clipboard copy)
 .nr step 1 1
 .IP \n[step]. 3
@@ -251,7 +253,9 @@ debounce check (500 ms) runs under
 .BR flock (1)
 .IP \n+[step].
 .BR notify-send (1)
-fires "Screenshot copied to clipboard" notification
+fires "Screenshot copied to clipboard" notification with an explicit
+.B "\-t 5000"
+so it auto-dismisses after 5 s
 .SH STORAGE
 Screenshots are saved to
 .I ~/Screenshots/
@@ -305,6 +309,26 @@ The script polls the sway tree until the freeze window appears before forcing it
 tiled; a fixed
 .B sleep
 races swayimg's map and paint on a busy system.
+.TP
+.B Screenshot notifications need an explicit timeout
+mako runs with
+.B default-timeout=0
+in
+.IR ~/.config/mako/config ,
+so every notification persists until clicked (intentional \(em chat messages
+must not be missed). The two screenshot daemons therefore pass an explicit
+.B "\-t 5000"
+to
+.BR notify-send (1)
+so the "Screenshot saved" and "Screenshot copied to clipboard" confirmations
+auto-dismiss after 5 s without touching the global policy. mako honors a
+per-notification timeout over
+.B default-timeout
+only while
+.B ignore-timeout=0
+(its default); flipping that to 1 would make mako ignore the
+.B "\-t"
+and the confirmations would linger again.
 .SH SEE ALSO
 .BR grim (1),
 .BR slurp (1),
