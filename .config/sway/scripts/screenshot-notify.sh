@@ -46,7 +46,7 @@ while true; do
             DIFF=$((NOW - LAST))
             if [[ $DIFF -gt 100000000 ]]; then
                 echo $NOW > /tmp/screenshot-save-last
-                notify-send "Screenshot saved" "$FILE"
+                notify-send -t 5000 "Screenshot saved" "$FILE"
             fi
             ;;
     esac

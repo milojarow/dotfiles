@@ -59,7 +59,7 @@ if [[ "$MIME" == "image/png" ]]; then
         DIFF=$((NOW - LAST))
         if [[ $DIFF -gt 500000000 ]]; then
             echo $NOW > /tmp/screenshot-clipboard-last
-            notify-send "Screenshot copied to clipboard"
+            notify-send -t 5000 "Screenshot copied to clipboard"
         fi
     ) 200>/tmp/screenshot-clipboard-debounce.lock
 fi
