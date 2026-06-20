@@ -1,4 +1,4 @@
-.TH PALETTE-THEMING 1 "2026-06-01" "sway dotfiles" "User Commands"
+.TH PALETTE-THEMING 1 "2026-06-16" "sway dotfiles" "User Commands"
 .SH NAME
 palette-theming \- live color palette theming system for sway
 .SH DESCRIPTION
@@ -357,8 +357,10 @@ Sent to \fBwaybar\fR(1) to refresh the \fBcustom/theme\fR module output (icon
 and tooltip).
 .TP
 .B SIGHUP
-Sent to \fBmako\fR(1) to reload its configuration (picks up the new accent
-via the GTK theme integration).
+Sent to \fBmako\fR(1) to reload its configuration. NOTE: mako is \fBnot\fR
+wired into the palette \(em \fI~/.config/mako/config\fR is a static, hardcoded
+Dracula palette (\fBborder-size=0\fR, so no accent ever shows) and SIGHUP just
+re-reads that same file. Notifications look identical under every theme.
 .SH "WAYBAR INTEGRATION"
 The \fBcustom/theme\fR module in \fI~/.config/waybar/config.jsonc\fR shows a
 moon/sun icon and the active theme name. It calls \fItheme-toggle.sh status\fR
@@ -458,6 +460,34 @@ detects a missing cache dir and runs \fBtheme-cache-regen.sh\fR synchronously
 before swapping symlinks. After a fresh theme is added under
 \fI~/.config/sway/themes/\fR, the first switch to it includes the ~50 ms cache
 build; subsequent switches are instant.
+.IP \[bu]
+\fBA shared \fI$accent-color\fB makes sibling flavors look like the same
+theme.\fR The catppuccin dark trio (frappe / macchiato / mocha) originally all
+set \fBset $accent-color $blue\fR; the three catppuccin blues differ by only
+~16 RGB / ~4.5\[de] hue (below the just-noticeable threshold), so every
+accent-driven surface (waybar/rofi/wofi/eww highlight, wob fill, GTK & Kvantum
+accent, papirus folders) was identical and only the background darkened
+(luma ~52 \[->] 40 \[->] 31) \(em three brightness levels of one theme. Fix =
+a \fBdistinct\fR \fB$accent-color\fR per flavor. Two non-obvious requirements:
+.RS
+.IP \[bu] 2
+The sway focused border uses \fB$lavender\fR, \fBnot\fR \fB$accent-color\fR, so
+edit BOTH the \fBset $accent-color\fR line AND the \fBclient.focused\fR line
+(swap its two \fB$lavender\fR tokens to the accent) \(em otherwise the most
+visible chrome stays the same lilac across flavors.
+.IP \[bu]
+\fB$gtk-theme\fR, \fB$kvantum-theme\fR, and \fB$cursor-theme\fR must name the
+\fBmatching accent variant\fR (e.g. \fIcatppuccin-mocha-teal-standard+default\fR)
+and it must be installed \(em an unknown name makes GTK fall back to Adwaita and
+Kvantum to its default. All 14 catppuccin accents are installed per flavor here.
+.RE
+.IP \[bu]
+\fBNot every surface can carry the accent.\fR \fIqt6ct.conf\fR
+\fBcolor_scheme_path\fR is a binary light/dark branch \(em every dark theme
+writes the same \fIdarker.conf\fR (generic grey), so non-Kvantum Qt apps
+can\[aq]t be told apart this way; \fBmako\fR is static (see \fBSIGNALS\fR). The
+per-flavor distinction lives in foot/waybar/rofi/wofi/eww/GTK/Kvantum + the
+accent.
 .SH NOTES
 .IP \[bu] 2
 \fBLight vs dark count.\fR The current set is 12 light + 11 dark, classified
@@ -486,8 +516,11 @@ Their distinction comes from the accent and, for dracula, the Dracula purple
 \fBCatppuccin themes\fR use named palette variables (rosewater, flamingo,
 base, surface1, etc.) instead of \fB$color0\fR\[en]\fB$color15\fR. The four
 catppuccin flavors share GTK / cursor / Kvantum families and differ only in
-palette values. The catppuccin-latte-* variants share the latte palette but
-swap the accent color.
+palette values. To stay visually distinct, each catppuccin theme pins its own
+\fB$accent-color\fR: the latte-* variants swap it, and as of 2026-06-16 the
+three dark flavors do too \(em \fBfrappe \[->] sky\fR,
+\fBmacchiato \[->] peach\fR, \fBmocha \[->] teal\fR. They previously all shared
+\fB$blue\fR and were nearly indistinguishable (see \fBGOTCHAS\fR).
 .SH "SEE ALSO"
 .BR foot (1),
 .BR sway (5),
