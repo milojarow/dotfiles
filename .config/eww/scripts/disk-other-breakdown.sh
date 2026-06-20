@@ -15,7 +15,7 @@ du -d1 -k "$HOME_DIR" 2>/dev/null | \
       if (dir == home) next
       name = dir
       sub(home "/", "", name)
-      if (name == "Documents" || name == "Pictures" || name == "Downloads" || name == "Videos") next
+      if (name == "documents" || name == "pictures" || name == "downloads" || name == "videos") next
       sizes[count] = $1
       names[count] = name
       paths[count] = dir

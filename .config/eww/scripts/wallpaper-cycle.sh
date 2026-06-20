@@ -11,7 +11,7 @@
 set -u
 
 EWW=/home/milo/.cargo/bin/eww
-WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+WALLPAPER_DIR="$(xdg-user-dir PICTURES)/wallpapers"
 STATE_FILE="$HOME/.cache/eww/current-wallpaper"
 COUNT_FILE="/tmp/eww-wp-count"
 INDEX_FILE="/tmp/eww-wp-index"

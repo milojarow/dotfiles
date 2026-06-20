@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+WALLPAPER_DIR="$(xdg-user-dir PICTURES)/wallpapers"
 STATE_FILE="$HOME/.cache/eww/current-wallpaper"
 
 # Verificar que el directorio existe y tiene imágenes

@@ -26,10 +26,10 @@
 (defwidget disk-widget []
   (box :orientation "h" :space-evenly false
     (box :class "disk-widget" :orientation "v" :space-evenly false
-      (disk-row :label "Documents" :path "/home/milo/Documents" :pct {jq(disk-data, ".documents")})
-      (disk-row :label "Pictures"  :path "/home/milo/Pictures"  :pct {jq(disk-data, ".pictures")})
-      (disk-row :label "Downloads" :path "/home/milo/Downloads" :pct {jq(disk-data, ".downloads")})
-      (disk-row :label "Videos"    :path "/home/milo/Videos"    :pct {jq(disk-data, ".videos")})
+      (disk-row :label "Documents" :path "/home/milo/documents" :pct {jq(disk-data, ".documents")})
+      (disk-row :label "Pictures"  :path "/home/milo/pictures"  :pct {jq(disk-data, ".pictures")})
+      (disk-row :label "Downloads" :path "/home/milo/downloads" :pct {jq(disk-data, ".downloads")})
+      (disk-row :label "Videos"    :path "/home/milo/videos"    :pct {jq(disk-data, ".videos")})
       (button :class {show-disk-other == 1 ? "disk-row disk-row-other open" : "disk-row disk-row-other"}
               :onclick "${EWW_CMD} update show-disk-other=$((1 - ${show-disk-other}))"
         (box :orientation "h" :space-evenly false :valign "center"

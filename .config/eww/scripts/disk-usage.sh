@@ -19,10 +19,10 @@ size_of() {
     echo "$du_home" | awk -v p="$1" '$2 == p { print $1; exit }'
 }
 
-docs=$(size_of "$HOME_DIR/Documents"); docs=${docs:-0}
-pics=$(size_of "$HOME_DIR/Pictures");  pics=${pics:-0}
-dls=$(size_of  "$HOME_DIR/Downloads"); dls=${dls:-0}
-vids=$(size_of "$HOME_DIR/Videos");    vids=${vids:-0}
+docs=$(size_of "$(xdg-user-dir DOCUMENTS)"); docs=${docs:-0}
+pics=$(size_of "$(xdg-user-dir PICTURES)");  pics=${pics:-0}
+dls=$(size_of  "$(xdg-user-dir DOWNLOAD)");  dls=${dls:-0}
+vids=$(size_of "$(xdg-user-dir VIDEOS)");    vids=${vids:-0}
 home_total=$(size_of "$HOME_DIR");     home_total=${home_total:-0}
 
 # Other = everything in home that is not the four named directories
