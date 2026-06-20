@@ -48,9 +48,13 @@ function update --wraps topgrade --description 'Update everything via topgrade'
     # Post-update: surface local/AUR packages left stale by a dependency's soname bump
     # (e.g. protobuf 34→35 breaking mosh-osc52). checkrebuild's pacman hook fires per
     # transaction but drowns in topgrade's output; this makes it the last thing on screen.
-    # See memory reference_mosh_osc52_local_rebuild. No sudo, ~seconds for the foreign set.
+    # See memory reference_mosh_osc52_local_rebuild. No sudo, ~1-2 min for the foreign set.
     if type -q checkrebuild
-        set -l stale (checkrebuild 2>/dev/null | awk '{print $2}')
+        set_color brblack
+        echo 'Buscando rebuilds pendientes (checkrebuild, ~1-2 min)...'
+        set_color normal
+        # </dev/null: without a tty, checkrebuild reads stdin as hook targets (mapfile)
+        set -l stale (checkrebuild 2>/dev/null </dev/null | awk '{print $2}')
         if test -n "$stale"
             echo ''
             set_color yellow
@@ -62,6 +66,30 @@ function update --wraps topgrade --description 'Update everything via topgrade'
             set_color brblack
             echo '   Rebuild manual. Ej. mosh-osc52 → makepkg -fC en ~/.local/src/mosh-osc52/ + sudo pacman -U'
             set_color normal
+        end
+    end
+
+    # Reboot pendiente: el hook de CachyOS solo avisa transitorio (echo en TTY + notif de
+    # 10s, sin flag persistente); su rastro queda en pacman.log. Cubre los casos que el
+    # test clásico de /usr/lib/modules/(uname -r) no ve (nvidia/mesa/systemd sin bump de kernel).
+    set -l rb (grep -F 'Reboot is recommended' /var/log/pacman.log 2>/dev/null | tail -1 | string match -r '^\[(.*?)\]')
+    if test (count $rb) -eq 2; and test (date -d $rb[2] +%s) -gt (date -d (uptime -s) +%s)
+        set_color red
+        echo '⚠  Reboot pendiente — paquete core (kernel/nvidia/mesa/systemd) actualizado después del último arranque'
+        set_color normal
+    end
+
+    # Configs .pacnew/.pacsave pendientes (pacdiff lee la DB de pacman, sin sudo).
+    # Ojo histórico: mkinitcpio.conf.pacnew se RECHAZA con rm (ver memoria mkinitcpio).
+    if type -q pacdiff
+        set -l pacnews (pacdiff --output 2>/dev/null)
+        if test -n "$pacnews"
+            set_color yellow
+            echo '⚠  Configs .pacnew/.pacsave pendientes:'
+            set_color normal
+            for f in $pacnews
+                echo "     • $f"
+            end
         end
     end
     return $rc
