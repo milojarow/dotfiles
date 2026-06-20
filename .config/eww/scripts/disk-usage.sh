@@ -19,10 +19,10 @@ size_of() {
     echo "$du_home" | awk -v p="$1" '$2 == p { print $1; exit }'
 }
 
-docs=$(size_of "$(xdg-user-dir DOCUMENTS)"); docs=${docs:-0}
-pics=$(size_of "$(xdg-user-dir PICTURES)");  pics=${pics:-0}
-dls=$(size_of  "$(xdg-user-dir DOWNLOAD)");  dls=${dls:-0}
-vids=$(size_of "$(xdg-user-dir VIDEOS)");    vids=${vids:-0}
+docs_dir=$(xdg-user-dir DOCUMENTS); docs=$(size_of "$docs_dir"); docs=${docs:-0}
+pics_dir=$(xdg-user-dir PICTURES);  pics=$(size_of "$pics_dir"); pics=${pics:-0}
+dls_dir=$(xdg-user-dir DOWNLOAD);   dls=$(size_of "$dls_dir");   dls=${dls:-0}
+vids_dir=$(xdg-user-dir VIDEOS);    vids=$(size_of "$vids_dir"); vids=${vids:-0}
 home_total=$(size_of "$HOME_DIR");     home_total=${home_total:-0}
 
 # Other = everything in home that is not the four named directories
@@ -38,6 +38,7 @@ pct() {
     awk -v s="$1" -v t="$DISK_TOTAL" 'BEGIN { printf "%.1f", (s / t) * 100 }'
 }
 
-printf '{"documents":%s,"pictures":%s,"downloads":%s,"videos":%s,"other":%s,"root":%s}\n' \
+printf '{"documents":%s,"pictures":%s,"downloads":%s,"videos":%s,"other":%s,"root":%s,"documents_path":"%s","pictures_path":"%s","downloads_path":"%s","videos_path":"%s"}\n' \
     "$(pct "$docs")" "$(pct "$pics")" "$(pct "$dls")" "$(pct "$vids")" \
-    "$(pct "$other")" "$(pct "$root_size")"
+    "$(pct "$other")" "$(pct "$root_size")" \
+    "$docs_dir" "$pics_dir" "$dls_dir" "$vids_dir"

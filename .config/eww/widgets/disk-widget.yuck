@@ -2,7 +2,7 @@
 ; role:    window
 ; Disk usage data — refreshes every 10 minutes
 (defpoll disk-data :interval "10m"
-  :initial `{"documents":0,"pictures":0,"downloads":0,"videos":0,"other":0,"root":0}`
+  :initial `{"documents":0,"pictures":0,"downloads":0,"videos":0,"other":0,"root":0,"documents_path":"","pictures_path":"","downloads_path":"","videos_path":""}`
   `~/.config/eww/scripts/disk-usage.sh`)
 
 ; Top 6 heaviest dirs in "Other" — refreshes every 10 minutes
@@ -26,10 +26,10 @@
 (defwidget disk-widget []
   (box :orientation "h" :space-evenly false
     (box :class "disk-widget" :orientation "v" :space-evenly false
-      (disk-row :label "Documents" :path "/home/milo/documents" :pct {jq(disk-data, ".documents")})
-      (disk-row :label "Pictures"  :path "/home/milo/pictures"  :pct {jq(disk-data, ".pictures")})
-      (disk-row :label "Downloads" :path "/home/milo/downloads" :pct {jq(disk-data, ".downloads")})
-      (disk-row :label "Videos"    :path "/home/milo/videos"    :pct {jq(disk-data, ".videos")})
+      (disk-row :label "Documents" :path {replace(jq(disk-data, ".documents_path"), '"', '')} :pct {jq(disk-data, ".documents")})
+      (disk-row :label "Pictures"  :path {replace(jq(disk-data, ".pictures_path"), '"', '')}  :pct {jq(disk-data, ".pictures")})
+      (disk-row :label "Downloads" :path {replace(jq(disk-data, ".downloads_path"), '"', '')} :pct {jq(disk-data, ".downloads")})
+      (disk-row :label "Videos"    :path {replace(jq(disk-data, ".videos_path"), '"', '')}    :pct {jq(disk-data, ".videos")})
       (button :class {show-disk-other == 1 ? "disk-row disk-row-other open" : "disk-row disk-row-other"}
               :onclick "${EWW_CMD} update show-disk-other=$((1 - ${show-disk-other}))"
         (box :orientation "h" :space-evenly false :valign "center"
