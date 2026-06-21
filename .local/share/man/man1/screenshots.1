@@ -1,4 +1,4 @@
-.TH SCREENSHOTS 1 "2026-06-18" "sway dotfiles" "User Commands"
+.TH SCREENSHOTS 1 "2026-06-20" "sway dotfiles" "User Commands"
 .SH NAME
 screenshots \- screenshot capture, editing, and notification system for sway
 .SH DESCRIPTION
@@ -302,7 +302,36 @@ in it or the frozen capture is visibly scaled.
 .BR swayimg.text.hide ()
 and
 .B set_default_scale
-both still exist in the 5.2 Lua API \(em the breakage was never the API.
+both still exist in the 5.3 Lua API \(em the breakage was never the API.
+.TP
+.B swayimg renames CLI flags between minor releases
+swayimg 5.3 (released 2026-06-18) removed
+.B \-\-class
+in favor of
+.BR \-\-appid =ID
+for setting the Wayland app_id. The freeze launch in
+.I screenshot-frozen.sh
+passed
+.BR \-\-class ,
+so under 5.3 swayimg aborts at startup (unrecognized option) and the overlay
+never maps. Because the script runs under
+.B set \-e
+and the following
+.BR swaymsg (1)
+floating-disable returns exit 2 (\(lqNo matching node\(rq) when the window is
+absent, the whole script aborts there \(em before
+.BR slurp (1)
+\(em so nothing reaches
+.BR swappy (1):
+the screenshot mode menu shows but no capture happens. Fix: use
+.B \-\-appid
+and append
+.B "|| true"
+to that
+.BR swaymsg
+call so a swayimg-launch failure degrades to a non-frozen capture instead of
+total silence. The Lua API (swayimg.text.hide, set_default_scale) is unchanged
+in 5.3 \(em the breakage is the CLI, not the API.
 .TP
 .B Wait for the overlay to map, not a blind sleep
 The script polls the sway tree until the freeze window appears before forcing it
