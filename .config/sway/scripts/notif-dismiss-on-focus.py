@@ -1,27 +1,24 @@
 #!/usr/bin/env python3
-# ── Notification Dismiss-on-Focus ─────────────────────────────────────────────
-# Role:     Sway IPC event daemon. When a terminal window regains keyboard
-#           focus, dismiss its lingering desktop notifications. Covers the case
-#           where you reach the window WITHOUT clicking the notification
-#           (Super+n, swayr, bar click) — clicking the notification itself
-#           already focuses + closes it via foot's native window activation
-#           (see ~/.config/foot/foot.ini [desktop-notifications], helper: fyi).
-# Files:    notif-dismiss-on-focus.py
+# ── Notification Dismiss-on-Focus (per-window) ────────────────────────────────
+# Role:     Sway IPC event daemon. When a window regains keyboard focus, dismiss
+#           the desktop notifications that THAT specific window generated. Each
+#           notification is tagged at creation with category "claudewin:<con_id>"
+#           by foot-notify-wrapper.sh (foot's [desktop-notifications] command);
+#           here we match the focused window's con_id against that tag, so
+#           focusing terminal A clears only A's notification, never B's.
+#           Clicking a notification still focuses + closes it via foot's native
+#           window activation (fyi); this only covers reaching the window by
+#           other means (Super+n, swayr, bar click).
+# Files:    notif-dismiss-on-focus.py   (paired: foot-notify-wrapper.sh)
 # Programs: swaymsg, makoctl
 # Daemon:   ~/.config/systemd/user/notif-dismiss-on-focus.service
 # Storage:  /tmp/notif-dismiss-on-focus-$USER.pid (single-instance guard)
-# Scope:    Only app_ids in TARGET_APP_IDS. Kept to "foot" so the nchat / Altus
-#           mako flows (click-to-open, badges) are left untouched. Matching is
-#           app-id level: focusing any foot clears all foot notifications, since
-#           BEL notifications carry no per-window identity.
 # ─────────────────────────────────────────────────────────────────────────────
 
 import json
 import os
 import subprocess
 import sys
-
-TARGET_APP_IDS = {"foot"}
 
 PIDFILE = f"/tmp/notif-dismiss-on-focus-{os.environ.get('USER', 'user')}.pid"
 
@@ -30,8 +27,9 @@ def log(msg):
     print(msg, file=sys.stderr, flush=True)
 
 
-def dismiss_for(app_id):
-    """Dismiss (no history) every mako notification whose app-name == app_id."""
+def dismiss_for_con(con_id):
+    """Dismiss (no history) mako notifications tagged for this con_id."""
+    tag = f"claudewin:{con_id}"
     try:
         result = subprocess.run(
             ["makoctl", "list", "-j"], capture_output=True, text=True, check=False
@@ -43,7 +41,7 @@ def dismiss_for(app_id):
         log(f"makoctl list failed: {exc}")
         return
     for n in notifs:
-        if n.get("app_name") == app_id:
+        if n.get("category") == tag:
             subprocess.run(
                 ["makoctl", "dismiss", "-n", str(n.get("id")), "-h"],
                 capture_output=True, text=True, check=False,
@@ -76,9 +74,9 @@ def main():
         if event.get("change") != "focus":
             continue
         con = event.get("container") or {}
-        app_id = con.get("app_id") or ""
-        if app_id in TARGET_APP_IDS:
-            dismiss_for(app_id)
+        con_id = con.get("id")
+        if con_id is not None:
+            dismiss_for_con(con_id)
 
 
 if __name__ == "__main__":
