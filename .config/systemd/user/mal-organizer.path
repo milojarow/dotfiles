@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch aMule Incoming for completed downloads (MAL local tracking)
+
+[Path]
+PathModified=%h/.aMule/Incoming
+Unit=mal-organizer.service
+
+[Install]
+WantedBy=default.target

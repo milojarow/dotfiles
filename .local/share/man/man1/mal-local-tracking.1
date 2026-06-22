@@ -1,0 +1,352 @@
+.TH MAL-LOCAL-TRACKING 1 "2026-06-21" "1.2" "sway dotfiles"
+.SH NAME
+mal-local-tracking \- auto-file aMule and torrent/HTTP downloads into a media library and scrobble anime/manga to MyAnimeList
+.SH DESCRIPTION
+A self-driving pipeline that watches the
+.BR amule (1)
+Incoming directory and, whenever a download completes, files it into
+.I $HOME/media
+\[em] anime by season, manga and books by series \[em] using an isolated headless
+Claude "lobo" for the naming and placement judgment. Files are
+.B hardlinked
+(not moved) so aMule keeps seeding. Once filed, anime played in
+.BR mpv (1)
+is scrobbled to MyAnimeList by the
+.BR tundra (1)
+daemon, and manga is read and scrobbled through a local
+.B Suwayomi
+server.
+.PP
+The split is deliberate: the bash organizer does all I/O (scan, classify,
+hardlink, cache); the LLM lobo does only the per-series judgment (type, canonical
+folder name, season), invoked once per new series and then cached.
+.PP
+A second source covers downloads from
+.BR qbittorrent (1)
+and
+.BR aria2c (1):
+on completion each client runs a hook that drops a job in a watched queue; the
+.I mal-organizer-dropzone
+helper then walks the (possibly season-pack) unit, skips junk and samples, pairs
+subtitles, and hardlinks the episodes into the library \[em] reusing the same lobo,
+cache, ledger and lock. The download stays in place so the torrent keeps seeding.
+.SH SYNOPSIS
+.B mal-organizer
+.RI [ --dry-run ]
+.PP
+.B mal-organizer-lobo
+.RI "< " digest
+.PP
+.B dl-complete-hook
+.I "CLIENT UNIT_PATH NAME UID"
+.PP
+.B mal-organizer-dropzone
+.PP
+The organizers are normally invoked automatically by their
+.I .path
+units (\fImal-organizer.path\fR for Incoming, \fImal-dropzone.path\fR for the
+queue); run by hand to backfill or test.
+.SH USAGE
+.TP
+.B Automatic
+A completed aMule download (Incoming) or a finished torrent/HTTP download (client
+hook) triggers the matching watcher; nothing to do.
+.TP
+.B Manual backfill / test
+.nf
+mal-organizer --dry-run    # show the aMule plan, touch nothing
+mal-organizer              # hardlink for real
+mal-organizer-dropzone     # process queued torrent jobs
+.fi
+.TP
+.B Anime \[->] MAL
+Play the episode in
+.BR mpv (1)
+(not a browser) and watch past 50%; the tundra daemon scrobbles it.
+.TP
+.B Manga \[->] MAL
+Open
+.I http://127.0.0.1:4567
+\[em] Settings, Tracking, MyAnimeList, login \[em] enable auto progress, then bind
+each series to its MAL entry.
+.SH FILES
+.SS Scripts
+.TP
+.I $HOME/.scripts/mal-organizer
+The aMule I/O layer: scans Incoming, classifies by extension, consults the cache
+then the lobo, hardlinks into the library, records the ledger and cache.
+.TP
+.I $HOME/.scripts/mal-organizer-lobo
+The judgment layer: reads a TAB digest on stdin, runs an isolated headless
+.BR claude (1)
+with a forced JSON schema, prints the move-plan.
+.TP
+.I $HOME/.scripts/mal-organizer-dropzone
+Torrent/HTTP source: reads queued jobs, guards completeness, walks season packs
+(skipping junk/samples), pairs subtitles, hardlinks into the library via the
+shared lobo/cache/ledger. The download stays put (seeding preserved).
+.TP
+.I $HOME/.local/bin/dl-complete-hook
+Called by qBittorrent (AutoRun) and aria2 on completion; publishes a job naming
+the finished unit into the queue.
+.TP
+.I $HOME/.local/bin/aria2-deliver
+Adapts aria2's completion args (first-file path) into the dl-complete-hook contract.
+.SS "systemd user units"
+.TP
+.I $HOME/.config/systemd/user/mal-organizer.path
+inotify watch (\fBPathModified\fR) on the Incoming directory; fires the service.
+.TP
+.I $HOME/.config/systemd/user/mal-organizer.service
+oneshot that runs the aMule organizer after a 10 s settle.
+.TP
+.I $HOME/.config/systemd/user/mal-dropzone.path
+inotify watch on the job queue; fires the dropzone organizer (event-driven, no daemon).
+.TP
+.I $HOME/.config/systemd/user/mal-dropzone.service
+oneshot that runs
+.IR mal-organizer-dropzone .
+.TP
+.I $HOME/.config/systemd/user/tundra.service
+the anime scrobbler daemon (watches mpv via MPRIS).
+.TP
+.I $HOME/.config/systemd/user/suwayomi.service
+the local manga server (web UI on 127.0.0.1:4567).
+.SS State
+.TP
+.I $HOME/.local/state/mal-organizer/processed.tsv
+ledger of handled files, keyed by inode \[em] makes re-runs idempotent (shared by both sources).
+.TP
+.I $HOME/.local/state/mal-organizer/series-cache.tsv
+per-series decisions (\fItitle|sN\fR \[->] type, folder, season) so repeat
+episodes skip the LLM (shared by both sources).
+.TP
+.I $HOME/.local/state/mal-organizer/queue/
+job files dropped by the completion hooks; watched by
+.IR mal-dropzone.path .
+.TP
+.I $HOME/.local/state/mal-organizer/lobo-schema.json
+the JSON schema the lobo output is validated against.
+.TP
+.I $HOME/.local/state/mal-organizer/organizer.log
+per-run log (decisions, links, lobo cost).
+.TP
+.I $HOME/.local/state/mal-organizer/organizer.lock
+flock single-instance guard (shared aMule + dropzone).
+.SS Configuration
+.TP
+.I $HOME/.config/tundra/config.toml
+tundra MAL tokens (mode 600). Uses tundra's own bundled MAL client.
+.TP
+.I $HOME/.local/share/Tachidesk/server.conf
+Suwayomi config. Overrides appended at the end (HOCON last-wins): bind
+127.0.0.1,
+.I localSourcePath
+= $HOME/media/manga, tray/kcef/auto-browser off.
+.TP
+.I $HOME/.config/qBittorrent/qBittorrent.conf
+\fBSession\\DefaultSavePath\fR = $HOME/torrents, plus TempPath/AppendExtension and
+an \fB[AutoRun]\fR program calling dl-complete-hook. Edit ONLY while qBittorrent is
+closed (it rewrites the file on exit). Backup: \fI.bak-maltrack\fR.
+.TP
+.I $HOME/.config/aria2/aria2.conf
+\fBdir\fR = $HOME/torrents plus
+.I on-bt-download-complete
+/
+.I on-download-complete
+pointing at aria2-deliver.
+.SS Library
+.TP
+.I $HOME/media/anime/<series>/season-NN/
+anime, filed per season.
+.TP
+.I $HOME/media/manga/<series>/
+manga (cbz/zip), read by Suwayomi.
+.TP
+.I $HOME/media/books/<series>/
+epub / pdf novels, read with \fBfoliate\fR(1).
+.TP
+.I $HOME/torrents/
+qBittorrent + aria2 download here (in-progress pieces in
+.IR .parts/ ).
+Completed units stay for seeding; only hardlinks go to the library.
+.SH "DATA PIPELINE"
+.SS "aMule source"
+.nr step 1 1
+.IP \n[step]. 3
+aMule finishes a download and moves the complete file into
+.IR $HOME/.aMule/Incoming .
+.IP \n+[step].
+The
+.I mal-organizer.path
+unit sees the directory change and starts
+.IR mal-organizer.service .
+.IP \n+[step].
+After a 10 s settle the service runs
+.IR mal-organizer .
+.IP \n+[step].
+The organizer lists new media files (skipping any inode already in the ledger),
+classifies each by extension, and looks up the series cache.
+.IP \n+[step].
+Uncached files become a TAB digest piped to
+.IR mal-organizer-lobo ,
+which returns one JSON decision per file.
+.IP \n+[step].
+Each file is hardlinked into
+.IR $HOME/media ;
+the inode is recorded in the ledger and the series decision in the cache.
+.IP \n+[step].
+Anime played in mpv (with mpv-mpris) is detected by the tundra daemon over MPRIS
+and scrobbled to MAL past 50%. Manga read in Suwayomi syncs to MAL.
+.SS "Torrent / HTTP source"
+.nr tstep 1 1
+.IP \n[tstep]. 3
+qBittorrent / aria2 finish a download in
+.IR $HOME/torrents .
+.IP \n+[tstep].
+The client's completion hook runs
+.I dl-complete-hook
+(aria2 via
+.IR aria2-deliver )
+which writes a job naming the unit into the queue.
+.IP \n+[tstep].
+.I mal-dropzone.path
+sees the queue change and starts
+.IR mal-dropzone.service .
+.IP \n+[tstep].
+.I mal-organizer-dropzone
+guards completeness, walks the unit (skipping junk/samples), pairs subtitles, then
+hardlinks episodes into the library through the shared lobo/cache/ledger and
+removes the job. The download stays in
+.I $HOME/torrents
+so seeding continues.
+.SH PROGRAMS
+.BR claude (1),
+.BR mpv (1),
+.BR tundra (1),
+.BR java (1),
+.BR jq (1),
+.BR flock (1),
+.BR amule (1),
+.BR qbittorrent (1),
+.BR aria2c (1)
+.SH DEPENDENCIES
+.TP
+.B mpv \[en] mpv-mpris
+plays anime and publishes the MPRIS metadata (the filename) the scrobbler reads.
+.TP
+.B tundra
+MyAnimeList scrobbler daemon; bundles its own MAL client (PKCE, loopback
+redirect).
+.TP
+.B suwayomi-server-preview-bin \[en] jdk-openjdk
+the local manga server (JVM); runs on Java 26.
+.TP
+.B qbittorrent \[en] aria2
+torrent/HTTP clients; configured to download to $HOME/torrents and run the
+completion hook.
+.TP
+.B claude
+the headless LLM the lobo invokes for naming and placement.
+.SH GOTCHAS
+.IP \[bu] 2
+.B Hardlink, never move.
+aMule and the torrent clients seed from their download dirs; moving a file stops
+the seed. Hardlinks need the same filesystem (here, one nvme) \[em] the organizer
+falls back to
+.B cp
+across filesystems.
+.IP \[bu] 2
+.B The lobo is cost-bounded by the cache, not by flags.
+A cold call is ~$0.21\[en]0.33 (the 44k context is the operator's CLAUDE.md and
+MCP, which
+.I --exclude-dynamic-system-prompt-sections
+and
+.I "--allowed-tools Read"
+do not trim). The series cache makes every later episode of a known series
+.B free
+\[em] a whole season pack costs one lobo call.
+.IP \[bu] 2
+.B Anti-fork-bomb.
+The lobo carries
+.I CLAUDE_HEADLESS=1
+(the operator's hooks bail),
+.I "--allowed-tools Read"
+(no Agent tool \[em] it cannot spawn lobos), and single-shot
+.I --json-schema
+(no agentic loop). It runs from systemd, not a Claude hook, so the in-session
+PreToolUse block on
+.I "claude -p"
+is not in the loop \[em] which is also why the lobo hides its claude call inside
+the script.
+.IP \[bu] 2
+.B Torrents keep seeding (job-queue, not move).
+The download client is the authoritative "complete" signal: its hook queues the
+unit's path and the organizer HARDLINKS the episodes \[em] the files are never
+moved out of
+.IR $HOME/torrents ,
+so qBittorrent/aria2 keep seeding (removing the torrent later does not lose the
+library copy, since the hardlink survives). Moving them (the naive approach) would
+yank files from under the client and error the torrent.
+.IP \[bu] 2
+.B Season packs: junk and subtitles.
+The dropzone skips samples (by name and < 10% of median size), \fI.nfo\fR /
+\fI.txt\fR / proof / screens, and pairs subtitles to episodes by the
+.I SxxEyy
+token, hardlinking them next to the video as \fI<stem>.<lang>.srt\fR so players
+auto-load them. Unparseable video goes to \fIanime/_unsorted\fR, never dropped.
+.IP \[bu] 2
+.B Play anime in mpv, not the browser.
+tundra reads the MPRIS
+.I xesam:title
+/
+.I xesam:url
+(the filename), which only mpv publishes cleanly; a browser publishes the tab
+title. mpv-mpris auto-loads from
+.I /etc/mpv/scripts/mpris.so
+(no mpv.conf edit).
+.IP \[bu] 2
+.B Scrobble needs real playback.
+A seek-jump past 50% does not count (anti-cheat); watch past the halfway point.
+The series must be on the MAL list. Multi-stage titles map correctly (Initial D
+season 4 \[->] "Fourth Stage") via anitomy plus anime-relations.
+.IP \[bu] 2
+.B Suwayomi runs as the user, not its system service.
+The shipped
+.I suwayomi-server.service
+has
+.I ProtectHome=true
+and runs as a system user \[em] it cannot read the 0700 home. The user unit here
+reads
+.I $HOME/media/manga
+directly. Java 26 runs it (it targets 21; a redundant jre21 was removed).
+.IP \[bu] 2
+.B Why not Houdoku.
+Houdoku needs electron32 \[->] nodejs-lts-iron, which would downgrade the system
+Node 26 (used by npm, vercel, typescript, mongodb-compass). Suwayomi (JVM)
+sidesteps it. Kavita was also dropped \[em] its scrobbling is the paid Kavita+.
+.IP \[bu] 2
+.B No self-retrigger.
+The aMule organizer hardlinks into
+.I $HOME/media
+(it never touches Incoming), so its own work does not fire the watcher. A settle
+coalesces bursts; flock prevents overlap; the inode ledger makes it idempotent.
+.SH NOTES
+.IP \[bu] 2
+All services run under
+.I "systemctl --user"
+with lingering enabled, so the pipeline works without an active login (matching
+aMule).
+.IP \[bu] 2
+EPUB is content-routed by the lobo (an image-vs-text count inside the EPUB plus the
+title): an image-based manga EPUB goes to the manga library and is read and
+scrobbled through Suwayomi like a CBZ; a text-novel EPUB goes to
+.I $HOME/media/books
+and is read with \fBfoliate\fR(1), with MAL marked by hand.
+.IP \[bu] 2
+The operator's own registered MAL API client is unused by tundra and Suwayomi
+(both bundle theirs); it is reserved for that future epub script.
+.SH "SEE ALSO"
+.BR amule-vpn (1),
+.BR mpv (1),
+.BR tundra (1)

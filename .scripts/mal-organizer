@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+# mal-organizer — file the aMule Incoming dump into ~/media.
+#
+#   IO + hardlinking live here (bash); naming/placement judgment lives in the
+#   lobo (mal-organizer-lobo, an isolated headless LLM call). Anime is filed
+#   per season. Everything is HARDLINKED so aMule keeps seeding from Incoming.
+#
+#   A per-series cache means repeated episodes of an already-seen series are
+#   filed deterministically, without spending an LLM call.
+#
+# Usage: mal-organizer [--dry-run]
+set -uo pipefail
+
+INCOMING="${INCOMING:-$HOME/.aMule/Incoming}"
+MEDIA="${MEDIA:-$HOME/media}"
+STATE="$HOME/.local/state/mal-organizer"
+LEDGER="$STATE/processed.tsv"        # inode<TAB>path   (already handled)
+CACHE="$STATE/series-cache.tsv"      # key<TAB>type<TAB>series_folder<TAB>season
+LOG="$STATE/organizer.log"
+LOBO="$HOME/.scripts/mal-organizer-lobo"
+LOCKFILE="$STATE/organizer.lock"
+
+DRY=0; [[ "${1:-}" == "--dry-run" ]] && DRY=1
+
+mkdir -p "$STATE" "$MEDIA/anime" "$MEDIA/manga" "$MEDIA/books"
+touch "$LEDGER" "$CACHE"
+
+log(){ printf '%s  %s\n' "$(date -Is)" "$*" >>"$LOG"; printf '%s\n' "$*" >&2; }
+
+# single-instance lock (real runs only; dry-run is read-only/repeatable)
+if [[ $DRY -eq 0 ]]; then
+  exec 9>"$LOCKFILE"
+  flock -n 9 || { log "another run holds the lock; exiting"; exit 0; }
+fi
+
+mark_done(){ [[ $DRY -eq 0 ]] || return 0
+  local ino; ino=$(stat -c '%i' "$1" 2>/dev/null) || return 0
+  printf '%s\t%s\n' "$ino" "$1" >>"$LEDGER"; }
+
+# derive a stable per-series cache key from a filename, or empty string
+cache_key(){
+  local b="$1"
+  if [[ "$b" =~ ^(.+)[[:space:]]+[Ss]([0-9]{1,2})[Ee][0-9]{1,3} ]]; then
+    printf '%s|s%d' "${BASH_REMATCH[1],,}" "$((10#${BASH_REMATCH[2]}))"
+  fi
+}
+
+shopt -s nocasematch
+RE_VIDEO='\.(mkv|mp4|avi|m4v|webm|mov|ts)$'
+RE_COMIC='\.(cbz|cbr|zip|rar)$'
+RE_BOOK='\.(epub|pdf|mobi|azw3)$'
+
+# ---- 1. collect new media files (by inode, not already in the ledger) ----
+declare -a FILES=()
+while IFS= read -r f; do
+  [[ "$f" =~ $RE_VIDEO || "$f" =~ $RE_COMIC || "$f" =~ $RE_BOOK ]] || continue
+  ino=$(stat -c '%i' "$f" 2>/dev/null) || continue
+  grep -qP "^${ino}\t" "$LEDGER" 2>/dev/null && continue
+  FILES+=("$f")
+done < <(find "$INCOMING" -maxdepth 2 -type f 2>/dev/null | sort)
+shopt -u nocasematch
+
+((${#FILES[@]})) || { log "no new media files in $INCOMING"; exit 0; }
+log "found ${#FILES[@]} new media file(s)"
+
+# ---- 2. split into cache-hits vs lobo-needed ----
+declare -a D_TYPE D_SERIES D_SEASON
+declare -a NEED_LOBO=()
+for i in "${!FILES[@]}"; do
+  b=$(basename "${FILES[$i]}")
+  key=$(cache_key "$b"); hit=""
+  [[ -n "$key" ]] && hit=$(grep -P "^\Q${key}\E\t" "$CACHE" 2>/dev/null | head -1)
+  if [[ -n "$hit" ]]; then
+    IFS=$'\t' read -r _ t s sea <<<"$hit"
+    D_TYPE[$i]="$t"; D_SERIES[$i]="$s"; D_SEASON[$i]="$sea"
+    log "CACHE  $b  ->  $t/$s"
+  else
+    NEED_LOBO+=("$i")
+  fi
+done
+
+# ---- 3. ask the lobo for the uncached files ----
+if ((${#NEED_LOBO[@]})); then
+  digest=""
+  for i in "${NEED_LOBO[@]}"; do
+    f="${FILES[$i]}"; b=$(basename "$f"); ext="${b##*.}"; hint=""
+    case "${ext,,}" in
+      epub)
+        et=$(unzip -p "$f" 2>/dev/null | grep -aioE '<dc:title[^>]*>[^<]+' | head -1 | sed -E 's/<[^>]+>//')
+        eimg=$(unzip -l "$f" 2>/dev/null | grep -ciE '\.(jpe?g|png|webp|gif)[[:space:]]*$')
+        etxt=$(unzip -l "$f" 2>/dev/null | grep -ciE '\.x?html?[[:space:]]*$')
+        hint="title=${et}; images=${eimg} textpages=${etxt}"
+        ;;
+    esac
+    printf -v line '%s\t%s\t%s\t%s' "$i" "$ext" "$b" "$hint"
+    digest+="$line"$'\n'
+  done
+  log "consulting the lobo for ${#NEED_LOBO[@]} file(s)…"
+  plan=$(printf '%s' "$digest" | "$LOBO")
+  cost=$(printf '%s' "$plan" | jq -r '.total_cost_usd // empty' 2>/dev/null)
+  [[ -n "$cost" ]] && log "lobo cost: \$$cost"
+  decs=$(printf '%s' "$plan" | jq -c '.structured_output.decisions // .decisions // empty' 2>/dev/null)
+  if [[ -z "$decs" || "$decs" == "null" ]]; then
+    log "lobo returned no usable plan; raw: ${plan:0:400}"; exit 1
+  fi
+  while IFS= read -r d; do
+    idx=$(jq -r '.index' <<<"$d"); t=$(jq -r '.type' <<<"$d")
+    s=$(jq -r '.series_folder' <<<"$d"); sea=$(jq -r '.season' <<<"$d")
+    D_TYPE[$idx]="$t"; D_SERIES[$idx]="$s"; D_SEASON[$idx]="$sea"
+    if [[ $DRY -eq 0 ]]; then
+      b=$(basename "${FILES[$idx]}"); key=$(cache_key "$b")
+      if [[ -n "$key" ]] && ! grep -qP "^\Q${key}\E\t" "$CACHE" 2>/dev/null; then
+        printf '%s\t%s\t%s\t%s\n' "$key" "$t" "$s" "$sea" >>"$CACHE"
+      fi
+    fi
+  done < <(printf '%s' "$decs" | jq -c '.[]')
+fi
+
+# ---- 4. apply: hardlink into the library (or print on dry-run) ----
+for i in "${!FILES[@]}"; do
+  f="${FILES[$i]}"; b=$(basename "$f")
+  t="${D_TYPE[$i]:-}"; s="${D_SERIES[$i]:-}"; sea="${D_SEASON[$i]:-null}"
+  [[ -z "$t" ]] && { log "NODEC  $b"; continue; }
+  case "$t" in
+    anime) sub="anime/$s"; [[ "$sea" != "null" && -n "$sea" ]] && sub+=$(printf '/season-%02d' "$((10#$sea))") ;;
+    manga) sub="manga/$s" ;;
+    book)  sub="books/$s" ;;
+    *)     log "SKIP   $b (type=$t)"; mark_done "$f"; continue ;;
+  esac
+  dest_dir="$MEDIA/$sub"; dest="$dest_dir/$b"
+  if [[ $DRY -eq 1 ]]; then
+    log "PLAN   $b  ->  $sub/"
+    continue
+  fi
+  mkdir -p "$dest_dir"
+  if [[ -e "$dest" ]]; then
+    log "EXISTS $sub/$b (skip link)"
+  elif ln "$f" "$dest" 2>/dev/null; then
+    log "LINK   $b  ->  $sub/"
+  else
+    cp -n "$f" "$dest" 2>/dev/null && log "COPY   $b -> $sub/ (cross-fs fallback)"
+  fi
+  mark_done "$f"
+done
+
+log "done"

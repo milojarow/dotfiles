@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# aria2-deliver — translate aria2's completion args into the dl-complete-hook contract.
+# aria2 invokes the hook with: $1=GID  $2=numFiles  $3=first-selected-file-path.
+# For multi-file (BT) downloads $3 is the FIRST file, not the torrent folder, so we
+# climb to the top-level unit directly under the download root.
+set -uo pipefail
+
+gid="${1:-}"; num="${2:-0}"; fp="${3:-}"
+DLROOT="${MAL_DL_ROOT:-$HOME/torrents}"
+
+[[ -n "$fp" && -e "$fp" ]] || exit 0   # metadata-only / spurious startup fire
+
+if [[ "${num:-0}" -gt 1 ]]; then
+  rel="${fp#"$DLROOT"/}"
+  if [[ "$rel" != "$fp" ]]; then unit="$DLROOT/${rel%%/*}"; else unit="$(dirname "$fp")"; fi
+else
+  unit="$fp"
+fi
+
+exec "$HOME/.local/bin/dl-complete-hook" aria2 "$unit" "$(basename "$unit")" "aria2-$gid"

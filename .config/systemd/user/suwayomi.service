@@ -1,0 +1,13 @@
+[Unit]
+Description=Suwayomi — local manga server (reader + MAL scrobbling)
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/suwayomi-server
+Restart=on-failure
+RestartSec=15
+Nice=5
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# dl-complete-hook CLIENT UNIT_PATH NAME UID
+#   Called by qBittorrent (AutoRun) and aria2 (via aria2-deliver) when a download
+#   COMPLETES. Publishes a tiny "job" into the mal-organizer queue naming the
+#   completed unit's path. The systemd .path on the queue wakes
+#   mal-organizer-dropzone, which HARDLINKS the media into ~/media — the unit
+#   itself stays put, so the torrent keeps seeding.
+set -uo pipefail
+
+client="${1:-}"; unit="${2:-}"; name="${3:-unit}"; uid="${4:-}"
+QUEUE="$HOME/.local/state/mal-organizer/queue"
+LOG="$HOME/.local/state/mal-organizer/deliver.log"
+mkdir -p "$QUEUE" "$(dirname "$LOG")"
+log(){ printf '%s deliver[%s]: %s\n' "$(date -Is)" "${client:-?}" "$*" >>"$LOG"; }
+
+[[ -n "$unit" && -e "$unit" ]] || { log "no valid unit ('$unit'), skip"; exit 0; }
+
+# stable, filesystem-safe job id (prefer client uid, else the path)
+jid="$(printf '%s' "${uid:-$unit}" | tr -c 'A-Za-z0-9._-' '_' | cut -c1-120)"
+job="$QUEUE/$jid.job"
+[[ -e "$job" ]] && { log "job already queued: $jid"; exit 0; }   # idempotent re-fire
+
+# publish atomically: write a dotfile tmp, then rename (the .path ignores non-*.job)
+tmp="$QUEUE/.$jid.$$.tmp"
+{ printf 'client\t%s\n' "$client"
+  printf 'unit\t%s\n'   "$unit"
+  printf 'name\t%s\n'   "$name"
+  printf 'uid\t%s\n'    "$uid"
+} > "$tmp"
+mv -f "$tmp" "$job"
+log "queued '$name' -> $job (unit: $unit)"

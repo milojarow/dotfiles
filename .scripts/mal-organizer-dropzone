@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+# mal-organizer-dropzone — file COMPLETED torrent/HTTP downloads into ~/media.
+#
+# Triggered by mal-dropzone.path when dl-complete-hook publishes a job into the
+# queue. Each job names a completed unit (a single file or a season-pack FOLDER)
+# living in ~/torrents. This walks the unit, SKIPS junk (samples, .nfo, proof,
+# screens, …), PAIRS subtitles to episodes (by SxxEyy, respecting language), then
+# reuses the SAME lobo + per-series cache + inode ledger + lock as the aMule
+# organizer. The unit STAYS in place (the client keeps seeding); only HARDLINKS
+# go into ~/media.
+set -uo pipefail
+
+MEDIA="${MEDIA:-$HOME/media}"
+STATE="$HOME/.local/state/mal-organizer"
+QUEUE="$STATE/queue"
+LEDGER="$STATE/processed.tsv"          # SHARED inode ledger
+CACHE="$STATE/series-cache.tsv"        # SHARED per-series cache
+LOG="$STATE/organizer.log"
+LOBO="$HOME/.scripts/mal-organizer-lobo"
+LOCKFILE="$STATE/organizer.lock"       # SHARED lock with the aMule organizer
+UNSORTED="$MEDIA/anime/_unsorted"
+
+mkdir -p "$STATE" "$QUEUE" "$MEDIA/anime" "$MEDIA/manga" "$MEDIA/books" "$UNSORTED"
+touch "$LEDGER" "$CACHE"
+log(){ printf '%s  %s\n' "$(date -Is)" "$*" >>"$LOG"; printf '%s\n' "$*" >&2; }
+
+exec 9>"$LOCKFILE"; flock -n 9 || { log "[dropzone] organizer busy; exiting"; exit 0; }
+
+shopt -s nocasematch
+RE_VIDEO='\.(mkv|mp4|avi|m4v|ts|m2ts|mov|webm|ogm)$'
+RE_SUB='\.(srt|ass|ssa|sub|vtt|idx)$'
+RE_JUNK_EXT='\.(nfo|txt|sfv|md5|exe|bat|cmd|scr|url|lnk|website|jpe?g|png|gif|bmp|ini|db|par2?|nzb|torrent)$'
+RE_JUNK_PATH='/(sample|samples|proof|proofs|screens?|screenshots?|extras?|featurettes?|trailers?|bonus)/'
+RE_JUNK_NAME='(^|[._ -])(sample|rarbg|proof|readme|yenc)([._ -]|\.|$)'
+
+# per-series cache key, tolerant of scene separators (Test.Show.S01E01 and "Show S01E01")
+cache_key(){ local b="$1"
+  if [[ "$b" =~ ^(.+)[._[:space:]-]+[Ss]([0-9]{1,2})[Ee][0-9]{1,3} ]]; then
+    printf '%s|s%d' "${BASH_REMATCH[1],,}" "$((10#${BASH_REMATCH[2]}))"
+  fi; }
+
+detect_lang(){ local n=".${1,,}."
+  case "$n" in
+    *.es.*|*.spa.*|*.spanish.*|*.castellano.*|*.lat.*) echo es;;
+    *.en.*|*.eng.*|*.english.*) echo en;;
+    *.ja.*|*.jpn.*|*.japanese.*) echo ja;;
+    *.fr.*|*.fre.*|*.fra.*|*.french.*) echo fr;;
+    *.pt.*|*.por.*|*.portuguese.*) echo pt;;
+    *) echo "";;
+  esac; }
+
+markers_present(){ find "$1" \( -name '*.!qB' -o -name '*.!qb' -o -name '*.aria2' \
+  -o -name '*.part' -o -name '*.crdownload' -o -name '*.filepart' \) -print -quit 2>/dev/null | grep -q .; }
+
+mark_done(){ local ino; ino=$(stat -c '%i' "$1" 2>/dev/null) || return 0
+  printf '%s\t%s\n' "$ino" "$1" >>"$LEDGER"; }
+
+# hardlink keeping the original basename (seeding source untouched)
+linkinto(){ local src="$1" sub="$2" b dir dest; b=$(basename "$src")
+  dir="$MEDIA/$sub"; dest="$dir/$b"; mkdir -p "$dir"
+  if [[ -e "$dest" ]]; then log "EXISTS $sub/$b"; return 0; fi
+  if ln "$src" "$dest" 2>/dev/null; then log "LINK   $b -> $sub/"
+  else cp -n "$src" "$dest" 2>/dev/null && log "COPY   $b -> $sub/ (cross-fs)"; fi; }
+
+# ---- collect jobs ----
+declare -a JOBS=()
+while IFS= read -r -d '' j; do JOBS+=("$j"); done \
+  < <(find "$QUEUE" -mindepth 1 -maxdepth 1 -name '*.job' -print0 2>/dev/null)
+((${#JOBS[@]})) || { log "[dropzone] no jobs in queue"; exit 0; }
+log "[dropzone] processing ${#JOBS[@]} job(s)"
+
+for job in "${JOBS[@]}"; do
+  unit=$(awk -F'\t' '$1=="unit"{sub(/^unit\t/,""); print; exit}' "$job")
+  if [[ -z "$unit" || ! -e "$unit" ]]; then log "[dropzone] bad/gone unit in $(basename "$job"), dropping"; rm -f "$job"; continue; fi
+  if markers_present "$unit"; then log "GUARD  incomplete markers under $(basename "$unit"); keeping job"; continue; fi
+
+  # 1) gather videos + subs, skipping junk
+  declare -a VIDS=() SUBS=()
+  while IFS= read -r -d '' f; do
+    rel="/${f#"$unit"/}"
+    [[ "$f"   =~ $RE_JUNK_EXT  ]] && continue
+    [[ "$rel" =~ $RE_JUNK_PATH ]] && continue
+    [[ "$(basename "$f")" =~ $RE_JUNK_NAME ]] && continue
+    if   [[ "$f" =~ $RE_VIDEO ]]; then VIDS+=("$f")
+    elif [[ "$f" =~ $RE_SUB   ]]; then SUBS+=("$f"); fi
+  done < <(find "$unit" -type f -print0 2>/dev/null)
+
+  # 2) drop sample videos (by name<50MB, or <10% of median episode size)
+  MED=0
+  if ((${#VIDS[@]})); then
+    MED=$(for v in "${VIDS[@]}"; do stat -c '%s' "$v" 2>/dev/null; done | sort -n \
+          | awk '{a[NR]=$1} END{print (NR? a[int((NR+1)/2)] : 0)}')
+  fi
+  declare -a EPS=()
+  for v in "${VIDS[@]}"; do
+    sz=$(stat -c '%s' "$v" 2>/dev/null || echo 0)
+    if [[ "$(basename "$v")" =~ sample ]] && (( sz < 52428800 )); then log "SAMPLE $(basename "$v")"; continue; fi
+    (( MED > 0 )) && (( sz*10 < MED )) && { log "SAMPLE(size) $(basename "$v")"; continue; }
+    EPS+=("$v")
+  done
+  ((${#EPS[@]})) || EPS=("${VIDS[@]}")   # no clear episodes -> treat remaining videos (single file / manga)
+
+  if ((${#EPS[@]}==0)); then log "[dropzone] no media in $(basename "$unit"), dropping job"; rm -f "$job"; continue; fi
+
+  # 3) classify: ledger-skip + cache-hit, else lobo
+  declare -A DTYPE=() DSERIES=() DSEASON=()
+  declare -a NEED=() NEEDIDX=()
+  for i in "${!EPS[@]}"; do
+    f="${EPS[$i]}"; ino=$(stat -c '%i' "$f" 2>/dev/null) || continue
+    grep -qP "^${ino}\t" "$LEDGER" 2>/dev/null && { log "LEDGER seen $(basename "$f")"; continue; }
+    key=$(cache_key "$(basename "$f")"); hit=""
+    [[ -n "$key" ]] && hit=$(grep -P "^\\Q${key}\\E\t" "$CACHE" 2>/dev/null | head -1)
+    if [[ -n "$hit" ]]; then
+      IFS=$'\t' read -r _ t s sea <<<"$hit"
+      DTYPE[$i]="$t"; DSERIES[$i]="$s"; DSEASON[$i]="$sea"; log "CACHE  $(basename "$f") -> $t/$s"
+    else
+      NEED+=("$f"); NEEDIDX+=("$i")
+    fi
+  done
+
+  if ((${#NEED[@]})); then
+    digest=""
+    for k in "${!NEED[@]}"; do
+      b=$(basename "${NEED[$k]}"); ext="${b##*.}"
+      printf -v line '%s\t%s\t%s\t%s' "$k" "$ext" "$b" ""
+      digest+="$line"$'\n'
+    done
+    log "[dropzone] consulting lobo for ${#NEED[@]} file(s)"
+    plan=$(printf '%s' "$digest" | "$LOBO")
+    cost=$(printf '%s' "$plan" | jq -r '.total_cost_usd // empty' 2>/dev/null); [[ -n "$cost" ]] && log "lobo cost: \$$cost"
+    decs=$(printf '%s' "$plan" | jq -c '.structured_output.decisions // .decisions // empty' 2>/dev/null)
+    if [[ -z "$decs" || "$decs" == "null" ]]; then log "[dropzone] lobo no plan; raw: ${plan:0:300}"; continue; fi
+    while IFS= read -r d; do
+      kk=$(jq -r '.index' <<<"$d"); t=$(jq -r '.type' <<<"$d"); s=$(jq -r '.series_folder' <<<"$d"); sea=$(jq -r '.season' <<<"$d")
+      gi="${NEEDIDX[$kk]}"; DTYPE[$gi]="$t"; DSERIES[$gi]="$s"; DSEASON[$gi]="$sea"
+      key=$(cache_key "$(basename "${NEED[$kk]}")")
+      if [[ -n "$key" ]] && ! grep -qP "^\\Q${key}\\E\t" "$CACHE" 2>/dev/null; then
+        printf '%s\t%s\t%s\t%s\n' "$key" "$t" "$s" "$sea" >>"$CACHE"; fi
+    done < <(printf '%s' "$decs" | jq -c '.[]')
+  fi
+
+  # 4) apply: hardlink each decided episode + its paired subtitles
+  for i in "${!EPS[@]}"; do
+    f="${EPS[$i]}"; t="${DTYPE[$i]:-}"; s="${DSERIES[$i]:-}"; sea="${DSEASON[$i]:-null}"
+    [[ -z "$t" ]] && continue   # ledger-skipped earlier, or undecided
+    case "$t" in
+      anime) sub="anime/$s"; [[ "$sea" != "null" && -n "$sea" ]] && sub+=$(printf '/season-%02d' "$((10#$sea))") ;;
+      manga) sub="manga/$s" ;;
+      book)  sub="books/$s" ;;
+      ""|null) sub="anime/_unsorted"; log "UNPARSED $(basename "$f")" ;;
+      *) log "SKIP $(basename "$f") (type=$t)"; mark_done "$f"; continue ;;
+    esac
+    linkinto "$f" "$sub"
+
+    # pair subtitles: match by the episode's SxxEyy token, rename to <epstem>.<lang>.<ext>
+    ebase=$(basename "$f"); epstem="${ebase%.*}"; ekey=""
+    [[ "$ebase" =~ [Ss][0-9]{1,2}[Ee][0-9]{1,3} ]] && ekey="${BASH_REMATCH[0],,}"
+    for sf in "${SUBS[@]:-}"; do
+      [[ -z "$sf" ]] && continue
+      sb=$(basename "$sf"); m=0
+      if [[ -n "$ekey" && "${sb,,}" == *"$ekey"* ]]; then m=1
+      elif [[ -z "$ekey" && ${#EPS[@]} -eq 1 ]]; then m=1   # single-file unit: one ep, pair any sub
+      fi
+      (( m )) || continue
+      lang=$(detect_lang "$sb"); sext="${sb##*.}"
+      if [[ -n "$lang" ]]; then sdest="$epstem.$lang.$sext"; else sdest="$epstem.$sext"; fi
+      mkdir -p "$MEDIA/$sub"
+      if [[ -e "$MEDIA/$sub/$sdest" ]]; then :
+      elif ln "$sf" "$MEDIA/$sub/$sdest" 2>/dev/null; then log "SUB    $sb -> $sub/$sdest"
+      else cp -n "$sf" "$MEDIA/$sub/$sdest" 2>/dev/null; fi
+    done
+    mark_done "$f"
+  done
+
+  rm -f "$job"
+  log "[dropzone] done: $(basename "$unit")"
+done
+shopt -u nocasematch
+log "[dropzone] finished"

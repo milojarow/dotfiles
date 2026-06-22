@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# mal-organizer-lobo — judgment layer for the Incoming organizer.
+#
+# Reads a digest on stdin, one file per line, TAB-separated:
+#     INDEX<TAB>EXTENSION<TAB>FILENAME<TAB>HINT
+# Returns a JSON move-plan on stdout:
+#     {"decisions":[{"index":N,"type":"anime|manga|book|skip",
+#                    "series_folder":"kebab","season":N|null}, ...]}
+#
+# Anti-fork-bomb locks (manada): CLAUDE_HEADLESS guard so the operator's hooks
+# bail; no Agent tool (cannot spawn more lobos); single-shot structured output
+# via --json-schema (no agentic loop to run away); cheap model.
+set -uo pipefail
+
+STATE="$HOME/.local/state/mal-organizer"
+SCHEMA="$STATE/lobo-schema.json"
+MODEL="${LOBO_MODEL:-sonnet}"
+
+digest="$(cat)"
+# nothing but whitespace -> empty plan
+[[ -z "${digest//[$' \t\r\n']/}" ]] && { printf '{"decisions":[]}\n'; exit 0; }
+
+SYS='You are the organizer "lobo" for a personal anime/manga library on Linux.
+Input: a digest of newly downloaded files, one per line, TAB-separated:
+INDEX<TAB>EXTENSION<TAB>FILENAME<TAB>HINT  (HINT may be empty).
+For EACH line decide, using your knowledge of anime and manga titles:
+- "type": "anime" for video episodes; "manga" for image comics (cbz/cbr/zip, or an
+  EPUB that is image-based manga); "book" for text novels or light novels (a PDF, or
+  an EPUB that is mostly text); "skip" if it is not library media. For an EPUB the
+  HINT carries "images=N textpages=M": a high image count (about one per page) means
+  image-based manga; very few images (just a cover) means a text novel => book.
+  Combine the hint with the title.
+- "series_folder": the canonical series name as lowercase kebab-case, collapsing
+  season-specific titles to the base series (e.g. "Initial D" -> "initial-d";
+  "Sousou no Frieren" -> "frieren"; "Shingeki no Kyojin" -> "attack-on-titan").
+- "season": integer season for anime (infer from SxxExx or context); null for
+  manga, book, or when unknown.
+Do NOT rename files; you only choose the destination folder. Preserve each INDEX
+exactly. Return ONLY the JSON object for the schema, one decision per input line.'
+
+CLAUDE_HEADLESS=1 claude -p "$digest" \
+  --append-system-prompt "$SYS" \
+  --allowed-tools Read \
+  --dangerously-skip-permissions \
+  --exclude-dynamic-system-prompt-sections \
+  --model "$MODEL" \
+  --output-format json \
+  --json-schema "$(cat "$SCHEMA")"

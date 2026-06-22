@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch the mal-organizer job queue for completed downloads (MAL local tracking)
+
+[Path]
+PathModified=%h/.local/state/mal-organizer/queue
+Unit=mal-dropzone.service
+
+[Install]
+WantedBy=default.target

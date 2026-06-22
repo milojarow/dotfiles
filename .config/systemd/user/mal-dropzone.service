@@ -1,0 +1,11 @@
+[Unit]
+Description=Organize completed torrent/HTTP downloads into ~/media (MAL local tracking)
+After=default.target
+
+[Service]
+Type=oneshot
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStartPre=/usr/bin/sleep 3
+ExecStart=%h/.scripts/mal-organizer-dropzone
+Nice=10
+IOSchedulingClass=idle

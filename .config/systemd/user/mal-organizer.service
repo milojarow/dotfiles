@@ -1,0 +1,11 @@
+[Unit]
+Description=Organize new aMule downloads into ~/media (MAL local tracking)
+After=default.target
+
+[Service]
+Type=oneshot
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStartPre=/usr/bin/sleep 10
+ExecStart=%h/.scripts/mal-organizer
+Nice=10
+IOSchedulingClass=idle

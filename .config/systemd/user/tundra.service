@@ -1,0 +1,12 @@
+[Unit]
+Description=Tundra — MyAnimeList scrobbler daemon (watches mpv via MPRIS)
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tundra daemon
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target
