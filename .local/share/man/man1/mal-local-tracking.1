@@ -1,4 +1,4 @@
-.TH MAL-LOCAL-TRACKING 1 "2026-06-21" "1.2" "sway dotfiles"
+.TH MAL-LOCAL-TRACKING 1 "2026-06-24" "1.3" "sway dotfiles"
 .SH NAME
 mal-local-tracking \- auto-file aMule and torrent/HTTP downloads into a media library and scrobble anime/manga to MyAnimeList
 .SH DESCRIPTION
@@ -157,8 +157,14 @@ closed (it rewrites the file on exit). Backup: \fI.bak-maltrack\fR.
 pointing at aria2-deliver.
 .SS Library
 .TP
-.I $HOME/media/anime/<series>/season-NN/
-anime, filed per season.
+.I $HOME/media/anime/<series>/<installment>/
+anime, filed per installment \[em] a numbered
+.I season-NN
+for ordinary seasons, or a named lowercase kebab-case folder
+.RI ( fifth-stage ,
+.IR final-stage )
+when the series uses named installments instead of plain numbers (the Initial D
+"Stages", a "Final Season").
 .TP
 .I $HOME/media/manga/<series>/
 manga (cbz/zip), read by Suwayomi.
@@ -310,6 +316,20 @@ title. mpv-mpris auto-loads from
 A seek-jump past 50% does not count (anti-cheat); watch past the halfway point.
 The series must be on the MAL list. Multi-stage titles map correctly (Initial D
 season 4 \[->] "Fourth Stage") via anitomy plus anime-relations.
+.IP \[bu] 2
+.B Named installments, not just numbers.
+The lobo
+.I season
+field is an integer for ordinary seasons but a lowercase kebab-case STRING for
+series with named installments (the Initial D Stages \[->]
+.IR fifth-stage / final-stage ;
+a "Final Season"). The organizers build
+.I season-NN
+from an integer and use the string verbatim otherwise, so the library folder
+shows the real installment name. The schema
+.RI ( lobo-schema.json )
+allows season to be integer, string, or null. Scrobbling is unaffected \[em]
+tundra maps by filename, not folder.
 .IP \[bu] 2
 .B Suwayomi runs as the user, not its system service.
 The shipped

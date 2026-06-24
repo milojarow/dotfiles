@@ -122,7 +122,14 @@ for i in "${!FILES[@]}"; do
   t="${D_TYPE[$i]:-}"; s="${D_SERIES[$i]:-}"; sea="${D_SEASON[$i]:-null}"
   [[ -z "$t" ]] && { log "NODEC  $b"; continue; }
   case "$t" in
-    anime) sub="anime/$s"; [[ "$sea" != "null" && -n "$sea" ]] && sub+=$(printf '/season-%02d' "$((10#$sea))") ;;
+    anime)
+      sub="anime/$s"
+      if [[ "$sea" != "null" && -n "$sea" ]]; then
+        if [[ "$sea" =~ ^[0-9]+$ ]]; then sub+=$(printf '/season-%02d' "$((10#$sea))")
+        else san=$(printf '%s' "${sea,,}" | sed -E 's/[[:space:]_]+/-/g; s/[^a-z0-9-]//g; s/-+/-/g; s/^-|-$//g'); [[ -n "$san" ]] && sub+="/$san"
+        fi
+      fi
+      ;;
     manga) sub="manga/$s" ;;
     book)  sub="books/$s" ;;
     *)     log "SKIP   $b (type=$t)"; mark_done "$f"; continue ;;

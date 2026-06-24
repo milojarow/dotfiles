@@ -11,7 +11,7 @@
           "index": { "type": "integer", "description": "The INDEX from the input digest line" },
           "type": { "type": "string", "enum": ["anime", "manga", "book", "skip"] },
           "series_folder": { "type": "string", "description": "Canonical series name as lowercase kebab-case folder" },
-          "season": { "type": ["integer", "null"], "description": "Season number for anime, null otherwise" }
+          "season": { "type": ["integer", "string", "null"], "description": "Anime installment: an INTEGER for ordinary numbered seasons, OR a lowercase kebab-case STRING for named installments (e.g. 'final-stage'); null for manga/book/unknown" }
         },
         "required": ["index", "type", "series_folder", "season"]
       }

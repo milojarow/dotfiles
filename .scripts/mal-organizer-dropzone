@@ -144,7 +144,14 @@ for job in "${JOBS[@]}"; do
     f="${EPS[$i]}"; t="${DTYPE[$i]:-}"; s="${DSERIES[$i]:-}"; sea="${DSEASON[$i]:-null}"
     [[ -z "$t" ]] && continue   # ledger-skipped earlier, or undecided
     case "$t" in
-      anime) sub="anime/$s"; [[ "$sea" != "null" && -n "$sea" ]] && sub+=$(printf '/season-%02d' "$((10#$sea))") ;;
+      anime)
+        sub="anime/$s"
+        if [[ "$sea" != "null" && -n "$sea" ]]; then
+          if [[ "$sea" =~ ^[0-9]+$ ]]; then sub+=$(printf '/season-%02d' "$((10#$sea))")
+          else san=$(printf '%s' "${sea,,}" | sed -E 's/[[:space:]_]+/-/g; s/[^a-z0-9-]//g; s/-+/-/g; s/^-|-$//g'); [[ -n "$san" ]] && sub+="/$san"
+          fi
+        fi
+        ;;
       manga) sub="manga/$s" ;;
       book)  sub="books/$s" ;;
       ""|null) sub="anime/_unsorted"; log "UNPARSED $(basename "$f")" ;;

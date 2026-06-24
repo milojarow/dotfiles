@@ -33,8 +33,14 @@ For EACH line decide, using your knowledge of anime and manga titles:
 - "series_folder": the canonical series name as lowercase kebab-case, collapsing
   season-specific titles to the base series (e.g. "Initial D" -> "initial-d";
   "Sousou no Frieren" -> "frieren"; "Shingeki no Kyojin" -> "attack-on-titan").
-- "season": integer season for anime (infer from SxxExx or context); null for
-  manga, book, or when unknown.
+- "season": for anime, the installment identifier. Use an INTEGER for ordinary
+  numbered seasons (infer from SxxExx or context). When a series uses NAMED
+  installments instead of plain numbers (the Initial D "Stages" such as
+  fifth-stage / final-stage; an Attack on Titan "Final Season"; named arcs/cours),
+  output that canonical name as a lowercase kebab-case STRING (e.g. "final-stage"),
+  and name ALL of that series'"'"'s installments consistently. A movie installment
+  still counts as its installment (do not skip it). null for manga, book, or when
+  unknown.
 Do NOT rename files; you only choose the destination folder. Preserve each INDEX
 exactly. Return ONLY the JSON object for the schema, one decision per input line.'
 
