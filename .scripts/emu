@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+# emu - manage the fleet of Android tester emulators (tester-01 .. tester-NN)
+# Each AVD maps to a fixed port: tester-NN -> 5554 + 2*(NN-1) -> serial emulator-PORT
+set -euo pipefail
+
+export ANDROID_HOME=/opt/android-sdk
+export ANDROID_SDK_ROOT=/opt/android-sdk
+EMULATOR="$ANDROID_HOME/emulator/emulator"
+AVDMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager"
+ADB="$ANDROID_HOME/platform-tools/adb"
+IMAGE="system-images;android-36;google_apis_playstore;x86_64"
+DEVICE_PROFILE="medium_phone"
+AVD_DIR="$HOME/.android/avd"
+LOG_DIR="$HOME/.local/share/emu"
+RAM_PER_AVD_MB=2048
+RAM_WARN_MB=3000
+
+mkdir -p "$LOG_DIR"
+
+usage() {
+    cat <<EOF
+emu - flota de emuladores Android para testing
+
+Uso:
+  emu <n>            arranca tester-NN (ventana grafica)
+  emu -l, --list     lista AVDs y su estado
+  emu -c, --create <n|a-b>   crea tester-NN (o rango, ej: 1-15)
+  emu -k, --kill <n|all>     apaga tester-NN (o todos)
+  emu -w, --wipe <n>         arranca tester-NN con factory reset
+  emu -h, --help     esta ayuda
+
+Sin argumentos: igual que --list.
+EOF
+}
+
+pad() { printf "%02d" "$1"; }
+
+validate_n() {
+    if ! [[ "$1" =~ ^[0-9]+$ ]] || (( $1 < 1 || $1 > 99 )); then
+        echo "Error: '$1' no es un numero de emulador valido (1-99)"
+        exit 1
+    fi
+}
+
+port_for() { echo $((5554 + 2 * ($1 - 1))); }
+
+is_running() {
+    local port; port=$(port_for "$1")
+    "$ADB" devices 2>/dev/null | grep -q "^emulator-$port[[:space:]]"
+}
+
+avd_exists() { [ -d "$AVD_DIR/tester-$(pad "$1").avd" ]; }
+
+mem_available_mb() { awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo; }
+
+patch_ini() {
+    local file="$1" key="$2" value="$3"
+    if grep -q "^${key}=" "$file"; then
+        sed -i "s|^${key}=.*|${key}=${value}|" "$file"
+    else
+        echo "${key}=${value}" >> "$file"
+    fi
+}
+
+create_one() {
+    local n="$1" name pad_n
+    pad_n=$(pad "$n"); name="tester-$pad_n"
+    if avd_exists "$n"; then
+        echo "[$name] ya existe, sin cambios"
+        return 0
+    fi
+    echo "[$name] creando AVD (imagen: Android 16 + Play Store, perfil: $DEVICE_PROFILE)..."
+    echo "no" | "$AVDMANAGER" create avd -n "$name" -k "$IMAGE" -d "$DEVICE_PROFILE" >/dev/null
+    local ini="$AVD_DIR/$name.avd/config.ini"
+    patch_ini "$ini" "hw.ramSize" "$RAM_PER_AVD_MB"
+    patch_ini "$ini" "hw.keyboard" "yes"
+    patch_ini "$ini" "disk.dataPartition.size" "8G"
+    patch_ini "$ini" "hw.gpu.mode" "auto"
+    echo "[$name] creado (RAM ${RAM_PER_AVD_MB}MB, data 8G, puerto $(port_for "$n"))"
+}
+
+cmd_create() {
+    local arg="${1:?falta el numero o rango, ej: emu -c 3  |  emu -c 1-15}"
+    if [[ "$arg" =~ ^([0-9]+)-([0-9]+)$ ]]; then
+        local a="${BASH_REMATCH[1]}" b="${BASH_REMATCH[2]}"
+        validate_n "$a"; validate_n "$b"
+        for ((i=a; i<=b; i++)); do create_one "$i"; done
+    else
+        validate_n "$arg"
+        create_one "$arg"
+    fi
+}
+
+cmd_start() {
+    local n="$1"; validate_n "$n"
+    local pad_n name port
+    pad_n=$(pad "$n"); name="tester-$pad_n"; port=$(port_for "$n")
+    if ! avd_exists "$n"; then
+        echo "[$name] no existe. Crealo primero: emu -c $n"
+        exit 1
+    fi
+    if is_running "$n"; then
+        echo "[$name] ya esta corriendo (serial emulator-$port)"
+        return 0
+    fi
+    local avail; avail=$(mem_available_mb)
+    if (( avail < RAM_WARN_MB )); then
+        echo "AVISO: solo ${avail}MB de RAM disponibles (cada emulador usa ~2500MB reales)."
+        echo "       Considera cerrar Brave o apagar otro emulador (emu -k <n>)."
+    fi
+    echo "[$name] arrancando en puerto $port (log: $LOG_DIR/$name.log)..."
+    nohup "$EMULATOR" -avd "$name" -port "$port" -no-metrics -no-boot-anim \
+        > "$LOG_DIR/$name.log" 2>&1 &
+    echo "[$name] lanzado (PID $!). La ventana aparece en unos segundos; el boot tarda ~1-2 min la primera vez, despues segundos (quickboot)."
+    echo "        Serial adb: emulator-$port"
+}
+
+cmd_wipe() {
+    local n="$1"; validate_n "$n"
+    local pad_n name port
+    pad_n=$(pad "$n"); name="tester-$pad_n"; port=$(port_for "$n")
+    if ! avd_exists "$n"; then
+        echo "[$name] no existe. Crealo primero: emu -c $n"
+        exit 1
+    fi
+    if is_running "$n"; then
+        echo "[$name] esta corriendo; apagalo primero: emu -k $n"
+        exit 1
+    fi
+    echo "[$name] arrancando con FACTORY RESET (se borran apps, cuenta y datos)..."
+    nohup "$EMULATOR" -avd "$name" -port "$port" -no-metrics -no-boot-anim -wipe-data \
+        > "$LOG_DIR/$name.log" 2>&1 &
+    echo "[$name] lanzado con datos limpios (PID $!)."
+}
+
+cmd_kill() {
+    local arg="${1:?falta el numero, ej: emu -k 3  |  emu -k all}"
+    if [ "$arg" = "all" ]; then
+        local killed=0
+        for d in "$AVD_DIR"/tester-*.avd; do
+            [ -d "$d" ] || continue
+            local base num
+            base=$(basename "$d" .avd)
+            num=$((10#${base#tester-}))
+            if is_running "$num"; then
+                "$ADB" -s "emulator-$(port_for "$num")" emu kill >/dev/null 2>&1
+                echo "[$base] apagado"
+                killed=1
+            fi
+        done
+        [ "$killed" -eq 0 ] && echo "No habia emuladores corriendo"
+        return 0
+    fi
+    validate_n "$arg"
+    local name port
+    name="tester-$(pad "$arg")"; port=$(port_for "$arg")
+    if ! is_running "$arg"; then
+        echo "[$name] no esta corriendo"
+        return 0
+    fi
+    "$ADB" -s "emulator-$port" emu kill >/dev/null 2>&1
+    echo "[$name] apagado (el quickboot snapshot se guarda al cerrar)"
+}
+
+cmd_list() {
+    local found=0 running=0
+    printf "%-12s %-10s %-16s %s\n" "AVD" "ESTADO" "SERIAL" "CUENTA/NOTAS"
+    for d in "$AVD_DIR"/tester-*.avd; do
+        [ -d "$d" ] || continue
+        found=1
+        local base num port state
+        base=$(basename "$d" .avd)
+        num=$((10#${base#tester-}))
+        port=$(port_for "$num")
+        if is_running "$num"; then
+            state="corriendo"; running=$((running+1))
+        else
+            state="apagado"
+        fi
+        printf "%-12s %-10s %-16s %s\n" "$base" "$state" "emulator-$port" ""
+    done
+    if [ "$found" -eq 0 ]; then
+        echo "(no hay AVDs tester-* creados; usa: emu -c 1-15)"
+        return 0
+    fi
+    echo
+    echo "Corriendo: $running | RAM disponible: $(mem_available_mb)MB (~2500MB por emulador)"
+}
+
+case "${1:-}" in
+    -h|--help) usage ;;
+    -l|--list|"") cmd_list ;;
+    -c|--create) shift; cmd_create "${1:-}" ;;
+    -k|--kill) shift; cmd_kill "${1:-}" ;;
+    -w|--wipe) shift; cmd_wipe "${1:?falta el numero, ej: emu -w 3}" ;;
+    -*) echo "Flag desconocida: $1"; usage; exit 1 ;;
+    *) cmd_start "$1" ;;
+esac

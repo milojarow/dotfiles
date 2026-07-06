@@ -1,0 +1,247 @@
+.TH EMU 1 "2026-07-05" "1.0" "User Commands"
+.SH NAME
+emu \- fleet of Android emulators with Google Play for multi-account app testing
+.SH SYNOPSIS
+.B emu
+.I n
+.br
+.B emu
+[\fB\-l\fR|\fB\-\-list\fR]
+.br
+.B emu \-c
+.IR n | a\-b
+.br
+.B emu \-k
+.IR n | all
+.br
+.B emu \-w
+.I n
+.br
+.B emu \-h
+.SH DESCRIPTION
+.B emu
+manages a fleet of Android Virtual Devices named
+.IR tester\-01 " through " tester\-NN ,
+each a full Android 16 (API 36) phone with the certified Google Play Store,
+so every device can sign in to its own Google account and enroll as a tester
+for apps under development (Play Console closed testing).
+.PP
+Each AVD maps to a deterministic adb port,
+.RI "port = 5554 + 2\[mu](" n "\-1),"
+so
+.I tester\-01
+is always serial
+.IR emulator\-5554 ,
+.I tester\-02
+is
+.IR emulator\-5556 ,
+and so on \[em] stable targets for adb scripting.
+.PP
+The bare argument is always the device number (house CLI convention):
+.B emu 3
+starts
+.IR tester\-03 .
+Operations are dashed flags. Every command prints feedback; nothing is silent.
+.SH USAGE
+.TP
+.B emu \-c 1\-15
+Create the fleet (idempotent; existing AVDs are left untouched and reported).
+.TP
+.B emu 1
+Start
+.I tester\-01
+in a phone window. First boot takes 1\-2 minutes; after a clean shutdown a
+quickboot snapshot makes later boots take seconds. Sign in to the device's
+Google account through the normal Android setup, then open the Play Console
+opt\-in link in the device browser to enroll that account as a tester; the
+app under test then appears in that device's Play Store.
+.TP
+.B emu \-k 1
+Shut down cleanly (this is what saves the quickboot snapshot).
+.TP
+.B emu \-w 1
+Boot with factory reset \[em] wipes apps, account, and data of that device
+for a from\-scratch test run. Refuses to run while the device is up.
+.SH FILES
+.SS Scripts
+.TP
+.I ~/.scripts/emu
+The fleet CLI (bash). Holds the image/profile constants
+.RI ( "system\-images;android\-36;google_apis_playstore;x86_64" ,
+.IR medium_phone ),
+per\-AVD RAM (2048 MB), and the RAM warning threshold (3000 MB).
+.SS Configuration
+.TP
+.I ~/.config/fish/conf.d/android\-sdk.fish
+Exports
+.BR ANDROID_HOME / ANDROID_SDK_ROOT
+and adds cmdline\-tools, platform\-tools, and emulator to fish's PATH.
+Needed because fish does not read
+.IR /etc/profile.d .
+.TP
+.I /etc/profile.d/android\-sdk\-cmdline\-tools.sh
+Same environment for POSIX shells; shipped by the AUR package.
+.TP
+.I ~/.android/avd/tester\-NN.avd/config.ini
+Per\-device hardware config. Created by
+.B emu \-c
+and patched:
+.IR hw.ramSize=2048 ,
+.IR hw.keyboard=yes
+(host keyboard for typing passwords),
+.IR disk.dataPartition.size=8G ,
+.IR hw.gpu.mode=auto .
+.SS SDK binaries
+.TP
+.I /opt/android\-sdk/emulator/emulator
+QEMU\-based emulator, installed and updated by sdkmanager (v36.6.11 at forge time).
+.TP
+.I /opt/android\-sdk/platform\-tools/adb
+The only adb on the system (deliberately \[em] see GOTCHAS).
+.TP
+.I /opt/android\-sdk/cmdline\-tools/latest/bin/
+.BR avdmanager " and " sdkmanager
+(create AVDs; install/update SDK components).
+.SS Data & state
+.TP
+.I ~/.android/avd/tester\-NN.avd/
+Everything the device owns: userdata image, quickboot snapshots, config.
+Grows to roughly 4\-5 GB per device with apps installed.
+.TP
+.I /opt/android\-sdk/system\-images/android\-36/google_apis_playstore/x86_64/
+The system image, shared read\-only by all 15 devices.
+.TP
+.I ~/.local/share/emu/tester\-NN.log
+Emulator stdout/stderr per device, overwritten on each start.
+.SH FLOW
+.nr step 1 1
+.IP \n[step]. 3
+.B emu \-c
+.I n
+\[->]
+.B avdmanager
+creates the AVD from the Play Store image with the
+.I medium_phone
+profile \[->] config.ini is patched (RAM, keyboard, data size, GPU).
+.IP \n+[step].
+.B emu
+.I n
+\[->] checks the AVD exists, is not already running, and warns if available
+RAM is under 3 GB \[->] launches
+.B emulator
+detached on the device's fixed port \[->] QEMU boots Android under KVM
+(~25 s first boot, seconds from snapshot) \[->] the window maps in sway via
+XWayland with class
+.IR Emulator .
+.IP \n+[step].
+The adb server discovers
+.IR emulator\-PORT ;
+.B emu \-l
+reports it as running.
+.IP \n+[step].
+.B emu \-k
+.I n
+\[->]
+.B adb emu kill
+\[->] clean shutdown saves the quickboot snapshot.
+.SH PROGRAMS
+.BR emulator " (qemu\-system\-x86_64),"
+.BR adb ,
+.BR avdmanager ,
+.BR awk / sed / grep
+(config patching and RAM checks).
+.SH DEPENDENCIES
+.TP
+.B android\-sdk\-cmdline\-tools\-latest
+AUR (21.0\-1). Bootstraps the SDK: provides sdkmanager and avdmanager under
+.IR /opt/android\-sdk .
+.TP
+.B SDK components (installed by sdkmanager, not pacman)
+.IR emulator ,
+.IR platform\-tools ,
+.IR "system\-images;android\-36;google_apis_playstore;x86_64" .
+Update with
+.BR "sdkmanager \-\-update" .
+.TP
+.B java\-runtime
+OpenJDK (via java\-runtime\-common); sdkmanager and avdmanager are Java tools.
+.SH "HARDWARE NOTES"
+.IP \[bu] 2
+Acceleration via KVM
+.RI ( /dev/kvm );
+measured first boot 25 s on the i7\-6820HQ.
+.IP \[bu] 2
+Each running device costs ~2.5 GB of real RAM. With 15 GB total: 3
+concurrent devices with the browser closed, 1\-2 with Brave open. The script
+warns below 3 GB available but does not block.
+.IP \[bu] 2
+The 15 devices exist as AVDs on disk; concurrency is the only limit \[em]
+run in batches and rotate.
+.SH GOTCHAS
+.IP \[bu] 2
+The Play Store image tag is
+.IR google_apis_playstore ,
+not
+.IR google_play .
+Grepping sdkmanager listings for the latter finds nothing.
+.IP \[bu] 2
+There is deliberately ONE adb on the system (the SDK's platform\-tools).
+Installing
+.B android\-tools
+from the repos adds a second adb whose version mismatch kills and restarts
+the adb server on every alternate use.
+.IP \[bu] 2
+.I /opt/android\-sdk
+was chown'd to the user (single\-user pragmatism; the android\-sdk group
+alternative requires re\-login). An AUR package update returns
+.I cmdline\-tools/
+to root ownership \[em] benign, pacman manages that subtree; everything
+sdkmanager installed stays user\-owned.
+.IP \[bu] 2
+The emulator window is XWayland with
+.B class
+.IR Emulator ,
+not a native Wayland app_id \[em] sway criteria must use
+.IR [class="Emulator"] ,
+and in
+.B swaymsg \-t get_tree
+it appears under
+.IR window_properties.class .
+.IP \[bu] 2
+Quickboot snapshots are saved only on clean shutdown
+.RB ( "emu \-k"
+/
+.BR "adb emu kill" ).
+Killing the qemu process discards the session state.
+.IP \[bu] 2
+Google accounts for the fleet must be created spaced out over days, not in a
+burst \[em] burst creation from one IP triggers phone verification per
+account and early suspensions. The residential (CGNAT) IP is better standing
+for signups than a datacenter VPS exit; do not route the fleet through the
+VPS for this.
+.IP \[bu] 2
+Tester enrollment (Play Console closed testing) is a web opt\-in link \[em]
+it can be opened in the device browser or any browser where that account is
+signed in; the app then appears in that device's Play Store.
+.SH NOTES
+.IP \[bu] 2
+Nothing starts at boot or login; devices launch on demand and their state
+persists on disk between sessions.
+.IP \[bu] 2
+Removing the feature entirely:
+.IR ~/.scripts/emu ,
+.IR ~/.config/fish/conf.d/android\-sdk.fish ,
+.IR ~/.android/avd/ ,
+.IR ~/.local/share/emu/ ,
+then
+.B pacman \-R android\-sdk\-cmdline\-tools\-latest
+and delete
+.IR /opt/android\-sdk .
+.IP \[bu] 2
+Emulators are stock AOSP/Pixel\-style Android \[em] a bug that depends on a
+vendor skin (Motorola MyUX, Samsung One UI) will not reproduce here.
+.SH "SEE ALSO"
+.B emu \-h
+for the built\-in summary. Official emulator CLI reference:
+.UR https://developer.android.com/studio/run/emulator\-commandline
+.UE
