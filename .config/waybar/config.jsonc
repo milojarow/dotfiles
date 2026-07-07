@@ -167,6 +167,9 @@
             // Messaging
             "class<altus>":                                        "\uf232",
             "class<org\\.telegram\\.desktop|telegramdesktop>":     "\uf2c6",
+            "class<vesktop>":                                      "\uf1ff",
+            // P2P / downloads
+            "class<org\\.amule\\.aMule>":                          "\uf019",
             // File managers
             "class<nemo|nautilus|thunar|pcmanfm>":                 "\uf4d3",
             // Email
