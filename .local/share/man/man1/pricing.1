@@ -1,0 +1,272 @@
+.TH PRICING 1 "2026-07-06" "1.0" "sway dotfiles"
+.SH NAME
+pricing \- local offline PFAE pricing/quoting cockpit (LTV:CAC + cost-plus + progressive ISR)
+.SH SYNOPSIS
+.B pricing
+.PP
+Takes no arguments and no flags. Opens the calculator cockpit in the default
+browser and exits.
+.SH DESCRIPTION
+.B pricing
+is a single self-contained HTML page that answers one question: \(lqhow much
+do I charge this new client?\(rq It is built for a Mexican freelancer/agency
+operating as Persona F\('isica con Actividad Empresarial (PFAE), and combines
+two pricing heuristics with real progressive income tax:
+.IP \(bu 3
+.B LTV:CAC
+\(em a client's lifetime value must be some multiple of what it cost to
+acquire them, or the relationship burns money.
+.IP \(bu 3
+.B Cost-plus
+\(em price is derived bottom-up from a target net take-home salary plus
+monthly business costs plus profit, expressed as a real hourly cost.
+.PP
+The engine turns a desired net salary into the actual pre-tax utilidad
+required (inverting Mexico's progressive ISR brackets), adds deductible
+business costs, and divides by monthly capacity hours to get a
+tax-aware cost per hour. Each quote is then priced in one of three modes:
+.B renta
+(recurring monthly rent, the primary model), \c
+.B unico
+(one-off project), or \c
+.B buyout
+(client buys out of a recurring contract).
+.PP
+The tool runs entirely offline \(em no network calls, no login, no server.
+All state lives in the browser's
+.B localStorage
+for the
+.I file://
+origin. It is an internal decision aid only, never client-facing.
+.SH FILES
+.SS Application
+.TP
+.I $HOME/projects/pricing-calculator/index.html
+One self-contained HTML file: inline
+.B <style>,
+inline
+.B <script>
+math engine, inline UI script. Zero external dependencies, zero network
+calls. The math engine lives between the
+.I // ENGINE_START
+and
+.I // ENGINE_END
+comment markers inside the page and is exposed as
+.B globalThis.PE
+so it can be exercised by a separate test file outside the DOM.
+.SS Launcher
+.TP
+.I $HOME/.scripts/pricing
+Thin wrapper: resolves the
+.I index.html
+path, hands it to
+.BR xdg-open (1)
+as a
+.I file://
+URL in the background, and prints a one-line confirmation. Exits 1 with a
+message if the HTML file is missing.
+.SS "Local storage (browser state)"
+Two keys under the page's
+.B localStorage,
+scoped to the
+.I file://
+origin (only this browser profile sees them):
+.TP
+.I pricing.settings.v1
+\(lqMi negocio\(rq \(em the operator's global business settings: target net
+monthly salary, itemized monthly fixed costs (each with a
+.B deductible
+flag), capacity hours per month, a manual USD\(->MXN FX rate, the IVA
+regime, the target LTV:CAC ratio, target margin, and target buyout months.
+Set once, edited rarely. The ISR bracket table is
+.I not
+persisted under this key \(em see GOTCHAS.
+.TP
+.I pricing.quotes.v1
+Saved quote history: an array of
+.RI { id ", " clientName ", " quote ", " savedAt }
+entries written whenever a quote is explicitly saved. A convenience list
+only \(em clearing it loses saved drafts, not any engine behavior.
+.SH "CALC PIPELINE"
+Two ordered stages. Stage 1 runs once per settings change; Stage 2 runs
+once per quote and consumes Stage 1's output.
+.PP
+\fBStage 1 \(em businessFigures(settings)\fR
+.nr step 1 1
+.IP \n[step]. 3
+Split fixed costs into
+.B Cded
+(sum where
+.I deductible
+is true) and
+.B Cnonded
+(sum where false).
+.IP \n+[step].
+.B U
+(utilidad, taxable profit) =
+.I solveUtilidad(salaryNet, Cnonded)
+\(em inverts the progressive ISR table to find the utilidad that nets
+.I exactly
+.I salaryNet
+take-home after ISR and non-deductible costs.
+.IP \n+[step].
+.B isrMonthly
+=
+.I isr(U)
+\(em the monthly ISR bracket tax on U.
+.IP \n+[step].
+.B nut
+= U + Cded \(em total monthly revenue needed to cover profit plus
+deductible costs.
+.IP \n+[step].
+.B costHour
+= nut / capacityHours \(em the real, tax-aware hourly cost of running
+the business.
+.PP
+\fBStage 2 \(em quoteOutputs(settings, quote)\fR
+.nr step 1 1
+.IP \n[step]. 3
+.B buildHours
+= buildDays \(mu hoursPerDay;
+.B buildCost
+= buildHours \(mu costHour \(em this is CAC (customer acquisition cost).
+.IP \n+[step].
+Convert the quoted price to MXN via
+.I fxUsdMxn
+if quoted in USD, then apply the IVA regime
+.RI ( ivaMode )
+to get
+.B net
+(revenue that is actually the operator's) and
+.B ivaToSat
+(the portion owed to SAT).
+.IP \n+[step].
+Branch on
+.B mode:
+.RS
+.IP \(bu 2
+.B renta
+\(em LTV = (net \- serveCostMonthly) \(mu retentionMonths; ratio = LTV /
+CAC; sem\('aforo is green when ratio \(>= targetRatio, yellow
+when ratio \(>= 1, red otherwise; breakEvenClients = ceil(nut / net);
+plus a suggested price floor/ceiling and an effective-hourly table at
+1, 12, 24, and retentionMonths months.
+.IP \(bu 2
+.B unico
+\(em priceFloor = buildCost; priceSuggested = buildCost \(mu
+(1 + targetMargin).
+.IP \(bu 2
+.B buyout
+\(em buyoutFair = monthlyRent \(mu targetBuyoutMonths; proposedInMonths
+= proposedPrice / monthlyRent; warns when proposedInMonths < 12.
+.RE
+.SH USAGE
+Run
+.B pricing
+to open the cockpit, fill in \(lqMi negocio\(rq once, then price each new
+quote in the quote form. Worked example, renta mode, using the app's
+built-in defaults (a placeholder target salary, default capacity hours,
+and a lump default fixed-cost total \(em edit all three for your real
+numbers in Settings):
+.PP
+.RS
+.nf
+Quote:  renta, price $4,000 MXN/mes, build 3 d\('ias \(mu 12 h/d\('ia
+        (36 build hours), retenci\('on 24 meses, sin factura
+Result: CAC (buildCost)  ~4,239 MXN
+        LTV              96,000 MXN   (4,000 \(mu 24)
+        LTV:CAC ratio    ~22.6   \(-> sem\('aforo GREEN (target ratio 3)
+        break-even       6 clientes  (ceil(nut / net))
+.fi
+.RE
+.PP
+Reading it: at this hourly cost structure, a single $4,000/mes taquer\('ia
+client returning for 24 months is worth ~22.6\(mu what it cost to build
+their system \(em far past the 3\(mu floor \(em and six such clients
+alone cover the whole monthly nut (profit target + deductible costs).
+Change any input (retention, price, build time, capacity hours) and every
+downstream number recomputes live.
+.SH GOTCHAS
+.TP
+.B The ISR table is a pricing estimate, not a filing
+The bundled 2026 monthly ISR bracket table was cross-checked against
+facturama before shipping. A calculamx lookup during that same check
+served
+.I stale
+2024\(en2025 brackets \(em do not trust calculamx as a source for this
+table. Confirm the shipped brackets against the authoritative SAT Anexo 8
+(RMF 2026) before relying on this tool for anything beyond a pricing
+decision. The table is a plain data array in the source and can be edited
+directly for a new fiscal year; it is not yet exposed as a Settings-UI
+control.
+.TP
+.B The IVA regime changes the math materially and is not yet confirmed
+.I ivaMode
+defaults to
+.B noFactura
+(no invoice, no IVA netted \(em a tax-risk flag, not a recommendation).
+Switching to
+.B incluido
+nets revenue by dividing by 1.16; \c
+.B masIva
+assumes the client pays price \(mu 1.16 on top. Which mode is correct
+depends on whether prices are quoted IVA-included and whether an invoice
+is actually issued \(em decide this per client before trusting
+.I net
+or any LTV figure derived from it.
+.TP
+.B Foreign-SaaS deductibility is an open question
+Fixed monthly costs default to
+.I deductible = true
+optimistically. A large share of a typical fixed-cost stack is
+foreign SaaS (LLM APIs, TTS, automation platforms) billed without a
+Mexican CFDI. If those line items are not actually deductible under
+PFAE rules, unchecking
+.I deductible
+per row raises U (and therefore ISR and nut) \(em the tool will not
+decide this for you; it only lets you flip the flag and see the effect.
+.TP
+.B FX is manual, not live
+.I fxUsdMxn
+is a fixed number sitting in settings, not fetched from anywhere. A
+stale rate silently skews every USD-quoted price. Update it by hand
+when the peso moves meaningfully.
+.TP
+.B Retention is the single most load-bearing estimate in the model
+The entire
+.B renta
+mode's LTV and LTV:CAC ratio depend on
+.I retentionMonths,
+which is a guess, not a measurement. The effective-hourly table (at 1,
+12, 24, and retentionMonths months) exists specifically to expose that
+sensitivity \(em read the whole table, don't just trust the sem\('aforo
+color at the guessed retention.
+.TP
+.B isrTable is deliberately stripped from localStorage on every save
+.I saveSettings
+always writes
+.I isrTable: undefined
+into
+.I pricing.settings.v1;
+.I loadSettings
+always re-attaches the in-script
+.B PE.ISR_2026
+constant after reading. This is intentional \(em it means localStorage
+can never hold a stale copy of the tax table across a yearly bracket
+update; only the source array does. Do not "fix" this by persisting the
+table.
+.SH NOTES
+.IP \(bu 2
+Nothing here starts on login or boot; the cockpit is a static file opened
+on demand by the launcher.
+.IP \(bu 2
+Quote history is a local browser convenience, not synced or backed up
+anywhere \(em treat saved quotes as disposable notes, not records.
+.IP \(bu 2
+A yearly ISR bracket update means editing the
+.B ISR_2026
+array in
+.I index.html
+directly; there is no import/upload path.
+.SH "SEE ALSO"
+.BR cheatsheet (1)
