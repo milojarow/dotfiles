@@ -45,6 +45,27 @@ alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
 function update --wraps topgrade --description 'Update everything via topgrade'
     topgrade $argv
     set -l rc $status
+
+    # mosh-osc52 self-heal: mosh linkea protobuf/abseil/utf8_range versionados; un bump de
+    # soname lo deja con `ldd ... not found` y deja de arrancar (tu salvavidas remoto).
+    # Detector directo (instantáneo, sin lock) + rebuild quirúrgico. Solo mosh — el resto lo
+    # lista checkrebuild abajo. See memory reference_mosh_osc52_local_rebuild.
+    if command -q mosh-server; and ldd (command -v mosh-server) 2>/dev/null | grep -q 'not found'
+        set_color yellow; echo '⚠  mosh-osc52: soname roto tras el update — reconstruyendo...'; set_color normal
+        pushd ~/.local/src/mosh-osc52 >/dev/null
+        if makepkg -fC --noconfirm
+            sudo pacman -U --noconfirm (makepkg --packagelist | string match -v '*-debug-*')
+            if ldd (command -v mosh-server) 2>/dev/null | grep -q 'not found'
+                set_color red; echo '   sigue roto tras el rebuild — revísalo a mano'; set_color normal
+            else
+                set_color green; echo '   reconstruido y reinstalado ✓'; set_color normal
+            end
+        else
+            set_color red; echo '   el rebuild falló — arréglalo a mano en ~/.local/src/mosh-osc52'; set_color normal
+        end
+        popd >/dev/null
+    end
+
     # Post-update: surface local/AUR packages left stale by a dependency's soname bump
     # (e.g. protobuf 34→35 breaking mosh-osc52). checkrebuild's pacman hook fires per
     # transaction but drowns in topgrade's output; this makes it the last thing on screen.
