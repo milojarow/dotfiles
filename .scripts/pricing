@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# pricing — open the local pricing calculator cockpit in the default browser
+set -euo pipefail
+APP="$HOME/projects/pricing-calculator/index.html"
+[[ -f "$APP" ]] || { echo "pricing: no encuentro $APP" >&2; exit 1; }
+xdg-open "file://$APP" >/dev/null 2>&1 &
+echo "pricing: abriendo cockpit → $APP"
