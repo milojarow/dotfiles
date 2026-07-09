@@ -29,6 +29,8 @@ exec 9>"$LOCKFILE"; flock -n 9 || { log "[dropzone] organizer busy; exiting"; ex
 shopt -s nocasematch
 RE_VIDEO='\.(mkv|mp4|avi|m4v|ts|m2ts|mov|webm|ogm)$'
 RE_SUB='\.(srt|ass|ssa|sub|vtt|idx)$'
+RE_COMIC='\.(cbz|cbr|zip|rar)$'
+RE_BOOK='\.(epub|pdf|mobi|azw3)$'
 RE_JUNK_EXT='\.(nfo|txt|sfv|md5|exe|bat|cmd|scr|url|lnk|website|jpe?g|png|gif|bmp|ini|db|par2?|nzb|torrent)$'
 RE_JUNK_PATH='/(sample|samples|proof|proofs|screens?|screenshots?|extras?|featurettes?|trailers?|bonus)/'
 RE_JUNK_NAME='(^|[._ -])(sample|rarbg|proof|readme|yenc)([._ -]|\.|$)'
@@ -74,15 +76,18 @@ for job in "${JOBS[@]}"; do
   if [[ -z "$unit" || ! -e "$unit" ]]; then log "[dropzone] bad/gone unit in $(basename "$job"), dropping"; rm -f "$job"; continue; fi
   if markers_present "$unit"; then log "GUARD  incomplete markers under $(basename "$unit"); keeping job"; continue; fi
 
-  # 1) gather videos + subs, skipping junk
-  declare -a VIDS=() SUBS=()
+  # 1) gather videos + subs + comics/books, skipping junk
+  declare -a VIDS=() SUBS=() COMICS=() BOOKS=()
   while IFS= read -r -d '' f; do
     rel="/${f#"$unit"/}"
     [[ "$f"   =~ $RE_JUNK_EXT  ]] && continue
     [[ "$rel" =~ $RE_JUNK_PATH ]] && continue
     [[ "$(basename "$f")" =~ $RE_JUNK_NAME ]] && continue
     if   [[ "$f" =~ $RE_VIDEO ]]; then VIDS+=("$f")
-    elif [[ "$f" =~ $RE_SUB   ]]; then SUBS+=("$f"); fi
+    elif [[ "$f" =~ $RE_SUB   ]]; then SUBS+=("$f")
+    elif [[ "$f" =~ $RE_COMIC ]]; then COMICS+=("$f")
+    elif [[ "$f" =~ $RE_BOOK  ]]; then BOOKS+=("$f")
+    fi
   done < <(find "$unit" -type f -print0 2>/dev/null)
 
   # 2) drop sample videos (by name<50MB, or <10% of median episode size)
@@ -98,7 +103,8 @@ for job in "${JOBS[@]}"; do
     (( MED > 0 )) && (( sz*10 < MED )) && { log "SAMPLE(size) $(basename "$v")"; continue; }
     EPS+=("$v")
   done
-  ((${#EPS[@]})) || EPS=("${VIDS[@]}")   # no clear episodes -> treat remaining videos (single file / manga)
+  ((${#EPS[@]})) || EPS=("${VIDS[@]}")   # no clear episodes -> treat remaining videos (single file)
+  EPS+=("${COMICS[@]}" "${BOOKS[@]}")     # manga/book archives bypass video sample-filtering entirely
 
   if ((${#EPS[@]}==0)); then log "[dropzone] no media in $(basename "$unit"), dropping job"; rm -f "$job"; continue; fi
 

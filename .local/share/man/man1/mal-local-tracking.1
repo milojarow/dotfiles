@@ -84,7 +84,13 @@ with a forced JSON schema, prints the move-plan.
 .I $HOME/.scripts/mal-organizer-dropzone
 Torrent/HTTP source: reads queued jobs, guards completeness, walks season packs
 (skipping junk/samples), pairs subtitles, hardlinks into the library via the
-shared lobo/cache/ledger. The download stays put (seeding preserved).
+shared lobo/cache/ledger. The download stays put (seeding preserved). Recognizes
+video+subtitle files (episode packs) and, since 2026-07-08, comic archives
+(cbz/cbr/zip/rar) and books (epub/pdf/mobi/azw3) as well \[em] the same
+extension set as
+.IR mal-organizer ,
+so a manga/book batch downloaded by torrent is filed instead of silently
+dropped as "no media".
 .TP
 .I $HOME/.local/bin/dl-complete-hook
 Called by qBittorrent (AutoRun) and aria2 on completion; publishes a job naming
