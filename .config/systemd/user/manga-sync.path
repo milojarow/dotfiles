@@ -1,0 +1,12 @@
+[Unit]
+Description=Watch the Suwayomi database for manga reading progress
+Documentation=man:mal-local-tracking(1)
+
+[Path]
+# Suwayomi writes this file when you turn a page; it is quiet at rest,
+# so inotify beats polling here.
+PathModified=%h/.local/share/Tachidesk/database.mv.db
+Unit=manga-sync.service
+
+[Install]
+WantedBy=default.target

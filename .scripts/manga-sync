@@ -1,0 +1,300 @@
+#!/usr/bin/env python3
+"""manga-sync — scrobble local manga progress to MyAnimeList.
+
+Suwayomi has no concept of a volume: for a Local-source series it treats each
+.cbz file as one "chapter". But scanlation releases are packed per VOLUME, so a
+17-file series reads as "17 chapters" when it is really 17 volumes / 73 chapters.
+
+This bridges the gap. For each series it reads the real chapter numbering that
+lives INSIDE the .cbz (top-level folders are named after the chapter), replays
+Suwayomi's page ordering to find exactly which chapter the last read page falls
+in, and PUTs both num_chapters_read and num_volumes_read to MAL.
+
+Deterministic end to end: the mapping is parsed, never guessed.
+"""
+import argparse
+import json
+import os
+import re
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+import zipfile
+from collections import OrderedDict
+
+MEDIA = os.path.expanduser("~/media/manga")
+STATE = os.path.expanduser("~/.local/state/mal-organizer")
+MAP_FILE = os.path.join(STATE, "manga-mal-map.tsv")
+TUNDRA_CONF = os.path.expanduser("~/.config/tundra/config.toml")
+GQL = "http://127.0.0.1:4567/api/graphql"
+MAL = "https://api.myanimelist.net/v2"
+
+IMG_RE = re.compile(r"\.(jpe?g|png|webp|gif|bmp)$", re.I)
+# chapter folder, both seen formats: "64.2"  and  "Vol.01 Ch.0005.2 (gb) [Group]"
+CH_RE = re.compile(r"Ch\.?\s*0*(\d+(?:\.\d+)?)", re.I)
+CH_BARE_RE = re.compile(r"^0*(\d+(?:\.\d+)?)$")
+
+
+def say(*a):
+    print(*a, file=sys.stderr if False else sys.stdout, flush=True)
+
+
+def die(msg, code=1):
+    print(f"error: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+# ---------- MAL auth (borrowed from the tundra daemon, which keeps it fresh) ----------
+def mal_token():
+    try:
+        with open(TUNDRA_CONF) as f:
+            m = re.search(r'access_token\s*=\s*"([^"]+)"', f.read())
+    except OSError as e:
+        die(f"cannot read {TUNDRA_CONF}: {e}")
+    if not m:
+        die("no access_token in tundra config; run: tundra authenticate")
+    return m.group(1)
+
+
+def mal_req(path, method="GET", data=None):
+    req = urllib.request.Request(
+        f"{MAL}{path}", method=method,
+        data=urllib.parse.urlencode(data).encode() if data else None,
+        headers={"Authorization": f"Bearer {mal_token()}"})
+    if data:
+        req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode(errors="replace")[:200]
+        if e.code == 401:
+            die("MAL token rejected (401). Refresh it: tundra authenticate")
+        die(f"MAL {method} {path} -> HTTP {e.code}: {body}")
+
+
+# ---------- Suwayomi ----------
+def gql(query):
+    req = urllib.request.Request(
+        GQL, data=json.dumps({"query": query}).encode(),
+        headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            out = json.load(r)
+    except urllib.error.URLError as e:
+        die(f"Suwayomi unreachable at {GQL} ({e}). Is suwayomi.service running?")
+    if "errors" in out:
+        die(f"GraphQL: {out['errors']}")
+    return out["data"]
+
+
+def suwayomi_series():
+    d = gql("{ mangas(condition: {inLibrary: true}) { nodes { id title } } }")
+    return {n["title"]: n["id"] for n in d["mangas"]["nodes"]}
+
+
+def suwayomi_chapters(manga_id):
+    d = gql("{ chapters(condition: {mangaId: %d}) { nodes "
+            "{ chapterNumber name isRead lastPageRead pageCount } } }" % manga_id)
+    ns = d["chapters"]["nodes"]
+    ns.sort(key=lambda c: c["chapterNumber"])
+    return ns
+
+
+# ---------- the real chapter map, read out of the .cbz itself ----------
+def chapter_number(folder):
+    m = CH_RE.search(folder) or CH_BARE_RE.match(folder.strip())
+    return float(m.group(1)) if m else None
+
+
+def volume_layout(cbz_path):
+    """Return [(chapter_float, last_page_index)] replaying Suwayomi's page order."""
+    try:
+        z = zipfile.ZipFile(cbz_path)
+    except (zipfile.BadZipFile, OSError):
+        return []
+    pages = sorted(n for n in z.namelist() if IMG_RE.search(n))
+    groups = OrderedDict()
+    for p in pages:
+        groups.setdefault(p.split("/")[0], []).append(p)
+    out, acc = [], 0
+    for folder, ps in groups.items():
+        acc += len(ps)
+        ch = chapter_number(folder)
+        if ch is not None:
+            out.append((ch, acc))
+    return out
+
+
+def series_volumes(folder):
+    """Map Suwayomi's fake chapterNumber (== volume ordinal) -> cbz path."""
+    d = os.path.join(MEDIA, folder)
+    return sorted(os.path.join(d, f) for f in os.listdir(d) if f.lower().endswith(".cbz"))
+
+
+# ---------- progress resolution ----------
+def resolve(folder, chapters):
+    """-> (num_volumes_read, num_chapters_read, detail str)"""
+    vols = series_volumes(folder)
+    volumes_read = sum(1 for c in chapters if c["isRead"])
+
+    reached = None   # highest fully-read sub-chapter
+    detail = ""
+    for idx, c in enumerate(chapters):
+        if idx >= len(vols):
+            break
+        layout = volume_layout(vols[idx])
+        if not layout:
+            continue
+        if c["isRead"]:
+            reached = layout[-1][0]
+            continue
+        lp = c["lastPageRead"]
+        if lp <= 0:
+            continue
+        if c["pageCount"] > 0 and layout[-1][1] != c["pageCount"]:
+            say(f"  aviso: conteo de paginas difiere en {os.path.basename(vols[idx])} "
+                f"(cbz={layout[-1][1]} suwayomi={c['pageCount']}) — el capitulo puede salir corrido")
+        for ch, end_page in layout:
+            if end_page <= lp:
+                reached = ch
+            else:
+                detail = f"leyendo cap {ch} (pag {lp}/{c['pageCount']})"
+                break
+    if reached is None:
+        return volumes_read, 0, detail
+    return volumes_read, int(reached), detail
+
+
+# ---------- series <-> MAL id map ----------
+def load_map():
+    m = {}
+    if os.path.exists(MAP_FILE):
+        for line in open(MAP_FILE):
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) >= 2 and parts[0] and not parts[0].startswith("#"):
+                m[parts[0]] = int(parts[1])
+    return m
+
+
+def save_map(m, titles):
+    os.makedirs(STATE, exist_ok=True)
+    with open(MAP_FILE, "w") as f:
+        f.write("# series_folder\tmal_manga_id\ttitle\n")
+        for k, v in sorted(m.items()):
+            f.write(f"{k}\t{v}\t{titles.get(k,'')}\n")
+
+
+# ---------- commands ----------
+def cmd_find(folder):
+    q = folder.replace("-", " ")
+    d = mal_req(f"/manga?q={urllib.parse.quote(q)}&limit=8&fields=id,title,num_chapters,num_volumes")
+    say(f"candidatos en MAL para '{folder}':")
+    if not d.get("data"):
+        say("  (ninguno) — prueba otro termino de busqueda")
+        return
+    for n in d["data"]:
+        n = n["node"]
+        say(f"  {n['id']:>7}  {n['title']}")
+    say(f"\npara fijarlo:  manga-sync --map {folder} <ID>")
+
+
+def cmd_list(mapping):
+    series = suwayomi_series()
+    if not series:
+        say("no hay series en la biblioteca de Suwayomi")
+        return
+    say(f"{'serie':<26} {'MAL id':>8}  progreso")
+    say("-" * 62)
+    for title, mid in sorted(series.items()):
+        chs = suwayomi_chapters(mid)
+        mal_id = mapping.get(title)
+        if not os.path.isdir(os.path.join(MEDIA, title)):
+            say(f"{title:<26} {'--':>8}  (sin carpeta local)")
+            continue
+        v, c, detail = resolve(title, chs)
+        tag = str(mal_id) if mal_id else "SIN MAPEAR"
+        say(f"{title:<26} {tag:>8}  vol {v}, cap {c}" + (f" — {detail}" if detail else ""))
+    if any(t not in mapping for t in series):
+        say("\nseries sin mapear no se sincronizan. usa:  manga-sync --find <serie>")
+
+
+def cmd_sync(mapping, only, dry):
+    series = suwayomi_series()
+    targets = {t: i for t, i in series.items() if (not only or t == only)}
+    if not targets:
+        say(f"no encontre la serie '{only}' en la biblioteca de Suwayomi" if only
+            else "no hay series en la biblioteca de Suwayomi")
+        return
+    did = 0
+    for title, mid in sorted(targets.items()):
+        mal_id = mapping.get(title)
+        if not mal_id:
+            say(f"[skip] {title}: sin mapear a MAL (manga-sync --find {title})")
+            continue
+        if not os.path.isdir(os.path.join(MEDIA, title)):
+            say(f"[skip] {title}: no hay carpeta local en {MEDIA}")
+            continue
+        chs = suwayomi_chapters(mid)
+        vols, caps, detail = resolve(title, chs)
+        if caps == 0 and vols == 0:
+            say(f"[skip] {title}: sin progreso de lectura todavia")
+            continue
+
+        cur = mal_req(f"/manga/{mal_id}?fields=my_list_status,title")
+        st = cur.get("my_list_status") or {}
+        have_c, have_v = st.get("num_chapters_read", 0), st.get("num_volumes_read", 0)
+        status = "reading"
+
+        if have_c == caps and have_v == vols and st.get("status") == status:
+            say(f"[ok]   {title}: MAL ya al dia (vol {vols}, cap {caps})")
+            continue
+
+        say(f"[sync] {title}: MAL vol {have_v}->{vols}, cap {have_c}->{caps}"
+            + (f"  ({detail})" if detail else ""))
+        if dry:
+            say("       (dry-run, no escribi nada)")
+            continue
+        mal_req(f"/manga/{mal_id}/my_list_status", "PUT",
+                {"status": status, "num_chapters_read": caps, "num_volumes_read": vols})
+        say("       escrito en MAL")
+        did += 1
+    if not dry:
+        say(f"\nlisto: {did} serie(s) actualizada(s)")
+
+
+def main():
+    p = argparse.ArgumentParser(prog="manga-sync", add_help=True,
+                                description="Scrobble local manga progress (Suwayomi) to MyAnimeList.")
+    p.add_argument("series", nargs="?", help="solo esta serie (nombre de carpeta en ~/media/manga)")
+    p.add_argument("-n", "--dry-run", action="store_true", help="muestra que haria, no escribe en MAL")
+    p.add_argument("-l", "--list", action="store_true", help="lista series, mapeo y progreso")
+    p.add_argument("-f", "--find", metavar="SERIE", help="busca candidatos en MAL para mapear")
+    p.add_argument("-m", "--map", nargs=2, metavar=("SERIE", "MAL_ID"), help="fija el id de MAL de una serie")
+    a = p.parse_args()
+
+    mapping = load_map()
+    titles = {}
+
+    if a.map:
+        folder, mid = a.map[0], int(a.map[1])
+        info = mal_req(f"/manga/{mid}?fields=title")
+        mapping[folder] = mid
+        titles[folder] = info["title"]
+        for k in mapping:
+            titles.setdefault(k, "")
+        save_map(mapping, titles)
+        say(f"mapeado: {folder} -> MAL {mid} ({info['title']})")
+        return
+    if a.find:
+        cmd_find(a.find)
+        return
+    if a.list:
+        cmd_list(mapping)
+        return
+    cmd_sync(mapping, a.series, a.dry_run)
+
+
+if __name__ == "__main__":
+    main()

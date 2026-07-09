@@ -1,0 +1,10 @@
+[Unit]
+Description=Scrobble local manga progress (Suwayomi) to MyAnimeList
+Documentation=man:mal-local-tracking(1)
+
+[Service]
+Type=oneshot
+# Debounce: batch the page-turn writes instead of firing per page.
+# (Same settle pattern as mal-organizer.service; not a sync wait.)
+ExecStartPre=/usr/bin/sleep 90
+ExecStart=%h/.scripts/manga-sync

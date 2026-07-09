@@ -42,10 +42,17 @@ cache, ledger and lock. The download stays in place so the torrent keeps seeding
 .PP
 .B mal-organizer-dropzone
 .PP
+.B manga-sync
+.RI [ series ]
+.RI [ --dry-run ]
+.RI [ --list ]
+.RI [ --find " SERIES" ]
+.RI [ --map " SERIES MAL_ID" ]
+.PP
 The organizers are normally invoked automatically by their
 .I .path
 units (\fImal-organizer.path\fR for Incoming, \fImal-dropzone.path\fR for the
-queue); run by hand to backfill or test.
+queue, \fImanga-sync.path\fR for reading progress); run by hand to backfill or test.
 .SH USAGE
 .TP
 .B Automatic
@@ -57,6 +64,7 @@ hook) triggers the matching watcher; nothing to do.
 mal-organizer --dry-run    # show the aMule plan, touch nothing
 mal-organizer              # hardlink for real
 mal-organizer-dropzone     # process queued torrent jobs
+manga-sync --dry-run       # show what would go to MAL, write nothing
 .fi
 .TP
 .B Anime \[->] MAL
@@ -65,10 +73,44 @@ Play the episode in
 (not a browser) and watch past 50%; the tundra daemon scrobbles it.
 .TP
 .B Manga \[->] MAL
-Open
-.I http://127.0.0.1:4567
-\[em] Settings, Tracking, MyAnimeList, login \[em] enable auto progress, then bind
-each series to its MAL entry.
+Read in Suwayomi (\fIhttp://127.0.0.1:4567\fR, or the \fBManga\fR launcher entry);
+.I manga-sync
+scrobbles it. Map each new series to its MAL entry once:
+.nf
+manga-sync --find redo-of-healer     # list MAL candidates
+manga-sync --map redo-of-healer 108197
+manga-sync --list                    # series, MAL id, resolved progress
+.fi
+.B Do not
+enable Suwayomi's own MyAnimeList auto-progress for these series \[em] see
+.B "VOLUMES VS CHAPTERS"
+below.
+.SH "VOLUMES VS CHAPTERS"
+Suwayomi has no concept of a volume. For a Local-source series it treats
+.B each .cbz file as one chapter.
+Scanlation batches, however, are packed per
+.B volume
+(tankobon): a 17-file series is 17 volumes \[em] roughly 73 chapters \[em] not 17
+chapters. Left to Suwayomi's own tracker, MAL would record "chapter 15" for a
+reader who is really on chapter 64.
+.PP
+.I manga-sync
+resolves this from the archives themselves. The top-level folders inside each
+.I .cbz
+are named after the real chapter (\fI64.2\fR, or \fIVol.01 Ch.0005.2 [Group]\fR).
+It replays Suwayomi's page ordering, finds which chapter the last read page falls
+in, and PUTs both
+.I num_chapters_read
+and
+.I num_volumes_read
+to MAL. Nothing is guessed; the mapping is parsed. Suwayomi's GraphQL track API
+cannot send volumes at all (\fIUpdateTrackInput\fR has no such field), which is
+why the series is deliberately left unbound in Suwayomi.
+.PP
+.I num_volumes_read
+counts only
+.B completed
+volumes, so a reader midway through volume 15 reports 14.
 .SH FILES
 .SS Scripts
 .TP
@@ -98,6 +140,13 @@ the finished unit into the queue.
 .TP
 .I $HOME/.local/bin/aria2-deliver
 Adapts aria2's completion args (first-file path) into the dl-complete-hook contract.
+.TP
+.I $HOME/.scripts/manga-sync
+Manga scrobbler: reads reading progress from Suwayomi's GraphQL API, derives the
+real chapter from the
+.I .cbz
+internals, and writes num_chapters_read / num_volumes_read to MAL. Idempotent \[em]
+a run with no new progress writes nothing. Deterministic, no LLM.
 .SS "systemd user units"
 .TP
 .I $HOME/.config/systemd/user/mal-organizer.path
@@ -112,6 +161,15 @@ inotify watch on the job queue; fires the dropzone organizer (event-driven, no d
 .I $HOME/.config/systemd/user/mal-dropzone.service
 oneshot that runs
 .IR mal-organizer-dropzone .
+.TP
+.I $HOME/.config/systemd/user/manga-sync.path
+inotify watch on Suwayomi's database file, which is quiet at rest \[em] so page
+turns, and only page turns, trigger a scrobble. No polling.
+.TP
+.I $HOME/.config/systemd/user/manga-sync.service
+oneshot that runs
+.I manga-sync
+after a 90 s settle (debounces the per-page database writes).
 .TP
 .I $HOME/.config/systemd/user/tundra.service
 the anime scrobbler daemon (watches mpv via MPRIS).
@@ -130,6 +188,10 @@ episodes skip the LLM (shared by both sources).
 .I $HOME/.local/state/mal-organizer/queue/
 job files dropped by the completion hooks; watched by
 .IR mal-dropzone.path .
+.TP
+.I $HOME/.local/state/mal-organizer/manga-mal-map.tsv
+series folder \[->] MAL manga id. Written by \fBmanga-sync --map\fR; an unmapped
+series is skipped (never guessed).
 .TP
 .I $HOME/.local/state/mal-organizer/lobo-schema.json
 the JSON schema the lobo output is validated against.
