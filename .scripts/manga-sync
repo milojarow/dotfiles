@@ -31,9 +31,17 @@ GQL = "http://127.0.0.1:4567/api/graphql"
 MAL = "https://api.myanimelist.net/v2"
 
 IMG_RE = re.compile(r"\.(jpe?g|png|webp|gif|bmp)$", re.I)
-# chapter folder, both seen formats: "64.2"  and  "Vol.01 Ch.0005.2 (gb) [Group]"
-CH_RE = re.compile(r"Ch\.?\s*0*(\d+(?:\.\d+)?)", re.I)
-CH_BARE_RE = re.compile(r"^0*(\d+(?:\.\d+)?)$")
+ARCHIVE_RE = re.compile(r"\.(cbz|cbr|zip)$", re.I)
+
+# Chapter folder names, in priority order. Real-world shapes:
+#   "Vol.01 Ch.0005.2 (gb) [Group]" · "Chapter 5" · "c012" · "64.2" · "0012"
+CH_PATTERNS = [
+    re.compile(r"ch(?:apter)?\.?\s*0*(\d+(?:\.\d+)?)", re.I),
+    re.compile(r"^c\s*0*(\d+(?:\.\d+)?)$", re.I),
+    re.compile(r"^0*(\d+(?:\.\d+)?)$"),
+]
+# The archive itself being one chapter: "Series - c012.cbz", "Series ch.7.cbz"
+FNAME_CH_RE = re.compile(r"(?:^|[^a-z0-9])c(?:h(?:apter)?)?[\s._-]*0*(\d+(?:\.\d+)?)", re.I)
 
 
 def say(*a):
@@ -104,12 +112,29 @@ def suwayomi_chapters(manga_id):
 
 # ---------- the real chapter map, read out of the .cbz itself ----------
 def chapter_number(folder):
-    m = CH_RE.search(folder) or CH_BARE_RE.match(folder.strip())
+    folder = folder.strip()
+    for pat in CH_PATTERNS:
+        m = pat.search(folder) if pat is CH_PATTERNS[0] else pat.match(folder)
+        if m:
+            return float(m.group(1))
+    return None
+
+
+def chapter_from_filename(path):
+    """The archive itself is one chapter (packed per chapter, not per volume)."""
+    base = ARCHIVE_RE.sub("", os.path.basename(path))
+    m = FNAME_CH_RE.search(base)
     return float(m.group(1)) if m else None
 
 
 def volume_layout(cbz_path):
-    """Return [(chapter_float, last_page_index)] replaying Suwayomi's page order."""
+    """[(chapter_float, cumulative_last_page)] replaying Suwayomi's page order.
+
+    Page order is the zip namelist sorted alphabetically -- that is what Suwayomi
+    counts as "page N", so the accumulation must follow it even when the folder
+    names sort out of numeric order (e.g. "10.1" before "9.1"). Callers must not
+    assume the returned chapters ascend; take max(), never last().
+    """
     try:
         z = zipfile.ZipFile(cbz_path)
     except (zipfile.BadZipFile, OSError):
@@ -117,13 +142,17 @@ def volume_layout(cbz_path):
     pages = sorted(n for n in z.namelist() if IMG_RE.search(n))
     groups = OrderedDict()
     for p in pages:
-        groups.setdefault(p.split("/")[0], []).append(p)
+        head = p.split("/")[0]
+        if head == p:          # flat archive: no chapter folders at all
+            return []
+        groups.setdefault(head, []).append(p)
     out, acc = [], 0
     for folder, ps in groups.items():
         acc += len(ps)
         ch = chapter_number(folder)
-        if ch is not None:
-            out.append((ch, acc))
+        if ch is None:
+            return []          # unrecognised layout -> refuse to guess
+        out.append((ch, acc))
     return out
 
 
@@ -135,36 +164,59 @@ def series_volumes(folder):
 
 # ---------- progress resolution ----------
 def resolve(folder, chapters):
-    """-> (num_volumes_read, num_chapters_read, detail str)"""
+    """-> (num_volumes_read, num_chapters_read, detail, unresolved[])
+
+    unresolved is non-empty when a read archive's chapter numbering could not be
+    determined. Callers MUST NOT write chapters to MAL in that case -- reporting
+    0 would silently wipe real progress.
+    """
     vols = series_volumes(folder)
     volumes_read = sum(1 for c in chapters if c["isRead"])
 
-    reached = None   # highest fully-read sub-chapter
+    reached = None      # highest FULLY read chapter
     detail = ""
+    unresolved = []
+
+    def bump(ch):
+        nonlocal reached
+        reached = ch if reached is None else max(reached, ch)
+
     for idx, c in enumerate(chapters):
         if idx >= len(vols):
             break
-        layout = volume_layout(vols[idx])
-        if not layout:
-            continue
-        if c["isRead"]:
-            reached = layout[-1][0]
-            continue
-        lp = c["lastPageRead"]
-        if lp <= 0:
-            continue
-        if c["pageCount"] > 0 and layout[-1][1] != c["pageCount"]:
-            say(f"  aviso: conteo de paginas difiere en {os.path.basename(vols[idx])} "
-                f"(cbz={layout[-1][1]} suwayomi={c['pageCount']}) — el capitulo puede salir corrido")
-        for ch, end_page in layout:
-            if end_page <= lp:
-                reached = ch
+        cbz = vols[idx]
+        read, lp = c["isRead"], c["lastPageRead"]
+        if not read and lp <= 0:
+            continue                      # untouched
+
+        layout = volume_layout(cbz)
+        if layout:
+            if c["pageCount"] > 0 and layout[-1][1] != c["pageCount"]:
+                say(f"  aviso: paginas no cuadran en {os.path.basename(cbz)} "
+                    f"(cbz={layout[-1][1]} suwayomi={c['pageCount']})")
+            if read:
+                bump(max(ch for ch, _ in layout))
             else:
-                detail = f"leyendo cap {ch} (pag {lp}/{c['pageCount']})"
-                break
-    if reached is None:
-        return volumes_read, 0, detail
-    return volumes_read, int(reached), detail
+                done = [ch for ch, end in layout if end <= lp]
+                if done:
+                    bump(max(done))
+                pending = sorted((ch, end) for ch, end in layout if end > lp)
+                if pending:
+                    detail = f"leyendo cap {pending[0][0]} (pag {lp}/{c['pageCount']})"
+            continue
+
+        # No chapter folders inside. Is the archive itself one chapter?
+        fch = chapter_from_filename(cbz)
+        if fch is not None:
+            if read:
+                bump(fch)
+            else:
+                detail = f"leyendo cap {fch} (pag {lp}/{c['pageCount']})"
+            continue
+
+        unresolved.append(os.path.basename(cbz))
+
+    return volumes_read, (int(reached) if reached is not None else 0), detail, unresolved
 
 
 # ---------- series <-> MAL id map ----------
@@ -213,9 +265,13 @@ def cmd_list(mapping):
         if not os.path.isdir(os.path.join(MEDIA, title)):
             say(f"{title:<26} {'--':>8}  (sin carpeta local)")
             continue
-        v, c, detail = resolve(title, chs)
+        v, c, detail, unresolved = resolve(title, chs)
         tag = str(mal_id) if mal_id else "SIN MAPEAR"
-        say(f"{title:<26} {tag:>8}  vol {v}, cap {c}" + (f" — {detail}" if detail else ""))
+        if unresolved:
+            say(f"{title:<26} {tag:>8}  vol {v}, cap ?? — numeracion no reconocida "
+                f"en {len(unresolved)} archivo(s): {', '.join(unresolved[:2])}")
+        else:
+            say(f"{title:<26} {tag:>8}  vol {v}, cap {c}" + (f" — {detail}" if detail else ""))
     if any(t not in mapping for t in series):
         say("\nseries sin mapear no se sincronizan. usa:  manga-sync --find <serie>")
 
@@ -237,9 +293,18 @@ def cmd_sync(mapping, only, dry):
             say(f"[skip] {title}: no hay carpeta local en {MEDIA}")
             continue
         chs = suwayomi_chapters(mid)
-        vols, caps, detail = resolve(title, chs)
+        vols, caps, detail, unresolved = resolve(title, chs)
+        if unresolved:
+            say(f"[skip] {title}: no reconozco la numeracion de capitulos en "
+                f"{', '.join(unresolved[:3])}"
+                + (f" (+{len(unresolved)-3} mas)" if len(unresolved) > 3 else ""))
+            say("       no escribo nada: un 0 borraria tu progreso real en MAL")
+            continue
         if caps == 0 and vols == 0:
             say(f"[skip] {title}: sin progreso de lectura todavia")
+            continue
+        if caps == 0:
+            say(f"[skip] {title}: leiste {vols} volumen(es) pero no pude derivar el capitulo")
             continue
 
         cur = mal_req(f"/manga/{mal_id}?fields=my_list_status,title")

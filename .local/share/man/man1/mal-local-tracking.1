@@ -111,6 +111,34 @@ why the series is deliberately left unbound in Suwayomi.
 counts only
 .B completed
 volumes, so a reader midway through volume 15 reports 14.
+.SS "Recognised layouts"
+The chapter number is read from the top-level folders inside the archive, or \[em]
+when the archive has no folders \[em] from the archive's own filename:
+.TP
+.I 61.1/ \fRor\fI 0012/
+bare number
+.TP
+.I Vol.01 Ch.0005.2 (gb) [Group]/
+Ch. prefixed
+.TP
+.I Chapter 5/ \fRor\fI c012/
+word or c-prefixed
+.TP
+.I Series - c042.cbz
+flat archive that is itself one chapter (packed per chapter, not per volume)
+.PP
+Folder names are
+.B not
+assumed to sort numerically: an archive holding \fI9.1\fR and \fI10.1\fR sorts the
+latter first, so the reached chapter is taken as the maximum of the fully-read
+chapters, never the last one encountered.
+.SS "Fail-safe"
+If an archive that has been read uses a numbering scheme
+.I manga-sync
+does not recognise, the series is
+.B skipped with a warning
+and nothing is written. Reporting a 0 would overwrite real progress on MAL, so an
+unknown layout must never fall through to a write.
 .SH FILES
 .SS Scripts
 .TP
