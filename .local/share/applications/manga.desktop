@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Manga
+GenericName=Lector de manga
+Comment=Abre tu biblioteca de manga (Suwayomi) en una ventana dedicada
+Exec=/usr/sbin/brave --app=http://127.0.0.1:4567
+Icon=/home/milo/.local/share/icons/manga.svg
+Terminal=false
+Categories=Graphics;Viewer;
+Keywords=manga;suwayomi;comic;comics;lector;biblioteca;tachidesk;
+StartupNotify=true
