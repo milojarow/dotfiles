@@ -91,6 +91,13 @@ and patched:
 (host keyboard for typing passwords),
 .IR disk.dataPartition.size=8G ,
 .IR hw.gpu.mode=auto .
+.TP
+.I ~/.config/sway/config.d/98\-application\-defaults.conf
+Holds the sway rule \fIfor_window [class=\[dq]Emulator\[dq]] floating
+enable\fR, so the device window and the extended\-controls panel are born
+floating, not tiling. Applied live with
+.B swaymsg
+\[em] a full reload can drop the waybar.
 .SS SDK binaries
 .TP
 .I /opt/android\-sdk/emulator/emulator
@@ -113,6 +120,17 @@ The system image, shared read\-only by all 15 devices.
 .TP
 .I ~/.local/share/emu/tester\-NN.log
 Emulator stdout/stderr per device, overwritten on each start.
+.SS "Working directory"
+.TP
+.I ~/work/emu\-fleet/
+Curated operational workspace (mode 700), separate from the app state in
+.IR ~/.local/share/emu/ .
+Not tracked by any git repo.
+.TP
+.I ~/work/emu\-fleet/accounts.md
+Table mapping each device to its identity, Google email, password, and
+status (mode 600). Holds passwords in cleartext \[em] never copy to a repo.
+Populated as each account is created.
 .SH FLOW
 .nr step 1 1
 .IP \n[step]. 3
