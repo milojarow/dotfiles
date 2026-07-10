@@ -111,6 +111,30 @@ why the series is deliberately left unbound in Suwayomi.
 counts only
 .B completed
 volumes, so a reader midway through volume 15 reports 14.
+.SH "SCROBBLE TITLES (anime)"
+The tundra daemon identifies an episode by parsing the FILENAME and matching the
+title against MyAnimeList. Fansub weeklies name brand-new seasons with a tag the
+parser folds into the title (\fIMushoku Tensei S3 - 01\fR), which then matches the
+BASE entry \[em] the episodes scrobble to season 1's record and corrupt it (this
+happened: S1 went from completed/11 to watching/2).
+.PP
+The organizers close this at filing time, with live evidence rather than model
+memory: for each video reaching the lobo, the digest HINT carries
+.B live MAL search candidates
+(id, exact title, start date, episode count) fetched with the tundra token. The
+lobo must pick from those candidates \[em] cross-checking installment against dates
+and episode counts \[em] and returns
+.IR scrobble_title ,
+the entry's romaji title up to the colon (\fIMushoku Tensei III\fR). The library
+hardlink is then created as
+.I "<scrobble_title> - <ep>"
+(the torrent-side name never changes; same inode, seeding intact), and paired
+subtitles follow the new stem so mpv autoloads them.
+.PP
+The title is cached per series (fifth cache column), so the first episode of a new
+season costs one lobo call and every following weekly files and renames for free.
+Fail-open: no candidates, no episode token, or an unsure lobo \[->] the original
+basename is kept (today's behaviour, never a guess).
 .SS "Recognised layouts"
 The chapter number is read from the top-level folders inside the archive, or \[em]
 when the archive has no folders \[em] from the archive's own filename:
@@ -210,8 +234,10 @@ the local manga server (web UI on 127.0.0.1:4567).
 ledger of handled files, keyed by inode \[em] makes re-runs idempotent (shared by both sources).
 .TP
 .I $HOME/.local/state/mal-organizer/series-cache.tsv
-per-series decisions (\fItitle|sN\fR \[->] type, folder, season) so repeat
-episodes skip the LLM (shared by both sources).
+per-series decisions (\fItitle|sN\fR \[->] type, folder, season, scrobble title)
+so repeat episodes skip the LLM (shared by both sources). Older 4-column rows
+(no scrobble title) stay valid: readers treat the missing column as empty and
+simply keep the original basename.
 .TP
 .I $HOME/.local/state/mal-organizer/queue/
 job files dropped by the completion hooks; watched by

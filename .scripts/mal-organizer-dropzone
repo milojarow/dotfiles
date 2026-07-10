@@ -35,11 +35,41 @@ RE_JUNK_EXT='\.(nfo|txt|sfv|md5|exe|bat|cmd|scr|url|lnk|website|jpe?g|png|gif|bm
 RE_JUNK_PATH='/(sample|samples|proof|proofs|screens?|screenshots?|extras?|featurettes?|trailers?|bonus)/'
 RE_JUNK_NAME='(^|[._ -])(sample|rarbg|proof|readme|yenc)([._ -]|\.|$)'
 
-# per-series cache key, tolerant of scene separators (Test.Show.S01E01 and "Show S01E01")
+# per-series cache key, tolerant of scene separators (Test.Show.S01E01, "Show S01E01",
+# and the weekly-fansub shape "Show S3 - 03")
 cache_key(){ local b="$1"
   if [[ "$b" =~ ^(.+)[._[:space:]-]+[Ss]([0-9]{1,2})[Ee][0-9]{1,3} ]]; then
     printf '%s|s%d' "${BASH_REMATCH[1],,}" "$((10#${BASH_REMATCH[2]}))"
+  elif [[ "$b" =~ ^(.+)[[:space:]][Ss]([0-9]{1,2})[[:space:]]+-[[:space:]]+[0-9]{1,3} ]]; then
+    printf '%s|s%d' "${BASH_REMATCH[1],,}" "$((10#${BASH_REMATCH[2]}))"
   fi; }
+
+# episode token from a filename: SxxEyy or the scene "Title - 03" shape
+ep_token(){ local b="$1"
+  if [[ "$b" =~ [Ss][0-9]{1,2}[Ee]0*([0-9]{1,3}) ]]; then printf '%02d' "$((10#${BASH_REMATCH[1]}))"
+  elif [[ "$b" =~ [[:space:]]-[[:space:]]0*([0-9]{1,3}) ]]; then printf '%02d' "$((10#${BASH_REMATCH[1]}))"
+  fi; }
+
+# live MAL candidates for a video filename, so the lobo picks the scrobble entry
+# from verified data instead of recalling from memory (fail-open: empty on error)
+mal_candidates(){ local b="$1" tok q
+  tok=$(grep -oP 'access_token\s*=\s*"\K[^"]+' "$HOME/.config/tundra/config.toml" 2>/dev/null)
+  [[ -z "$tok" ]] && return 0
+  q=$(printf '%s' "$b" | sed -E '
+    s/\[[^]]*\]//g; s/\([^)]*\)//g; s/\.[A-Za-z0-9]+$//;
+    s/[._]/ /g;
+    s/[Ss][0-9]{1,2}[Ee][0-9]{1,3}.*$//;
+    s/[[:space:]]+-[[:space:]]+[0-9]{1,3}.*$//;
+    s/[[:space:]][Ss][0-9]{1,2}[[:space:]]*$//;
+    s/[[:space:]]+/ /g; s/^[[:space:]]+|[[:space:]]+$//g')
+  [[ -z "$q" ]] && return 0
+  curl -sf --max-time 10 -G -H "Authorization: Bearer $tok" \
+    --data-urlencode "q=$q" --data-urlencode "limit=8" \
+    --data-urlencode "fields=id,title,start_date,media_type,num_episodes" \
+    "https://api.myanimelist.net/v2/anime" 2>/dev/null \
+  | jq -r '"MAL candidates: " + ([.data[].node
+      | "\(.id) '\''\(.title)'\'' (\(.start_date // "?"), \(.media_type // "?"), \(.num_episodes // 0) eps)"]
+      | join("; "))' 2>/dev/null || true; }
 
 detect_lang(){ local n=".${1,,}."
   case "$n" in
@@ -57,12 +87,13 @@ markers_present(){ find "$1" \( -name '*.!qB' -o -name '*.!qb' -o -name '*.aria2
 mark_done(){ local ino; ino=$(stat -c '%i' "$1" 2>/dev/null) || return 0
   printf '%s\t%s\n' "$ino" "$1" >>"$LEDGER"; }
 
-# hardlink keeping the original basename (seeding source untouched)
-linkinto(){ local src="$1" sub="$2" b dir dest; b=$(basename "$src")
+# hardlink into the library (seeding source untouched). Optional 3rd arg renames
+# the LIBRARY link only (the torrent-side name never changes; same inode).
+linkinto(){ local src="$1" sub="$2" b dir dest; b="${3:-$(basename "$src")}"
   dir="$MEDIA/$sub"; dest="$dir/$b"; mkdir -p "$dir"
   if [[ -e "$dest" ]]; then log "EXISTS $sub/$b"; return 0; fi
-  if ln "$src" "$dest" 2>/dev/null; then log "LINK   $b -> $sub/"
-  else cp -n "$src" "$dest" 2>/dev/null && log "COPY   $b -> $sub/ (cross-fs)"; fi; }
+  if ln "$src" "$dest" 2>/dev/null; then log "LINK   $(basename "$src") -> $sub/$b"
+  else cp -n "$src" "$dest" 2>/dev/null && log "COPY   $(basename "$src") -> $sub/$b (cross-fs)"; fi; }
 
 # ---- collect jobs ----
 declare -a JOBS=()
@@ -109,7 +140,7 @@ for job in "${JOBS[@]}"; do
   if ((${#EPS[@]}==0)); then log "[dropzone] no media in $(basename "$unit"), dropping job"; rm -f "$job"; continue; fi
 
   # 3) classify: ledger-skip + cache-hit, else lobo
-  declare -A DTYPE=() DSERIES=() DSEASON=()
+  declare -A DTYPE=() DSERIES=() DSEASON=() DSCROB=()
   declare -a NEED=() NEEDIDX=()
   for i in "${!EPS[@]}"; do
     f="${EPS[$i]}"; ino=$(stat -c '%i' "$f" 2>/dev/null) || continue
@@ -117,8 +148,9 @@ for job in "${JOBS[@]}"; do
     key=$(cache_key "$(basename "$f")"); hit=""
     [[ -n "$key" ]] && hit=$(grep -P "^\\Q${key}\\E\t" "$CACHE" 2>/dev/null | head -1)
     if [[ -n "$hit" ]]; then
-      IFS=$'\t' read -r _ t s sea <<<"$hit"
-      DTYPE[$i]="$t"; DSERIES[$i]="$s"; DSEASON[$i]="$sea"; log "CACHE  $(basename "$f") -> $t/$s"
+      IFS=$'\t' read -r _ t s sea st <<<"$hit"
+      DTYPE[$i]="$t"; DSERIES[$i]="$s"; DSEASON[$i]="$sea"; DSCROB[$i]="${st:-}"
+      log "CACHE  $(basename "$f") -> $t/$s"
     else
       NEED+=("$f"); NEEDIDX+=("$i")
     fi
@@ -127,8 +159,9 @@ for job in "${JOBS[@]}"; do
   if ((${#NEED[@]})); then
     digest=""
     for k in "${!NEED[@]}"; do
-      b=$(basename "${NEED[$k]}"); ext="${b##*.}"
-      printf -v line '%s\t%s\t%s\t%s' "$k" "$ext" "$b" ""
+      b=$(basename "${NEED[$k]}"); ext="${b##*.}"; hint=""
+      [[ "$b" =~ $RE_VIDEO ]] && hint=$(mal_candidates "$b")
+      printf -v line '%s\t%s\t%s\t%s' "$k" "$ext" "$b" "$hint"
       digest+="$line"$'\n'
     done
     log "[dropzone] consulting lobo for ${#NEED[@]} file(s)"
@@ -138,10 +171,11 @@ for job in "${JOBS[@]}"; do
     if [[ -z "$decs" || "$decs" == "null" ]]; then log "[dropzone] lobo no plan; raw: ${plan:0:300}"; continue; fi
     while IFS= read -r d; do
       kk=$(jq -r '.index' <<<"$d"); t=$(jq -r '.type' <<<"$d"); s=$(jq -r '.series_folder' <<<"$d"); sea=$(jq -r '.season' <<<"$d")
-      gi="${NEEDIDX[$kk]}"; DTYPE[$gi]="$t"; DSERIES[$gi]="$s"; DSEASON[$gi]="$sea"
+      st=$(jq -r '.scrobble_title // empty' <<<"$d"); st="${st//\//-}"
+      gi="${NEEDIDX[$kk]}"; DTYPE[$gi]="$t"; DSERIES[$gi]="$s"; DSEASON[$gi]="$sea"; DSCROB[$gi]="$st"
       key=$(cache_key "$(basename "${NEED[$kk]}")")
       if [[ -n "$key" ]] && ! grep -qP "^\\Q${key}\\E\t" "$CACHE" 2>/dev/null; then
-        printf '%s\t%s\t%s\t%s\n' "$key" "$t" "$s" "$sea" >>"$CACHE"; fi
+        printf '%s\t%s\t%s\t%s\t%s\n' "$key" "$t" "$s" "$sea" "$st" >>"$CACHE"; fi
     done < <(printf '%s' "$decs" | jq -c '.[]')
   fi
 
@@ -163,11 +197,20 @@ for job in "${JOBS[@]}"; do
       ""|null) sub="anime/_unsorted"; log "UNPARSED $(basename "$f")" ;;
       *) log "SKIP $(basename "$f") (type=$t)"; mark_done "$f"; continue ;;
     esac
-    linkinto "$f" "$sub"
 
-    # pair subtitles: match by the episode's SxxEyy token, rename to <epstem>.<lang>.<ext>
-    ebase=$(basename "$f"); epstem="${ebase%.*}"; ekey=""
-    [[ "$ebase" =~ [Ss][0-9]{1,2}[Ee][0-9]{1,3} ]] && ekey="${BASH_REMATCH[0],,}"
+    # library name: "<scrobble_title> - <ep>" when the lobo/cache pinned the MAL
+    # entry title (a fansub "S3" tag would scrobble to the wrong entry otherwise)
+    destbase=""
+    if [[ "$t" == "anime" && -n "${DSCROB[$i]:-}" ]]; then
+      ep=$(ep_token "$(basename "$f")")
+      [[ -n "$ep" ]] && destbase="${DSCROB[$i]} - ${ep}.${f##*.}"
+    fi
+    linkinto "$f" "$sub" ${destbase:+"$destbase"}
+
+    # pair subtitles: match by the episode's SxxEyy token (from the ORIGINAL name),
+    # land next to the library file's stem so mpv autoloads them
+    ebase="${destbase:-$(basename "$f")}"; epstem="${ebase%.*}"; ekey=""
+    [[ "$(basename "$f")" =~ [Ss][0-9]{1,2}[Ee][0-9]{1,3} ]] && ekey="${BASH_REMATCH[0],,}"
     for sf in "${SUBS[@]:-}"; do
       [[ -z "$sf" ]] && continue
       sb=$(basename "$sf"); m=0

@@ -38,12 +38,42 @@ mark_done(){ [[ $DRY -eq 0 ]] || return 0
   printf '%s\t%s\n' "$ino" "$1" >>"$LEDGER"; }
 
 # derive a stable per-series cache key from a filename, or empty string
+# (SxxEyy with scene separators, or the weekly-fansub shape "Show S3 - 03")
 cache_key(){
   local b="$1"
-  if [[ "$b" =~ ^(.+)[[:space:]]+[Ss]([0-9]{1,2})[Ee][0-9]{1,3} ]]; then
+  if [[ "$b" =~ ^(.+)[._[:space:]-]+[Ss]([0-9]{1,2})[Ee][0-9]{1,3} ]]; then
+    printf '%s|s%d' "${BASH_REMATCH[1],,}" "$((10#${BASH_REMATCH[2]}))"
+  elif [[ "$b" =~ ^(.+)[[:space:]][Ss]([0-9]{1,2})[[:space:]]+-[[:space:]]+[0-9]{1,3} ]]; then
     printf '%s|s%d' "${BASH_REMATCH[1],,}" "$((10#${BASH_REMATCH[2]}))"
   fi
 }
+
+# episode token from a filename: SxxEyy or the scene "Title - 03" shape
+ep_token(){ local b="$1"
+  if [[ "$b" =~ [Ss][0-9]{1,2}[Ee]0*([0-9]{1,3}) ]]; then printf '%02d' "$((10#${BASH_REMATCH[1]}))"
+  elif [[ "$b" =~ [[:space:]]-[[:space:]]0*([0-9]{1,3}) ]]; then printf '%02d' "$((10#${BASH_REMATCH[1]}))"
+  fi; }
+
+# live MAL candidates for a video filename, so the lobo picks the scrobble entry
+# from verified data instead of recalling from memory (fail-open: empty on error)
+mal_candidates(){ local b="$1" tok q
+  tok=$(grep -oP 'access_token\s*=\s*"\K[^"]+' "$HOME/.config/tundra/config.toml" 2>/dev/null)
+  [[ -z "$tok" ]] && return 0
+  q=$(printf '%s' "$b" | sed -E '
+    s/\[[^]]*\]//g; s/\([^)]*\)//g; s/\.[A-Za-z0-9]+$//;
+    s/[._]/ /g;
+    s/[Ss][0-9]{1,2}[Ee][0-9]{1,3}.*$//;
+    s/[[:space:]]+-[[:space:]]+[0-9]{1,3}.*$//;
+    s/[[:space:]][Ss][0-9]{1,2}[[:space:]]*$//;
+    s/[[:space:]]+/ /g; s/^[[:space:]]+|[[:space:]]+$//g')
+  [[ -z "$q" ]] && return 0
+  curl -sf --max-time 10 -G -H "Authorization: Bearer $tok" \
+    --data-urlencode "q=$q" --data-urlencode "limit=8" \
+    --data-urlencode "fields=id,title,start_date,media_type,num_episodes" \
+    "https://api.myanimelist.net/v2/anime" 2>/dev/null \
+  | jq -r '"MAL candidates: " + ([.data[].node
+      | "\(.id) '\''\(.title)'\'' (\(.start_date // "?"), \(.media_type // "?"), \(.num_episodes // 0) eps)"]
+      | join("; "))' 2>/dev/null || true; }
 
 shopt -s nocasematch
 RE_VIDEO='\.(mkv|mp4|avi|m4v|webm|mov|ts)$'
@@ -64,15 +94,15 @@ shopt -u nocasematch
 log "found ${#FILES[@]} new media file(s)"
 
 # ---- 2. split into cache-hits vs lobo-needed ----
-declare -a D_TYPE D_SERIES D_SEASON
+declare -a D_TYPE D_SERIES D_SEASON D_SCROB
 declare -a NEED_LOBO=()
 for i in "${!FILES[@]}"; do
   b=$(basename "${FILES[$i]}")
   key=$(cache_key "$b"); hit=""
   [[ -n "$key" ]] && hit=$(grep -P "^\Q${key}\E\t" "$CACHE" 2>/dev/null | head -1)
   if [[ -n "$hit" ]]; then
-    IFS=$'\t' read -r _ t s sea <<<"$hit"
-    D_TYPE[$i]="$t"; D_SERIES[$i]="$s"; D_SEASON[$i]="$sea"
+    IFS=$'\t' read -r _ t s sea st <<<"$hit"
+    D_TYPE[$i]="$t"; D_SERIES[$i]="$s"; D_SEASON[$i]="$sea"; D_SCROB[$i]="${st:-}"
     log "CACHE  $b  ->  $t/$s"
   else
     NEED_LOBO+=("$i")
@@ -91,6 +121,7 @@ if ((${#NEED_LOBO[@]})); then
         etxt=$(unzip -l "$f" 2>/dev/null | grep -ciE '\.x?html?[[:space:]]*$')
         hint="title=${et}; images=${eimg} textpages=${etxt}"
         ;;
+      *) [[ "${b,,}" =~ $RE_VIDEO ]] && hint=$(mal_candidates "$b") ;;
     esac
     printf -v line '%s\t%s\t%s\t%s' "$i" "$ext" "$b" "$hint"
     digest+="$line"$'\n'
@@ -106,11 +137,12 @@ if ((${#NEED_LOBO[@]})); then
   while IFS= read -r d; do
     idx=$(jq -r '.index' <<<"$d"); t=$(jq -r '.type' <<<"$d")
     s=$(jq -r '.series_folder' <<<"$d"); sea=$(jq -r '.season' <<<"$d")
-    D_TYPE[$idx]="$t"; D_SERIES[$idx]="$s"; D_SEASON[$idx]="$sea"
+    st=$(jq -r '.scrobble_title // empty' <<<"$d"); st="${st//\//-}"
+    D_TYPE[$idx]="$t"; D_SERIES[$idx]="$s"; D_SEASON[$idx]="$sea"; D_SCROB[$idx]="$st"
     if [[ $DRY -eq 0 ]]; then
       b=$(basename "${FILES[$idx]}"); key=$(cache_key "$b")
       if [[ -n "$key" ]] && ! grep -qP "^\Q${key}\E\t" "$CACHE" 2>/dev/null; then
-        printf '%s\t%s\t%s\t%s\n' "$key" "$t" "$s" "$sea" >>"$CACHE"
+        printf '%s\t%s\t%s\t%s\t%s\n' "$key" "$t" "$s" "$sea" "$st" >>"$CACHE"
       fi
     fi
   done < <(printf '%s' "$decs" | jq -c '.[]')
@@ -134,18 +166,25 @@ for i in "${!FILES[@]}"; do
     book)  sub="books/$s" ;;
     *)     log "SKIP   $b (type=$t)"; mark_done "$f"; continue ;;
   esac
-  dest_dir="$MEDIA/$sub"; dest="$dest_dir/$b"
+  # library name: "<scrobble_title> - <ep>" when the lobo/cache pinned the MAL
+  # entry title (a fansub "S3" tag would scrobble to the wrong entry otherwise)
+  destbase="$b"
+  if [[ "$t" == "anime" && -n "${D_SCROB[$i]:-}" ]]; then
+    ep=$(ep_token "$b")
+    [[ -n "$ep" ]] && destbase="${D_SCROB[$i]} - ${ep}.${b##*.}"
+  fi
+  dest_dir="$MEDIA/$sub"; dest="$dest_dir/$destbase"
   if [[ $DRY -eq 1 ]]; then
-    log "PLAN   $b  ->  $sub/"
+    log "PLAN   $b  ->  $sub/$destbase"
     continue
   fi
   mkdir -p "$dest_dir"
   if [[ -e "$dest" ]]; then
-    log "EXISTS $sub/$b (skip link)"
+    log "EXISTS $sub/$destbase (skip link)"
   elif ln "$f" "$dest" 2>/dev/null; then
-    log "LINK   $b  ->  $sub/"
+    log "LINK   $b  ->  $sub/$destbase"
   else
-    cp -n "$f" "$dest" 2>/dev/null && log "COPY   $b -> $sub/ (cross-fs fallback)"
+    cp -n "$f" "$dest" 2>/dev/null && log "COPY   $b -> $sub/$destbase (cross-fs fallback)"
   fi
   mark_done "$f"
 done

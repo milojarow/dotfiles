@@ -3,9 +3,13 @@
 #
 # Reads a digest on stdin, one file per line, TAB-separated:
 #     INDEX<TAB>EXTENSION<TAB>FILENAME<TAB>HINT
+# For video files HINT may carry live MAL search candidates ("MAL candidates:
+# id 'title' (date, type, eps); ...") fetched by the caller, so the lobo picks
+# the scrobble target from verified entries instead of recalling from memory.
 # Returns a JSON move-plan on stdout:
 #     {"decisions":[{"index":N,"type":"anime|manga|book|skip",
-#                    "series_folder":"kebab","season":N|null}, ...]}
+#                    "series_folder":"kebab","season":N|null,
+#                    "scrobble_title":"MAL romaji title"|null}, ...]}
 #
 # Anti-fork-bomb locks (manada): CLAUDE_HEADLESS guard so the operator's hooks
 # bail; no Agent tool (cannot spawn more lobos); single-shot structured output
@@ -41,8 +45,21 @@ For EACH line decide, using your knowledge of anime and manga titles:
   and name ALL of that series'"'"'s installments consistently. A movie installment
   still counts as its installment (do not skip it). null for manga, book, or when
   unknown.
-Do NOT rename files; you only choose the destination folder. Preserve each INDEX
-exactly. Return ONLY the JSON object for the schema, one decision per input line.'
+- "scrobble_title": ONLY for type=anime, else null. The exact ROMAJI title of the
+  specific MyAnimeList entry this file'"'"'s installment scrobbles to, truncated
+  before any ":" (e.g. season 3 of Mushoku Tensei is its own MAL entry titled
+  "Mushoku Tensei III: Isekai Ittara Honki Dasu" -> "Mushoku Tensei III"). A MAL
+  scrobbler matches by title, so a fansub tag like "S3" in a filename maps to the
+  WRONG entry unless the library file carries the real entry title. When the HINT
+  contains "MAL candidates:" (live search results: id, exact title, start date,
+  media type, episode count), you MUST pick from those candidates - cross-check the
+  file'"'"'s season/installment against start dates and episode counts - and copy
+  the chosen title verbatim (up to the colon). NEVER output a title that is not
+  among the candidates when candidates are present. If no candidate fits, or there
+  is no candidates hint and you are not certain of the exact MAL title, use null.
+The organizer renames the library hardlink to "<scrobble_title> - <ep>" when you
+provide it; you only decide. Preserve each INDEX exactly. Return ONLY the JSON
+object for the schema, one decision per input line.'
 
 CLAUDE_HEADLESS=1 claude -p "$digest" \
   --append-system-prompt "$SYS" \
