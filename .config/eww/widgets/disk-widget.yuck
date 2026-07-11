@@ -32,7 +32,8 @@
       (disk-row :label "Downloads" :path {replace(jq(disk-data, ".downloads_path"), '"', '')} :pct {jq(disk-data, ".downloads")})
       (disk-row :label "Videos"    :path {replace(jq(disk-data, ".videos_path"), '"', '')}    :pct {jq(disk-data, ".videos")})
       (button :class {show-disk-other == 1 ? "disk-row disk-row-other open" : "disk-row disk-row-other"}
-              :onclick "${EWW_CMD} update show-disk-other=$((1 - ${show-disk-other}))"
+              :timeout "2s"
+              :onclick "${EWW_CMD} update show-disk-other=$((1 - ${show-disk-other})) &"
         (box :orientation "h" :space-evenly false :valign "center"
           (label :class "disk-folder-icon" :text "")
           (label :class "disk-name" :text "Other" :hexpand true :halign "start")

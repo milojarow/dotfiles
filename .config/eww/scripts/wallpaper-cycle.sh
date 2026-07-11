@@ -104,7 +104,12 @@ except Exception:
         fi
         ;;
 
+    # Click handlers below detach their whole body: eww SIGKILLs handler
+    # commands after :timeout (200ms default) — a kill mid-body desyncs
+    # INDEX_FILE from the wp-* vars. Detached, sh returns in ~5ms and the
+    # kill never has a target.
     prev|next)
+        (
         # Fast path: read both values from tempfiles, no eww calls except update.
         [ -f "$COUNT_FILE" ] || exit 0
         count=$(<"$COUNT_FILE")
@@ -118,9 +123,11 @@ except Exception:
         fi
         echo "$idx" > "$INDEX_FILE"
         "$EWW" update wp-index="$idx"
+        ) &
         ;;
 
     dot-click)
+        (
         rev=$("$EWW" get wp-revealed 2>/dev/null)
         if [ "$rev" = "true" ]; then
             idx=0
@@ -130,13 +137,16 @@ except Exception:
         else
             "$EWW" update wp-revealed=true
         fi
+        ) &
         ;;
 
     cancel)
+        (
         applied=0
         [ -f "$APPLIED_FILE" ] && applied=$(<"$APPLIED_FILE")
         echo "$applied" > "$INDEX_FILE"
         "$EWW" update wp-index="$applied" wp-revealed=false
+        ) &
         ;;
 
     *)

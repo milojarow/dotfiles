@@ -26,10 +26,9 @@
     (input :class "notes-input"
            :value notes-input
            :timeout "2s"
-           :onaccept "~/.config/eww/scripts/notes-add.sh <<'EOF_EWW_NOTES_7C4A'
+           :onaccept "~/.config/eww/scripts/notes-accept.sh <<'EOF_EWW_NOTES_7C4A'
 {}
-EOF_EWW_NOTES_7C4A
-${EWW_CMD} update notes-input=' ' && ${EWW_CMD} update notes-input=''")
+EOF_EWW_NOTES_7C4A")
 
     (label :class "notes-empty"
            :visible {notes-data.count == 0}
@@ -48,16 +47,18 @@ ${EWW_CMD} update notes-input=' ' && ${EWW_CMD} update notes-input=''")
                      :halign "start" :visible {note.time != ""}))
             (button :class "notes-btn" :valign "start"
                     :tooltip "Copiar"
-                    :onclick "~/.config/eww/scripts/notes-copy.sh ${note.idx}"
+                    :timeout "2s"
+                    :onclick "~/.config/eww/scripts/notes-copy.sh ${note.idx} &"
               (label :text "⧉"))
             (button :class "notes-btn delete" :valign "start"
                     :tooltip "Borrar (va a archive.txt)"
-                    :onclick "~/.config/eww/scripts/notes-delete.sh ${note.idx}"
+                    :timeout "2s"
+                    :onclick "~/.config/eww/scripts/notes-delete.sh ${note.idx} &"
               (label :text "×"))))))))
 
 (defwindow notes-widget
   :monitor 0
-  :geometry (geometry :x "940px"
+  :geometry (geometry :x "1020px"
                       :y "540px"
                       :width "560px"
                       :anchor "top left")
