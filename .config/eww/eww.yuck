@@ -18,3 +18,4 @@
 (include "./widgets/battery.yuck")
 (include "./widgets/tmux-sessions.yuck")
 (include "./widgets/wallpaper-cycle.yuck")
+(include "./widgets/notes.yuck")

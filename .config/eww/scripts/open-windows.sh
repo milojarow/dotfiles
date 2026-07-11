@@ -55,6 +55,7 @@ WINDOWS=(
     battery-window
     tmux-sessions
     wallpaper-cycle
+    notes-widget
 )
 
 # '9>&-' closes fd 9 in the child, preventing flock inheritance leaks.
