@@ -21,6 +21,7 @@
 
 ; ── Wifi manager data ─────────────────────────────────────────────────────────
 (defpoll wifi-networks :interval "30s"
+  :initial "[]"
   `~/.config/eww/scripts/wifi-scan.py`)
 
 ; ── Wifi manager widget ────────────────────────────────────────────────────────

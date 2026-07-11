@@ -1,12 +1,13 @@
 ; feature: disk
 ; role:    window
-; Disk usage data — refreshes every 10 minutes
-(defpoll disk-data :interval "10m"
+; Disk usage data — cheap cache read (the du lives in
+; eww-disk-refresh.timer, outside eww's cgroup; cache refreshes every 10m)
+(defpoll disk-data :interval "2m"
   :initial `{"documents":0,"pictures":0,"downloads":0,"videos":0,"other":0,"root":0,"documents_path":"","pictures_path":"","downloads_path":"","videos_path":""}`
   `~/.config/eww/scripts/disk-usage.sh`)
 
-; Top 6 heaviest dirs in "Other" — refreshes every 10 minutes
-(defpoll disk-other-data :interval "10m"
+; Top 6 heaviest dirs in "Other" — cheap cache read (same timer)
+(defpoll disk-other-data :interval "2m"
   :initial `[]`
   `~/.config/eww/scripts/disk-other-breakdown.sh`)
 

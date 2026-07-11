@@ -2,43 +2,19 @@
 # feature: disk
 # role:    helper
 #
-# disk-usage.sh - Compute disk usage percentages for home directories
-# Outputs JSON with each category's share of total disk (percentage)
+# disk-usage.sh — reads the cached disk-usage payload for the disk widget.
+# The expensive du traversal lives in disk-usage-refresh.sh, run by the
+# systemd user timer eww-disk-refresh.timer OUTSIDE eww's cgroup: a du
+# inside an eww defpoll froze every config reload 40-70s (eww joins the
+# old script-var runtime on the GTK main thread, and a synchronous du
+# there is uncancellable) and pinned eww.service at its MemoryHigh
+# ceiling with page cache. This reader must stay O(ms).
 
-HOME_DIR="$HOME"
+CACHE="/tmp/eww-disk-usage.json"
 
-# Total partition size in 1K-blocks
-DISK_TOTAL=$(df --output=size "$HOME_DIR" | tail -1)
-[ -z "$DISK_TOTAL" ] || [ "$DISK_TOTAL" -le 0 ] && DISK_TOTAL=1
-
-# Single-pass traversal: summarize immediate children of home
-du_home=$(du -d1 -k "$HOME_DIR" 2>/dev/null)
-
-# Extract the 1K-block size for a given exact path
-size_of() {
-    echo "$du_home" | awk -v p="$1" '$2 == p { print $1; exit }'
-}
-
-docs_dir=$(xdg-user-dir DOCUMENTS); docs=$(size_of "$docs_dir"); docs=${docs:-0}
-pics_dir=$(xdg-user-dir PICTURES);  pics=$(size_of "$pics_dir"); pics=${pics:-0}
-dls_dir=$(xdg-user-dir DOWNLOAD);   dls=$(size_of "$dls_dir");   dls=${dls:-0}
-vids_dir=$(xdg-user-dir VIDEOS);    vids=$(size_of "$vids_dir"); vids=${vids:-0}
-home_total=$(size_of "$HOME_DIR");     home_total=${home_total:-0}
-
-# Other = everything in home that is not the four named directories
-other=$(( home_total - docs - pics - dls - vids ))
-[ "$other" -lt 0 ] && other=0
-
-# /root directory (falls back to 0 if not readable)
-root_size=$(du -sk /root 2>/dev/null | awk '{print $1}')
-root_size=${root_size:-0}
-
-# Return percentage of total disk size
-pct() {
-    awk -v s="$1" -v t="$DISK_TOTAL" 'BEGIN { printf "%.1f", (s / t) * 100 }'
-}
-
-printf '{"documents":%s,"pictures":%s,"downloads":%s,"videos":%s,"other":%s,"root":%s,"documents_path":"%s","pictures_path":"%s","downloads_path":"%s","videos_path":"%s"}\n' \
-    "$(pct "$docs")" "$(pct "$pics")" "$(pct "$dls")" "$(pct "$vids")" \
-    "$(pct "$other")" "$(pct "$root_size")" \
-    "$docs_dir" "$pics_dir" "$dls_dir" "$vids_dir"
+if [ -s "$CACHE" ]; then
+    cat "$CACHE"
+else
+    # Cache not primed yet (fresh boot, timer OnBootSec pending)
+    printf '{"documents":0,"pictures":0,"downloads":0,"videos":0,"other":0,"root":0,"documents_path":"","pictures_path":"","downloads_path":"","videos_path":""}\n'
+fi

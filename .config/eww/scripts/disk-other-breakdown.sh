@@ -1,38 +1,15 @@
 #!/bin/bash
 # feature: disk
 # role:    helper
-# Find top 6 heaviest directories in $HOME excluding standard ones
-# Output: JSON array sorted by size descending
+# Reads the cached top-6 heaviest-dirs payload for the disk widget.
+# The du traversal lives in disk-usage-refresh.sh (systemd user timer
+# eww-disk-refresh.timer, outside eww's cgroup) — see disk-usage.sh for
+# why. This reader must stay O(ms).
 
-HOME_DIR="$HOME"
+CACHE="/tmp/eww-disk-other.json"
 
-du -d1 -k "$HOME_DIR" 2>/dev/null | \
-  sort -rnk1 | \
-  awk -v home="$HOME_DIR" '
-    BEGIN { count = 0 }
-    {
-      dir = $2
-      if (dir == home) next
-      name = dir
-      sub(home "/", "", name)
-      if (name == "documents" || name == "pictures" || name == "downloads" || name == "videos") next
-      sizes[count] = $1
-      names[count] = name
-      paths[count] = dir
-      count++
-    }
-    END {
-      n = (count < 6) ? count : 6
-      printf "["
-      for (i = 0; i < n; i++) {
-        if (i > 0) printf ","
-        size_mb = sizes[i] / 1024
-        if (size_mb >= 1024) {
-          size_str = sprintf("%.1fG", size_mb / 1024)
-        } else {
-          size_str = sprintf("%.0fM", size_mb)
-        }
-        printf "{\"name\":\"%s\",\"path\":\"%s\",\"size\":\"%s\"}", names[i], paths[i], size_str
-      }
-      printf "]\n"
-    }'
+if [ -s "$CACHE" ]; then
+    cat "$CACHE"
+else
+    printf '[]\n'
+fi
