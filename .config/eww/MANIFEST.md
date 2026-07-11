@@ -13,7 +13,6 @@ their inline modules to the corresponding feature.
 
 ## bar
 
-- `widgets/bar.yuck`  *(container)*
 - `styles/bar.scss`  *(style)*
 
 ## battery
@@ -21,7 +20,6 @@ their inline modules to the corresponding feature.
 - `styles/battery.scss`  *(style)*
 - `scripts/battery-subscribe.sh`  *(subscribe)*
 - `widgets/battery.yuck`  *(window)*
-- referenced as module `bar-battery` in `widgets/bar.yuck:240`
 
 ## brightness
 
@@ -49,7 +47,6 @@ their inline modules to the corresponding feature.
 
 - `styles/clipboard.scss`  *(style)*
 - `scripts/clipboard-subscribe.sh`  *(subscribe)*
-- referenced as module `bar-clipboard` in `widgets/bar.yuck:205`
 
 ## clock
 
@@ -77,7 +74,6 @@ their inline modules to the corresponding feature.
 
 - `styles/dnd.scss`  *(style)*
 - `scripts/dnd-subscribe.sh`  *(subscribe)*
-- referenced as module `bar-dnd` in `widgets/bar.yuck:162`
 
 ## experiment
 
@@ -88,24 +84,20 @@ their inline modules to the corresponding feature.
 
 - `styles/gamma.scss`  *(style)*
 - `scripts/gamma-subscribe.sh`  *(subscribe)*
-- referenced as module `bar-gamma` in `widgets/bar.yuck:170`
 
 ## idle-inhibitor
 
 - `styles/idle-inhibitor.scss`  *(style)*
 - `scripts/idle-inhibitor-subscribe.sh`  *(subscribe)*
-- referenced as module `bar-idle-inhibitor` in `widgets/bar.yuck:154`
 
 ## meeting-notes
 
 - `styles/meeting-notes.scss`  *(style)*
 - `scripts/meeting-notes-subscribe.sh`  *(subscribe)*
-- referenced as module `bar-meeting-notes` in `widgets/bar.yuck:228`
 
 ## mem-pressure
 
 - `scripts/mem-pressure-watch.py`  *(subscribe)*
-- referenced as module `bar-mem-pressure` in `widgets/bar.yuck:178`
 
 ## mongo-tunnel
 
@@ -113,11 +105,19 @@ their inline modules to the corresponding feature.
 - `scripts/mongo-tunnel-subscribe.sh`  *(subscribe)*
 - `widgets/mongo-tunnel.yuck`  *(window)*
 
+## notes
+
+- `scripts/notes-add.sh`  *(action)*
+- `scripts/notes-copy.sh`  *(action)*
+- `scripts/notes-delete.sh`  *(action)*
+- `styles/notes.scss`  *(style)*
+- `scripts/notes-subscribe.sh`  *(subscribe)*
+- `widgets/notes.yuck`  *(window)*
+
 ## recorder
 
 - `styles/recorder.scss`  *(style)*
 - `scripts/recorder-subscribe.sh`  *(subscribe)*
-- referenced as module `bar-recorder` in `widgets/bar.yuck:220`
 
 ## selene-storage
 
@@ -165,7 +165,6 @@ their inline modules to the corresponding feature.
 - `scripts/volume-scroll.sh`  *(action)*
 - `styles/volume.scss`  *(style)*
 - `scripts/volume-subscribe.py`  *(subscribe)*
-- referenced as module `bar-volume` in `widgets/bar.yuck:185`
 
 ## wallpaper-cycle
 
@@ -188,13 +187,13 @@ their inline modules to the corresponding feature.
 - `scripts/wifi-password-toggle.sh`  *(action)*
 - `scripts/wifi-public-ip.sh`  *(action)*
 - `scripts/wifi-pw-submit.sh`  *(action)*
+- `scripts/wifi-qr-show.sh`  *(action)*
 - `scripts/wifi-rescan.sh`  *(action)*
 - `scripts/wifi-toggle-popup.sh`  *(action)*
 - `scripts/wifi-scan.py`  *(helper)*
 - `styles/wifi.scss`  *(style)*
 - `scripts/wifi-subscribe.py`  *(subscribe)*
 - `widgets/wifi-popup.yuck`  *(window)*
-- referenced as module `bar-wifi` in `widgets/bar.yuck:214`
 
 ## window-title
 
@@ -206,7 +205,6 @@ their inline modules to the corresponding feature.
 ## workspaces
 
 - `scripts/workspaces-subscribe.py`  *(subscribe)*
-- referenced as module `bar-workspaces` in `widgets/bar.yuck:57`
 
 ## _shared
 
@@ -215,10 +213,6 @@ their inline modules to the corresponding feature.
 - `scripts/move-widget.sh`  *(shared)*
 - `scripts/open-windows.sh`  *(shared)*
 
-## ⚠ Orphans (no `feature:` header)
-
-- `styles/theme.scss`
-
 ---
 
-**Summary:** 99 tagged files across 33 features. 1 orphans.
+**Summary:** 105 tagged files across 34 features. 0 orphans.
