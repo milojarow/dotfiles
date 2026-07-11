@@ -8,9 +8,10 @@
 (defpoll ram-pct :interval "3s" :initial "0"
   "awk '/MemTotal/{t=$2}/MemAvailable/{a=$2}END{printf \"%d\", (t-a)/t*100}' /proc/meminfo")
 
-; GPU temp via nvidia-smi. Slower poll because nvidia-smi takes ~150ms.
-(defpoll gpu-temp :interval "5s" :initial "0"
-  "nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null || echo 0")
+; GPU temp gated on runtime_status so the poll can't keep the dGPU awake
+; (nvidia-smi wakes it; at 5s it never reached autosuspend). 0 = asleep.
+(defpoll gpu-temp :interval "30s" :initial "0"
+  "~/.config/eww/scripts/gpu-temp.sh")
 
 (defwidget temps-gauge [val unit name icon thresh1 thresh2]
   (overlay
