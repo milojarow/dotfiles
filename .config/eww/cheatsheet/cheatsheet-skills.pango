@@ -1,0 +1,23 @@
+<span font_family="monospace">
+<span foreground="#ff79c6" weight="bold">🧩  SKILLS · marcador</span>
+
+🔨 forjador-de-skills   <span foreground="#6272a4">forjar / empacar skills</span>
+💼 espocrm              <span foreground="#6272a4">EspoCRM API + modelado</span>
+🫐 meta-ads             <span foreground="#6272a4">campañas Meta (CLI)</span>
+📹 ai-video             <span foreground="#6272a4">video: setup·captions·assets·compose</span>
+🌐 website              <span foreground="#6272a4">Next.js · Tailwind · DeployNow</span>
+🧭 mongodb-compass      <span foreground="#6272a4">Compass por túnel SSH</span>
+🌙 luna                 <span foreground="#6272a4">Luna CDN — subir media</span>
+🫟 eww                  <span foreground="#6272a4">widgets eww (6 sub)</span>
+🔰 sway                 <span foreground="#6272a4">sway/SwayFX (1 skill)</span>
+🗺️ google-maps          <span foreground="#6272a4">geocoding · rutas · validar dirección</span>
+🐺 manada               <span foreground="#6272a4">crear/configurar subagents</span>
+📖 system-docs          <span foreground="#6272a4">man-forge: documentar funcionalidades</span>
+
+<span foreground="#50fa7b" weight="bold">ℹ  cómo se usan</span>
+<span foreground="#f8f8f2">Auto: disparan por contexto.</span>
+<span foreground="#f8f8f2">Manual: pídelas por nombre.</span>
+<span foreground="#f8f8f2">El emoji al inicio = skill activa.</span>
+
+<span foreground="#6272a4">+ terceros: vercel · cloudflare · expo · n8n · hyperframes</span>
+</span>
