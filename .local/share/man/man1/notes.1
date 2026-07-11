@@ -51,6 +51,11 @@ Style (catppuccin, house pattern).
 deflisten source: emits the full list as JSON on start and on every file
 change (inotify on the parent directory).
 .TP
+.I $HOME/.config/eww/scripts/notes-accept.sh
+The input's accept flow: reads the note from stdin, then detaches
+(append + input clear run in the background) so eww's handler-command
+timeout can never kill the chain mid-flight.
+.TP
 .I $HOME/.config/eww/scripts/notes-add.sh
 Appends one timestamped note. Text arrives on stdin (heredoc from the
 widget) or as argv (CLI use). Serialized with
@@ -95,8 +100,10 @@ flock serialization for add/delete.
 Enter in the input fires
 .B :onaccept
 \[->] the note text travels to
-.I notes-add.sh
-through a quoted-delimiter heredoc on stdin (see GOTCHAS \[em] never argv).
+.I notes-accept.sh
+through a quoted-delimiter heredoc on stdin (see GOTCHAS \[em] never
+argv), which reads it and detaches before appending via
+.IR notes-add.sh .
 .IP \n+[step].
 .I notes-add.sh
 appends \[lq]timestamp<TAB>text\[rq] under flock.

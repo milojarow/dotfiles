@@ -32,7 +32,7 @@
 
 .temp-fill {
   border-radius: 18px;
-  transition: 500ms linear all;
+  transition: background-color 500ms linear;  // never 'all': the fill height changes per update
 }
 
 .temp-fill.cool {

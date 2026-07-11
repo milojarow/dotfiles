@@ -66,6 +66,7 @@ their inline modules to the corresponding feature.
 ## disk
 
 - `scripts/disk-other-breakdown.sh`  *(helper)*
+- `scripts/disk-usage-refresh.sh`  *(helper)*
 - `scripts/disk-usage.sh`  *(helper)*
 - `styles/disk-widget.scss`  *(style)*
 - `widgets/disk-widget.yuck`  *(window)*
@@ -107,6 +108,7 @@ their inline modules to the corresponding feature.
 
 ## notes
 
+- `scripts/notes-accept.sh`  *(action)*
 - `scripts/notes-add.sh`  *(action)*
 - `scripts/notes-copy.sh`  *(action)*
 - `scripts/notes-delete.sh`  *(action)*
@@ -135,6 +137,7 @@ their inline modules to the corresponding feature.
 
 ## temps
 
+- `scripts/gpu-temp.sh`  *(helper)*
 - `styles/temps.scss`  *(style)*
 - `widgets/temps.yuck`  *(window)*
 
@@ -213,6 +216,10 @@ their inline modules to the corresponding feature.
 - `scripts/move-widget.sh`  *(shared)*
 - `scripts/open-windows.sh`  *(shared)*
 
+## ⚠ Naming dissonances (filename does not start with declared feature)
+
+- `scripts/gpu-temp.sh` declares feature `temps` but filename does not start with `temps-`
+
 ---
 
-**Summary:** 105 tagged files across 34 features. 0 orphans.
+**Summary:** 108 tagged files across 34 features. 0 orphans.

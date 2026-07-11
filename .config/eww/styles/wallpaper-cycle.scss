@@ -27,11 +27,13 @@
   font-family: "Caveat", "Comic Sans MS", "Roboto", sans-serif;
   font-size: 38px;
   color: rgba(216, 222, 233, 0.75);
-  transition: color 120ms ease, text-shadow 120ms ease;
 }
 
 .wp-arrow:hover label,
 .wp-dot:hover label {
+  // transition lives here, not on the base selector — base-selector
+  // animations repaint on every unrelated re-render (known amplifier)
+  transition: color 120ms ease, text-shadow 120ms ease;
   color: rgba(255, 255, 255, 1.0);
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
