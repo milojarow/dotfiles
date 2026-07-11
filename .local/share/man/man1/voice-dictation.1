@@ -1,0 +1,195 @@
+.TH VOICE-DICTATION 1 "2026-06-01" "1.0" "sway dotfiles"
+.SH NAME
+voice-dictation \- system-wide push-to-talk voice dictation (speech-to-text) into the clipboard
+.SH DESCRIPTION
+The Voice Dictation system lets you press a key, speak, and paste the
+transcribed text into any application. It runs fully offline using
+.BR voxtype (1)
+as a systemd user daemon, the
+.B whisper.cpp
+engine (Whisper
+.B small
+multilingual model) for Spanish/English speech-to-text, and a PipeWire
+.B rnnoise
+noise-cancelling source so the microphone is cleaned before transcription.
+.PP
+It is toggle-driven: one keypress starts recording, a second stops it and
+transcribes. The result is placed on the Wayland clipboard to paste with
+.BR Ctrl+V ,
+and a desktop notification shows the transcribed text.
+.PP
+Whisper inference runs on the GPU via the Vulkan backend \[em] specifically
+the Intel HD 530 iGPU, which outperforms the discrete NVIDIA Quadro M1000M
+for this workload (see
+.BR "HARDWARE NOTES" ).
+.SH KEYBINDINGS
+.TP
+.B Ctrl+Shift+space
+Toggle dictation. First press starts recording; second press stops and
+transcribes. Bound in
+.I ~/.config/sway/config.d/85-dictation.conf
+to
+.IR "voxtype record toggle" .
+.SH USAGE
+.RS
+.nf
+1. Place the cursor where you want the text (or anywhere \[em] output is clipboard).
+2. Press Ctrl+Shift+space and speak in Spanish or English.
+3. Press Ctrl+Shift+space again to stop and transcribe.
+4. A notification shows the text; it is now on the clipboard.
+5. Paste with Ctrl+V.
+.fi
+.RE
+.SH FILES
+.SS Engine and daemon
+.TP
+.I /usr/bin/voxtype
+The voxtype binary (package \fBvoxtype-bin\fR). Runs as a daemon.
+.TP
+.I /usr/lib/systemd/user/voxtype.service
+Systemd user unit (enabled \[em] starts on login). Runs \fIvoxtype -q daemon\fR.
+.TP
+.I ~/.config/voxtype/config.toml
+Main configuration. Key settings: \fBmodel\fR=small, \fBlanguage\fR=es,
+\fBeager_processing\fR=true, \fB[vad]\fR enabled=true / threshold=0.6,
+\fBinitial_prompt\fR (short list of terms/names), \fB[output] mode\fR=clipboard,
+\fB[audio] device\fR=pulse, \fB[hotkey] enabled\fR=false (recording is driven by
+the sway keybinding, not voxtype's own hotkey detection).
+.TP
+.I /usr/lib/voxtype/voxtype-vulkan
+Active binary variant (Whisper, Vulkan backend). Selected with
+.IR "voxtype setup gpu --enable" .
+.SS Models
+.TP
+.I ~/.local/share/voxtype/models/ggml-small.bin
+Whisper small multilingual model (466 MB). The active model.
+.TP
+.I ~/.local/share/voxtype/models/ggml-silero-vad.bin
+Silero VAD model. Trims silence so Whisper does not hallucinate on it.
+.TP
+.I ~/.local/share/voxtype/models/ggml-base.bin
+Whisper base model (142 MB). Optional faster/less-accurate fallback; not active.
+.SS Noise suppression (microphone)
+.TP
+.I ~/.config/pipewire/filter-chain.conf.d/99-rnnoise-mic.conf
+PipeWire filter-chain definition. Loads the rnnoise LADSPA plugin and exposes
+a virtual source \fBrnnoise_source\fR that captures from the real mic (via
+\fBtarget.object\fR) and outputs a denoised stream. Given high
+\fBpriority.session\fR so it is chosen as the default source.
+.TP
+.I /usr/lib/ladspa/librnnoise_ladspa.so
+The rnnoise LADSPA plugin (package \fBnoise-suppression-for-voice\fR). Labels:
+\fBnoise_suppressor_mono\fR / \fBnoise_suppressor_stereo\fR.
+.TP
+.I /usr/lib/systemd/user/filter-chain.service
+PipeWire filter-chain systemd user unit (enabled). Loads the config above and
+creates \fBrnnoise_source\fR on login.
+.SS Sway integration
+.TP
+.I ~/.config/sway/config.d/85-dictation.conf
+Sway keybinding file. Binds \fBCtrl+Shift+space\fR (through the \fB$bindsym\fR
+alias = \fIbindsym --to-code\fR) to \fIvoxtype record toggle\fR. Loaded by the
+\fIinclude ~/.config/sway/config.d/*\fR line in the main sway config.
+.SH AUDIO PIPELINE
+.nr step 1 1
+.IP \n[step]. 3
+The microphone (\fIalsa_input.pci-0000_00_1f.3.analog-stereo\fR) captures raw audio.
+.IP \n+[step].
+The PipeWire filter-chain (\fBfilter-chain.service\fR) feeds it through the
+rnnoise plugin \[->] denoised virtual source \fBrnnoise_source\fR, set as the
+default system source.
+.IP \n+[step].
+On \fIvoxtype record toggle\fR, the voxtype daemon captures from the default
+source (device \fBpulse\fR) while recording.
+.IP \n+[step].
+On the second toggle, recording stops. The Silero VAD trims silence, then
+whisper.cpp (small, Vulkan / Intel HD 530) transcribes the speech.
+.IP \n+[step].
+The text is copied to the Wayland clipboard (\fBwl-copy\fR) and shown in a
+notification. Paste with \fBCtrl+V\fR.
+.SH PROGRAMS
+.BR voxtype (1),
+.BR pw-link (1),
+.BR pactl (1),
+.BR wpctl (1),
+.BR wl-copy (1),
+.BR swaymsg (1),
+.BR systemctl (1)
+.SH DEPENDENCIES
+.TP
+.B voxtype-bin
+The dictation engine/daemon (AUR). Bundles whisper.cpp plus several ASR engines.
+.TP
+.B noise-suppression-for-voice
+rnnoise LADSPA plugin for the PipeWire noise-cancelling source.
+.TP
+.B PipeWire
+Audio server. Provides \fBfilter-chain.service\fR, \fBwl-copy\fR, and the
+virtual-source mechanism.
+.TP
+.B wtype
+Wayland virtual-keyboard typing \[em] voxtype's default output driver. Clipboard
+mode is used here instead, but wtype remains the type-mode fallback.
+.SH HARDWARE NOTES
+This machine is an i7-6820HQ (2015) with an Intel HD 530 iGPU and a discrete
+NVIDIA Quadro M1000M (Maxwell, 2 GB).
+.IP \[bu] 2
+\fBIntel HD 530 (Vulkan) beats the NVIDIA M1000M\fR for whisper.cpp: the Maxwell
+GPU lacks fast FP16 (\fBfp16=0\fR), the Intel iGPU has it (\fBfp16=1\fR). Forcing
+NVIDIA with \fBVOXTYPE_VULKAN_DEVICE=nvidia\fR was slower.
+.IP \[bu]
+\fBfaster-whisper / CTranslate2 does not run on the M1000M\fR (Compute Capability
+5.0 is below the 5.3/7.0 needed; only 2 GB VRAM; CUDA 13 installed vs the
+required 12.3 + cuDNN 9). This rules out GPU tools built on CTranslate2, such as
+whisper-overlay.
+.IP \[bu]
+Measured latency (audio ~5\[en]7 s): small/CPU ~22 s, small/Vulkan-NVIDIA ~20 s,
+small/Vulkan-Intel ~13 s, \fBbase/Vulkan-Intel ~2 s\fR, large-v3-turbo/Vulkan-Intel
+~33 s. \fBsmall\fR is the accuracy/speed balance chosen for daily use.
+.SH GOTCHAS
+.IP \[bu] 2
+\fBvoxtype does not accept PulseAudio source names\fR as \fBdevice\fR \[em] only
+\fBdefault\fR/\fBpulse\fR/\fBpipewire\fR/\fBlavrate\fR. To target the rnnoise
+source, set it as the default source and use \fBdevice = "pulse"\fR.
+.IP \[bu]
+\fBNoiseTorch does not work on pure PipeWire\fR (its \fBmodule-ladspa-source\fR
+load fails with "No such entity"). The native PipeWire filter-chain is used instead.
+The base \fBrnnoise\fR package ships only the library; the LADSPA plugin comes from
+\fBnoise-suppression-for-voice\fR.
+.IP \[bu]
+\fBvoxtype setup --download --model small\fR ambiguously resolves \fBsmall\fR to the
+SenseVoice engine (not compiled). Put the model in \fIconfig.toml\fR and run
+\fBvoxtype setup --download\fR without \fB--model\fR, or fetch the ggml file
+directly from HuggingFace (huggingface.co/ggerganov/whisper.cpp).
+.IP \[bu]
+Whisper hallucinates filler at the end of clips ("Suscríbete", "Chau", "gmail")
+\[em] an artifact of its YouTube-subtitle training. The Silero VAD reduces it;
+raising \fB[vad] threshold\fR above 0.6 starts clipping the start of speech.
+.IP \[bu]
+\fBinitial_prompt\fR improves technical terms and proper names, but Whisper
+regurgitates it at the end of clips if it is long \[em] keep it short.
+.IP \[bu]
+A binding applied live with \fBswaymsg\fR is lost when sway restarts; the
+\fIconfig.d/\fR file persists it across restarts.
+.SH NOTES
+.IP \[bu] 2
+Recordings are \fBnot\fR saved to disk \[em] voxtype transcribes in memory and
+discards the audio. No recordings accumulate.
+.IP \[bu]
+Both \fBvoxtype.service\fR and \fBfilter-chain.service\fR are enabled and start on
+login, so the system is ready after a reboot.
+.IP \[bu]
+For higher quality, the realistic paths are a USB microphone (attacks the
+root cause \[em] laptop mic + ambient noise) or a remote backend (whisper.cpp
+server with large-v3 on a powerful host; voxtype supports \fBbackend = "remote"\fR).
+.IP \[bu]
+Distinct from \fBmeeting-notes\fR(1), which records and transcribes whole meetings
+to a file with speaker diarization. Voice Dictation is short, real-time dictation
+to the clipboard.
+.SH SEE ALSO
+.BR voxtype (1),
+.BR meeting-notes (1),
+.BR pw-link (1),
+.BR wpctl (1),
+.BR pactl (1),
+.BR sway (5)

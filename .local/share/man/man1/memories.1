@@ -1,0 +1,259 @@
+.TH MEMORIES 1 "2026-07-10" "1.0" "antares system"
+.SH NAME
+memories \- antares-memory: persistent two-tier memory for Claude Code (lobos, hooks, semantic search)
+.SH DESCRIPTION
+Infrastructure that gives Claude Code sessions persistent memory. It runs
+\fIaround\fR the model \[em] hooks, headless lobos, a search daemon \[em] and
+never loads a skill into context.
+.PP
+Memories are flat \fI.md\fR files with frontmatter taxonomy
+(\fBfeedback_\fR/\fBreference_\fR/\fBproject_\fR/\fBtool_\fR/\fBuser_\fR) in
+two tiers:
+.IP \[bu] 2
+\fBGLOBAL\fR \[em] \fI~/.claude/memory-jarvis/\fR (antares-only override via
+\fBANTARES_GLOBAL_MEMORY_DIR\fR; a vanilla install such as selene uses the
+$HOME slug instead). Auto-recalled in every session. Also holds
+\fIjournal/\fR, the episodic session chronicles.
+.IP \[bu] 2
+\fBPROJECT\fR \[em] \fI~/.claude/projects/<slugify(cwd)>/memory/\fR, one slug
+per cwd; its \fIMEMORY.md\fR index is auto-loaded natively by Claude Code when
+the cwd matches.
+.PP
+Six memory lobos operate the system: \fBcronista\fR and \fBdestilador\fR
+(headless capture pipeline), \fBgardener\fR and \fBindex-curator\fR (headless
+maintenance), plus \fBmemory-router\fR and \fBmemory-recall\fR (in-session
+subagents via the Agent tool). A seventh lobo, \fBskill-keeper\fR, shares the
+launcher pattern but belongs to the skills domain, not to this system.
+.PP
+Canonical source: the PUBLIC repo \fBgithub.com/milojarow/antares-memory\fR
+(full docs under \fIdocs/\fR). The live install is NOT a git checkout \[em]
+sync is MANUAL (see GOTCHAS). Installed on antares and on selene
+(endymion@selene).
+.SH USAGE
+.TP
+.B "guarda esto / save this"
+Dispatches the \fBmemory-router\fR subagent: decides scope (global vs project),
+dedups semantically, writes, announces where.
+.TP
+.B "\[u00BF]ya tratamos X? / did we already\[u2026]?"
+Dispatches \fBmemory-recall\fR: episodic synthesis across memories + journals.
+.TP
+.B manual search
+.nf
+~/.claude/scripts/memory-search.py "query text"
+.fi
+Hybrid semantic+keyword search across global + current slug (works even with
+the daemon down, slower).
+.TP
+.B reindex
+\fI~/.claude/scripts/memory-reindex.sh\fR \[em] full rebuild; also runs on
+SessionStart and automatically after memory writes (PostToolUse).
+.TP
+.B update the system
+Edit scripts/prompts live (launchers read them per run), then \fBsync the repo
+the same session\fR. On selene: \fIcd ~/antares-memory && git pull &&
+\&./install.sh\fR.
+.SH FILES
+.SS "Hook scripts + prompts (~/.claude/scripts/)"
+.TP
+.I memory-search-hook.sh
+UserPromptSubmit: injects semantically relevant memories into every prompt
+\[u2265]30 chars via the daemon socket.
+.TP
+.I memory-journal-init.sh
+SessionStart: creates/loads today's + yesterday's journal.
+.TP
+.I memory-reindex.sh, memory-reindex-if-touched.sh
+Index maintenance (SessionStart / PostToolUse on Write|Edit|MultiEdit).
+.TP
+.I memory-scope-guard.sh
+PreToolUse on Write|Edit: writing a PROJECT-scoped memory injects the
+per-FACT scope reminder (added 2026-07-10).
+.TP
+.I memory-chronicle-launch.sh
+PreCompact + SessionEnd: watermark/delta plumbing, then chains cronista \[->]
+destilador (fire-and-forget, per-session lock).
+.TP
+.I memory-gardener-launch.sh, memory-curator-launch.sh
+SessionEnd: launch gardener (\[u2265]24h cadence) and index-curator
+(\[u2265]7d) when due.
+.TP
+.I memory-*-prompt.txt
+The lobos' policies: \fImemory-cronista-prompt.txt\fR,
+\fImemory-distiller-prompt.txt\fR (holds the per-FACT scope rule),
+\fImemory-gardener-prompt.txt\fR, \fImemory-curator-prompt.txt\fR.
+.TP
+.I memory-index.py, memory-search.py, memory-search-daemon.py
+Indexer, CLI search, UNIX-socket daemon (model warm in RAM).
+.TP
+.I lib/common.sh
+Shared env + path resolution: \fBANTARES_STATE\fR,
+\fBANTARES_PROJECTS_DIR\fR, \fBANTARES_GLOBAL_MEMORY_DIR\fR,
+\fBantares_home_memory_dir\fR, slugify.
+.SS "Lobos (~/.claude/agents-sdk/)"
+.TP
+.I cronista.mjs, destiller.mjs, gardener.mjs, index-curator.mjs
+Headless Agent SDK processes (\fBCLAUDE_HEADLESS=1\fR, isolated from user
+settings/hooks). \fIskill-keeper.mjs\fR lives here too but is the skills
+domain.
+.SS "Subagents (~/.claude/agents/)"
+.TP
+.I memory-router.md, memory-recall.md
+In-session subagent definitions (Agent tool).
+.SS "Stores + indexes"
+.TP
+.I ~/.claude/memory-jarvis/
+Global store (antares): memories + \fIMEMORY.md\fR index + \fIjournal/\fR.
+.TP
+.I ~/.claude/projects/<slug>/memory/
+Per-cwd project stores.
+.TP
+.I .memory-index.db
+Per-store SQLite embedding index (one inside each store dir).
+.SS "State (~/.local/state/antares-memory/)"
+.TP
+.I cronista-watermarks/, cronista-deltas/
+Per-session transcript progress + extracted deltas (capped ~300KB).
+.TP
+.I base-backups/
+Gardener's tar backups of the whole store before destructive passes (last 5).
+.TP
+.I gardener-last-run, curator-last-run, *-memory.md, gardener-deletions.txt
+Cadence stamps + per-lobo scratch memory + deletion log.
+.TP
+.I logs/
+Per-component logs (chronicle, search, \[u2026]).
+.SS "Daemon + wiring"
+.TP
+.I memory-search-daemon.service
+systemd user unit (enabled; antares keeps this LEGACY name \[em] the repo now
+ships \fIantares-memory-daemon.service\fR, see GOTCHAS). Socket:
+\fI$XDG_RUNTIME_DIR/memory-search.sock\fR.
+.TP
+.I ~/.claude/scripts/.venv/
+Python venv with sentence-transformers (legacy location on antares; repo
+installs under \fB$ANTARES_STATE\fR).
+.TP
+.I ~/.claude/settings.json
+The 6 hook events: SessionStart, UserPromptSubmit, PreCompact, SessionEnd,
+PostToolUse, PreToolUse.
+.SH FLOW
+.SS "Capture (session close / compaction)"
+.nr step 1 1
+.IP \n[step]. 3
+PreCompact or SessionEnd fires \fImemory-chronicle-launch.sh\fR (never blocks
+the close; any error \[->] exit 0).
+.IP \n+[step].
+Launcher computes the transcript DELTA since the per-session watermark,
+preprocesses to user/assistant text, caps ~300KB; trivial deltas (<400B) just
+advance the watermark.
+.IP \n+[step].
+\fBcronista\fR appends the delta's chronicle to the session journal (global
+store). Watermark advances only if it succeeded.
+.IP \n+[step].
+\fBdestilador\fR distills durable memories from the SAME delta, deduping
+against an inline digest of existing memories; decides scope per FACT
+(cross-cutting \[->] global).
+.IP \n+[step].
+Reindex, delta removed. Gardener/curator launchers run next if their cadence
+is due (\[u2265]24h / \[u2265]7d).
+.SS "Recall (every prompt)"
+.nr step 1 1
+.IP \n[step]. 3
+UserPromptSubmit \[->] \fImemory-search-hook.sh\fR \[->] daemon socket
+(hybrid 70% cosine + 30% BM25, threshold 0.35, top 5, HOME + current slug).
+.IP \n+[step].
+Hits injected as \fI<auto-loaded-memory>\fR additionalContext; daemon down
+\[->] silently no context.
+.SS "Write guard (every Write/Edit)"
+.nr step 1 1
+.IP \n[step]. 3
+PreToolUse \[->] \fImemory-scope-guard.sh\fR: target inside the global store
+\[->] silent; PROJECT-scoped memory path \[->] inject per-FACT scope
+reminder naming the global dir.
+.SH PROGRAMS
+.BR jq (1),
+.BR node (1),
+.BR python3 (1)
+(venv),
+.BR git (1)
+(manual repo sync),
+.BR systemctl (1)
+.SH DEPENDENCIES
+.TP
+.B sentence-transformers (venv)
+Embeddings; model \fBparaphrase-multilingual-MiniLM-L12-v2\fR kept warm by the
+daemon.
+.TP
+.B @anthropic-ai/claude-agent-sdk (0.3.157, ~/.claude/agents-sdk/node_modules)
+Runs the headless lobos on the Claude subscription when no
+\fBANTHROPIC_API_KEY\fR is exported.
+.TP
+.B jq
+Hook stdin parsing + JSON emission in every bash hook.
+.SH GOTCHAS
+.IP \[bu] 2
+\fBRepo sync is MANUAL since 2026-06-11\fR ("moved out of the keeper's
+domain"). Rule: any change to scripts/prompts/lobos \[->] sync
+\fBmilojarow/antares-memory\fR the same session (scrub-gate: repo is PUBLIC).
+A month of unsynced drift (found 2026-07-10) came from skipping this.
+.IP \[bu] 2
+\fBScope is decided per FACT, never inherited\fR from the file being
+appended/enriched. Enforced at write time by \fImemory-scope-guard.sh\fR and
+inside the destilador's policy. The lobos run isolated
+(\fBCLAUDE_HEADLESS=1\fR, no user hooks) \[em] their prompt IS their guard;
+the hook cannot see them. Direct shell writes (a script using \fIcat >\fR)
+bypass the guard too.
+.IP \[bu] 2
+\fBLegacy naming on antares\fR: unit \fImemory-search-daemon.service\fR +
+venv \fI~/.claude/scripts/.venv\fR predate the repo's rename to
+\fIantares-memory-daemon.service\fR + venv under the stable share dir.
+Since repo commit 98875a2 (2026-07-10) \fIinstall.sh\fR detects the legacy
+unit and stops/disables/removes it before installing the new one \[em]
+migrating antares is one deliberate \fI./install.sh\fR away (the installer
+also holds a single-instance flock and writes settings.json atomically).
+Still deliberate, not casual: the deploy step also overwrites antares'
+locally-evolved scripts with the repo versions.
+.IP \[bu] 2
+\fBANTHROPIC_API_KEY in the environment makes every session close bill the
+key\fR \[em] the SDK prefers it over the subscription (gardener/curator
+default to opus). Keep the key out of ambient env on machines running lobos.
+.IP \[bu] 2
+Never wire a headless lobo into per-tool-use hooks \[em] a model call per
+Write/Edit is slow, costly, and the cascade anti-pattern (headless writes
+re-trigger hooks; see the 101-session fork-bomb memory). Deterministic
+reflexes in bash, judgment in the session or in event-driven lobos.
+.IP \[bu] 2
+PreCompact and SessionEnd can near-collide; the per-session lock + watermark
+make the pipeline idempotent \[em] do not "fix" double-firing by removing one
+of the two triggers (a session that never compacts would lose capture).
+.IP \[bu] 2
+The destilador dedups against an INLINE digest (filename: description) \[em]
+never let it Grep+Read the whole store (that timed out at 300s and inspired
+the digest).
+.IP \[bu] 2
+Editing a \fI*-prompt.txt\fR takes effect on the NEXT lobo run (launchers read
+per fire) \[em] no restart. Daemon-side changes DO need
+\fIsystemctl --user restart memory-search-daemon\fR.
+.IP \[bu] 2
+\fImemory-jarvis\fR is an antares-only override; on a vanilla install (selene)
+the global store is the $HOME slug
+(\fI~/.claude/projects/-home-<user>/memory/\fR). Scripts must resolve it via
+\fBantares_home_memory_dir\fR, never hardcode.
+.SH NOTES
+.IP \[bu] 2
+Persistence: the daemon unit is enabled (starts on login); hooks live in
+settings.json (always active); lobos are event-driven (no timers \[em]
+cadence via last-run stamps checked at SessionEnd).
+.IP \[bu] 2
+Selene parity: \fIssh selene 'cd ~/antares-memory && git pull &&
+\&./install.sh'\fR (idempotent; backs up settings.json, merges hooks
+non-destructively, never touches memory files).
+.IP \[bu] 2
+The lobos' full architecture, taxonomy, and tuning knobs:
+\fIdocs/\fR in the canonical repo.
+.SH "SEE ALSO"
+.BR cheatsheet (1),
+repo \fBgithub.com/milojarow/antares-memory\fR (docs/architecture.md,
+docs/lobos-agents-sdk.md, docs/tuning-search.md), memoria global
+\fIreference_antares_memory_repo.md\fR.

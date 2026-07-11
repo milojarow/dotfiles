@@ -1,0 +1,307 @@
+.TH WHATSAPP 1 "2026-06-04" "1.0" "sway dotfiles"
+.SH NAME
+whatsapp \- WhatsApp in the terminal (nchat) with scratchpad tray, desktop notifications and an unread badge
+.SH DESCRIPTION
+A terminal WhatsApp client built on
+.BR nchat (1)
+(a ncurses TUI that links as a WhatsApp Web device via the whatsmeow library).
+It replaces Altus (an Electron client that grew a multi-day memory leak and was
+OOM-killed). nchat runs as a supervised
+.B systemd --user
+service inside a dedicated
+.BR foot (1)
+terminal whose app_id is
+.IR nchat ,
+so sway rules and keybindings can target it.
+.PP
+There is no real system tray for a TUI, so the sway
+.BR scratchpad (1)
+plays that role: nchat is born hidden in the scratchpad and is shown or hidden on
+demand. Incoming messages raise a
+.BR mako (5)
+notification and light a red, blinking WhatsApp icon in
+.BR waybar (5);
+clicking the notification brings nchat to the current workspace.
+.SH KEYBINDINGS
+.TP
+.I $mod+Shift+q
+The normal "close window" key, intercepted: if the focused window is nchat it is
+hidden to the scratchpad (kept alive, still receiving); for every other window it
+performs the normal kill.
+.TP
+.I $mod+m
+Show / hide nchat (toggle it in and out of the scratchpad). Same action as the
+waybar icon.
+.TP
+.I "Ctrl-v  Ctrl-r  Ctrl-t  Ctrl-f  Ctrl-q"
+Inside nchat: open the selected attachment, download it, send a file, jump to the
+unread chat, and quit. Quitting with Ctrl-q is a clean exit and does NOT trigger a
+service restart.
+.SH USAGE
+.TP
+.B Show / hide
+Press
+.I $mod+m
+or click the WhatsApp icon in waybar. Pressing
+.I $mod+Shift+q
+while nchat is focused hides it again.
+.TP
+.B Read a voice note
+Select the message (KeyUp) and press
+.I Ctrl-v
+\[em] the .oga plays through
+.BR mpv (1)
+with no window.
+.TP
+.B Send a file
+.I Ctrl-t .
+.TP
+.B Act on a notification
+Click it: nchat is pulled to the current workspace and jumps to the unread chat.
+.SH FILES
+.SS "Systemd unit"
+.TP
+.I $HOME/.config/systemd/user/nchat.service
+Runs
+.I "foot --app-id=nchat -e nchat" .
+.B Restart=on-failure
+revives nchat on a crash/OOM but not on a clean Ctrl-q. Modeled on eww.service.
+.SS "Sway scripts"
+.TP
+.I $HOME/.config/sway/scripts/close-or-scratchpad.sh
+Bound to
+.IR $mod+Shift+q .
+Hides nchat to the scratchpad if focused, else runs the normal kill.
+.TP
+.I $HOME/.config/sway/scripts/nchat-toggle.sh
+Bound to
+.I $mod+m
+and the waybar icon. Ensures the service is up, then toggles the scratchpad and
+clears the unread badge.
+.TP
+.I $HOME/.config/sway/scripts/nchat-show.sh
+Run by mako on notification click. Pulls nchat to the current workspace, focuses
+it, clears the badge, and sends
+.I Ctrl-f
+(jump to unread) via
+.BR wtype (1).
+.TP
+.I $HOME/.config/sway/scripts/nchat-notify.sh
+nchat's
+.I desktop_notify_command .
+Fires the notification AND lights the badge.
+.TP
+.I $HOME/.config/sway/scripts/nchat-waybar.sh
+exec for the waybar module; emits the unread state as a CSS class.
+.SS "Sway config"
+.TP
+.I $HOME/.config/sway/modes/default
+Defines the intercepted
+.I $mod+Shift+q
+and the
+.I $mod+m
+binding.
+.TP
+.I $HOME/.config/sway/config.d/98-application-defaults.conf
+.I "for_window [app_id=\[dq]nchat\[dq]] move scratchpad"
+\[em] nchat is born hidden.
+.SS "Waybar"
+.TP
+.I $HOME/.config/waybar/config.jsonc
+The
+.I custom/nchat
+module: WhatsApp glyph, exec nchat-waybar.sh, on-click nchat-toggle.sh, refreshed
+by signal 10.
+.TP
+.I $HOME/.config/waybar/style.css
+.I #custom-nchat.unread
+plus the
+.I nchat-pulse
+keyframe \[em] the red blink (color @error_color).
+.SS "Mako"
+.TP
+.I $HOME/.config/mako/config
+.I [app-name=\[dq]nchat\[dq]]
+maps the notification click to nchat-show.sh.
+.SS "nchat config"
+.TP
+.I $HOME/.config/nchat/ui.conf
+.I desktop_notify_enabled=1
+and
+.I desktop_notify_command
+point at nchat-notify.sh.
+.TP
+.I $HOME/.config/nchat/app.conf
+.I attachment_prefetch=1
+(download on message selection).
+.SS "MIME handler"
+.TP
+.I $HOME/.local/share/applications/mpv-audio.desktop
+Makes audio/ogg and friends open in
+.I "mpv --no-video"
+(no window). Audio is wired here, NOT in nchat, on purpose (see GOTCHAS).
+.SS "Runtime"
+.TP
+.I /tmp/nchat-unread
+Presence = unread. Touched by nchat-notify.sh, removed when nchat is shown.
+.SH "NOTIFICATION FLOW"
+.nr step 1 1
+.IP \n[step]. 3
+Incoming message \[->] nchat runs
+.I desktop_notify_command
+.RI ( nchat-notify.sh ).
+.IP \n+[step].
+The script runs
+.I "notify-send -a nchat"
+(mako shows it),
+.I "touch /tmp/nchat-unread" ,
+and
+.I "pkill -RTMIN+10 waybar" .
+.IP \n+[step].
+waybar re-execs nchat-waybar.sh, gets class
+.IR unread ,
+and CSS blinks the icon red.
+.IP \n+[step].
+Clicking the notification \[->] mako
+.I [app-name=nchat]
+\[->] nchat-show.sh \[->] nchat to current workspace + Ctrl-f + clear flag.
+.SH "MEDIA FLOW"
+.PP
+A received voice note (.oga = Opus/Ogg, MIME audio/ogg) is fetched on selection,
+opened with
+.I Ctrl-v
+\[->]
+.BR xdg-open (1)
+\[->]
+.I mpv-audio.desktop
+\[->]
+.IR "mpv --no-video" .
+.SH PROGRAMS
+.BR nchat (1),
+.BR foot (1),
+.BR mpv (1),
+.BR jq (1),
+.BR wtype (1),
+.BR notify-send (1),
+.BR swaymsg (1),
+.BR makoctl (1)
+.SH DEPENDENCIES
+.TP
+.B nchat-typing-log
+Local fork of the WhatsApp TUI (whatsmeow), WhatsApp-only + typing-log patch; provides/conflicts nchat.
+.TP
+.B foot
+Terminal that hosts the TUI under app_id nchat.
+.TP
+.B mpv
+Plays received audio/video attachments.
+.TP
+.B jq
+Parses the sway tree in the helper scripts.
+.TP
+.B wtype
+Sends Ctrl-f into nchat after a notification click.
+.TP
+.B mako
+Notification daemon that intercepts the click.
+.SH GOTCHAS
+.IP \[bu] 2
+nchat REWRITES ui.conf and app.conf on exit. Edit them only with the service
+stopped
+.RI ( "systemctl --user stop nchat" ),
+or the change is silently clobbered.
+.IP \[bu] 2
+Audio playback is wired via the system MIME handler (mpv-audio.desktop), NOT
+nchat's
+.I attachment_open_command
+\[em] precisely because that key gets clobbered (above). The default xdg-open
+sent audio/ogg to Firefox.
+.IP \[bu] 2
+.B Restart=on-failure
+(not always): a clean Ctrl-q (exit 0) does NOT revive nchat; a crash/OOM does.
+"Minimize" means scratchpad, not Ctrl-q.
+.IP \[bu] 2
+waybar glyphs are JSON hex escapes (e.g.
+.IR \[rs]uf232 ),
+not literal Private-Use characters. Edit via a Python script if unsure \[em] the
+editor may swap escape and glyph, and a raw write can drop PUA.
+.IP \[bu] 2
+.I $mod+Shift+q
+is intercepted by a script that defaults to
+.I kill
+if jq fails, so the normal close behavior is preserved for every other window.
+.IP \[bu] 2
+Built WhatsApp-only
+.RI ( "cmake -DHAS_TELEGRAM=OFF -DHAS_DUMMY=OFF" )
+to avoid compiling tdlib (~8 GB RAM). A
+.I "paru -Syu"
+may offer to rebuild the full AUR package \[em] keep it WhatsApp-only.
+.IP \[bu] 2
+nchat has no CLI to open a chat by name, so the notification click uses
+.I Ctrl-f
+(jump to unread). It lands on the right chat only when it is the sole unread one.
+.IP \[bu] 2
+.I "notify-send -a nchat"
+is required so mako can match
+.IR [app-name=nchat] ;
+without it the app-name is the generic "notify-send".
+.IP \[bu] 2
+The badge uses waybar signal
+.B SIGRTMIN+10
+(free; 3\-9 and 11\-17 were taken).
+.SH NOTES
+.IP \[bu] 2
+Replaces Altus (Electron, ~4.6 G profile, OOM-killed). nchat's profile is ~57 M;
+raw attachments live in
+.I profiles/<account>/tmp/
+and are not auto-pruned.
+.IP \[bu] 2
+Two WhatsApp accounts live in one nchat config and share a single chat list.
+.IP \[bu] 2
+The binary is a local fork
+.B nchat-typing-log
+(provides/conflicts nchat) built from
+.IR ~/.local/src/nchat-typing-log/ ;
+a
+.I "paru -Syu"
+will not replace it. Rebase
+.I 0001-typing-log.patch
+if a new nchat release moves the ReceiveTypingNotify case.
+.SH "TYPING LOG"
+A local patch records every typing/idle event a contact sends, to
+.IR ~/tmp/nchat-typing.log .
+Each line is tab-separated:
+.RS
+.nf
+timestamp  flag  name  number  typing|idle
+.fi
+.RE
+.PP
+The patch appends in the
+.I ReceiveTypingNotify
+handler of
+.IR src/uimodel.cpp ,
+resolving the contact name with
+.I GetContactName
+right there \[em] safe, because the notification handler in the same
+.I MessageHandler
+already calls it without deadlock \[em] then mapping the account to a flag and
+extracting the number. The log line is already human-readable; just
+.IR "tail -f" .
+Both
+.I typing
+and
+.I idle
+are recorded, so the gap measures how long the contact typed.
+.PP
+The per-account flag matters because the same number can be saved under a
+different name in each account's address book. A helper
+.BR nchat-typing-names.sh ( ~/.scripts/ )
+exists but is now redundant since the log is pre-resolved \[em] useful only if the
+patch is reverted.
+.SH "SEE ALSO"
+.BR nchat (1),
+.BR scratchpad (1),
+.BR mako (5),
+.BR waybar (5),
+.BR foot (1)
