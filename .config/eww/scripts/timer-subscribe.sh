@@ -42,8 +42,10 @@ get_remaining() {
     esac
 }
 
+last_payload=""
+
 emit() {
-    local remaining display
+    local remaining display payload
     remaining=$(get_remaining)
 
     # Transition running → finished when countdown hits zero
@@ -53,8 +55,16 @@ emit() {
     fi
 
     display=$(format_time "$remaining")
-    printf '{"status":"%s","remaining":%d,"total":%d,"display":"%s"}\n' \
-        "$status" "$remaining" "$total" "$display"
+    payload=$(printf '{"status":"%s","remaining":%d,"total":%d,"display":"%s"}' \
+        "$status" "$remaining" "$total" "$display")
+
+    # Suppress no-op emissions: while idle/paused/finished the payload is
+    # identical every tick, and eww applies every update with no
+    # equal-value dedup — each one re-renders the widget for nothing.
+    if [[ "$payload" != "$last_payload" ]]; then
+        printf '%s\n' "$payload"
+        last_payload="$payload"
+    fi
 }
 
 handle_cmd() {
