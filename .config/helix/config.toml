@@ -1,9 +1,13 @@
-# Helix — mirrors the vim lightline setup (colorscheme darcula,
-# left: mode | readonly modified absolute-path,
+# Helix — mirrors the vim lightline statusline layout
+# (left: mode | readonly modified absolute-path,
 # right: line:total | percent | line-ending encoding filetype).
 # vim's "paste" indicator has no helix equivalent (bracketed paste, no paste mode).
+#
+# base16_transparent paints with the terminal's 16 ANSI colors and keeps foot's
+# background, so helix follows the live palette-theming system (man palette-theming)
+# the same way plain-cterm vim does.
 
-theme = "darcula"
+theme = "base16_transparent"
 
 [editor.statusline]
 left = [
