@@ -104,7 +104,7 @@ nnoremap <Leader>sw :call ToggleSplitOrientation()<CR>
 " 8. Lightline Configuration
 "==============================================================================
 let g:lightline = {
-  \ 'colorscheme': 'darcula',
+  \ 'colorscheme': '16color',
   \ 'active': {
   \   'left':  [['mode','paste'], ['readonly','modified','absolutepath']]
   \ },
