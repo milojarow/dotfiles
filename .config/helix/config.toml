@@ -7,7 +7,7 @@
 # background, so helix follows the live palette-theming system (man palette-theming)
 # the same way plain-cterm vim does.
 
-theme = "base16_transparent"
+theme = "antares"
 
 [editor.statusline]
 left = [

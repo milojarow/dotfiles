@@ -1,0 +1,7 @@
+# Terminal-following theme with a solid statusline.
+# Inherits the ANSI/transparent base; fg/bg mirror vim's
+# `highlight StatusLine ctermfg=7 ctermbg=8` (light-gray on gray).
+inherits = "base16_transparent"
+
+"ui.statusline" = { fg = "light-gray", bg = "gray" }
+"ui.statusline.inactive" = { fg = "light-gray", bg = "gray" }
