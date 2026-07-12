@@ -1,0 +1,10 @@
+[Unit]
+Description=Initial D Fifth + Final Stage download at 2026-06-25 02:11:00
+
+[Timer]
+OnCalendar=2026-06-25 02:11:00
+AccuracySec=30s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

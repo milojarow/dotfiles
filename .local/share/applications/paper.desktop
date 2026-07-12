@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=Paper (AppImage)
+Exec=/home/milo/.local/bin/paper %U
+Terminal=false
+Type=Application
+Icon=paper
+StartupWMClass=Paper
+X-AppImage-Version=260513c3lncpex8
+Comment=Paper Desktop
+MimeType=x-scheme-handler/paper;x-scheme-handler/paper-dev;
+Categories=Utility;
+X-AppImage-Integrate=
+X-Zap-Id=paper
+

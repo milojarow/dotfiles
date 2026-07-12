@@ -1,0 +1,10 @@
+[Unit]
+Description=Keep Paper Desktop up to date in the background
+
+[Timer]
+OnCalendar=*-*-* 06,18:00:00
+AccuracySec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

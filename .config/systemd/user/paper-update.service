@@ -1,0 +1,10 @@
+[Unit]
+Description=Update Paper Desktop AppImage from the ToDesktop feed
+
+[Service]
+Type=oneshot
+ExecStart=%h/.scripts/paper-update
+Nice=19
+CPUSchedulingPolicy=idle
+IOSchedulingClass=idle
+IOSchedulingPriority=7

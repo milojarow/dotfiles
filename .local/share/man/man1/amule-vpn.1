@@ -1,0 +1,206 @@
+.TH AMULE-VPN 1 "2026-06-21" "1.0" "sway dotfiles"
+.SH NAME
+amule-vpn \- run aMule inside a WireGuard network namespace tunneled through the selene VPS, bypassing Telmex CGNAT
+.SH SYNOPSIS
+.B amule-vpn
+.RI [ ed2k-url ]
+.SH DESCRIPTION
+The home uplink (Telmex) sits behind carrier-grade NAT: the router's WAN address
+(10.150.85.148) is private and differs from the shared public address
+(189.140.98.194), so no port-forward can give aMule a reachable port \[em] eD2k
+stays LowID and Kad firewalled.
+.PP
+This system gives aMule a real public port by tunneling it through
+.IR selene ,
+a VPS with a routable public IP (187.124.234.236). aMule runs inside a dedicated
+network namespace named
+.I amule
+whose only interface is a WireGuard link
+.RI ( wg1 )
+to selene. Outbound aMule traffic egresses as selene's IP, so eD2k servers see a
+reachable address (HighID); selene DNATs the inbound eD2k/Kad ports back down the
+tunnel. The namespace has no other route, making it a structural killswitch: if
+the tunnel drops, aMule has no network at all and the real IP cannot leak.
+.SH USAGE
+.TP
+.B amule-vpn
+Launch aMule inside the namespace. Bound to
+.I $mod+d
+(rofi) through a desktop-entry override. Kills any plain root-namespace aMule
+first, since the config is shared. The namespace itself is built at boot by
+.IR amule-netns.service .
+.TP
+.B sudo systemctl restart amule-netns.service
+Rebuild the namespace and tunnel if it wedges (the builder is idempotent).
+.TP
+.B sudo ip netns exec amule curl -s https://api.ipify.org
+Health check: must print
+.IR 187.124.234.236 .
+.SH FILES
+.SS "antares \[em] launcher and namespace"
+.TP
+.I ~/.scripts/amule-vpn
+The launcher. Enters the
+.I amule
+netns, drops root to uid 1000 with
+.BR setpriv (1),
+re-injects the Wayland / PipeWire / D-Bus session sockets, and execs
+.IR /usr/sbin/amule .
+.TP
+.I /usr/local/sbin/amule-netns-up
+Idempotent builder: creates the netns, creates
+.I wg1
+in the root namespace then moves it into the netns, configures the peer, and
+sets the default route via wg1 (the killswitch).
+.TP
+.I /usr/local/sbin/amule-netns-down
+Teardown: kills aMule and deletes the netns, which auto-destroys
+.IR wg1 .
+.TP
+.I /etc/systemd/system/amule-netns.service
+Boot persistence: a oneshot with RemainAfterExit, ordered after
+.IR network-online.target .
+.TP
+.I /etc/netns/amule/resolv.conf
+DNS inside the netns (1.1.1.1), bind-mounted over /etc/resolv.conf by
+.BR ip-netns (8).
+.TP
+.I /etc/wireguard/amule-antares.key
+antares WireGuard private key; its pubkey is the selene peer.
+.TP
+.I /etc/sudoers.d/amule-netns
+NOPASSWD for
+.IR "/usr/bin/ip netns exec amule *" .
+.TP
+.I ~/.local/share/applications/org.amule.aMule.desktop
+rofi / XDG override whose
+.I Exec
+points at the launcher, so
+.I $mod+d
+always starts the tunneled aMule. Shadows the system entry of the same name.
+.TP
+.I ~/.local/share/applications/org.amule.aMule.gui.desktop
+Hides
+.B amulegui
+with NoDisplay to avoid a confusing second entry.
+.TP
+.I ~/.aMule/amule.conf
+aMule config: TCP 4662, UDP 4672, UPnPEnabled=0 (no gateway inside the netns),
+bind address blank (it binds the only interface, 10.9.0.2).
+.SS "selene \[em] tunnel server and port-forward"
+.TP
+.I /etc/wireguard/wg1.conf
+WireGuard server: 10.9.0.1/24, ListenPort 51822, peer antares (10.9.0.2/32).
+PostUp loads
+.IR wg1.nft .
+.TP
+.I /etc/wireguard/wg1.nft
+Dedicated
+.I "inet wg_amule"
+nft table: DNAT of tcp 4662 / udp 4672 / udp 4665 to 10.9.0.2, MASQUERADE of
+10.9.0.0/24, and a TCP MSS clamp. Loaded by wg1 PostUp and deleted by PostDown,
+so it never touches podman's
+.I netavark
+table.
+.TP
+.I /etc/nftables.conf
+Host firewall (default-deny input). Carries the one added line
+.IR "udp dport 51822 accept" ,
+persisted by the enabled
+.BR nftables.service .
+.SH FLOW
+.nr step 1 1
+.IP \n[step]. 3
+.B Outbound:
+aMule (netns, source 10.9.0.2) to wg1, through the tunnel to selene, nft
+MASQUERADE, out eth0 to the internet as 187.124.234.236. eD2k servers see a
+reachable IP, granting HighID.
+.IP \n+[step].
+.B Inbound:
+a peer hits selene:4662 on eth0, nft prerouting DNATs it to 10.9.0.2, it is
+forwarded out wg1, through the tunnel into the netns, to aMule.
+.IP \n+[step].
+.B WireGuard socket:
+wg1 is born in the root namespace, so its encrypted UDP socket stays there and
+reaches selene over the Telmex route; only the cleartext interface lives in the
+netns.
+.SH PROGRAMS
+.BR wg (8),
+.BR wg-quick (8),
+.BR ip-netns (8),
+.BR nft (8),
+.BR setpriv (1),
+.BR amule (1)
+.SH DEPENDENCIES
+.TP
+.B wireguard-tools
+Provides
+.B wg
+and
+.B wg-quick
+on both ends. The kernel datapath is in-tree.
+.SH GOTCHAS
+.IP \[bu] 2
+.B Killswitch by construction.
+With wg1 down the netns has no route \[em]
+.I "ip netns exec amule ip route get 8.8.8.8"
+returns "Network is unreachable". aMule never falls back to Telmex, so the real
+IP cannot leak.
+.IP \[bu] 2
+.B Single instance.
+.I ~/.aMule
+is shared, because a netns isolates the network and not the filesystem. Do not
+run plain
+.B amule
+while the tunneled one is up; they fight over
+.IR muleLock .
+The launcher kills any plain instance first.
+.IP \[bu] 2
+.B The local IP is free to change.
+antares connects out to selene's fixed endpoint, so a Telmex DHCP lease change
+(for example .243 to .154) does not affect the tunnel. No DHCP reservation is
+needed.
+.IP \[bu] 2
+.B WAYLAND_DISPLAY must match the live socket
+(wayland-1); the launcher hardcodes it. A wrong value fails with "Failed to
+create wl_display".
+.IP \[bu] 2
+.B sudoers path.
+The launcher calls
+.I /usr/bin/ip
+explicitly because the sudoers rule lists that exact path;
+.I /usr/sbin/ip
+is only a symlink and would not match.
+.IP \[bu] 2
+.B selene firewall.
+Port 51822 must stay allowed in
+.IR /etc/nftables.conf .
+The DNATed eD2k ports are forwarded rather than delivered locally, so they need
+no input rule.
+.IP \[bu] 2
+.B P2P egresses as selene's IP,
+which also serves the client CRMs and the poste.io mail server \[em] a
+reputation and abuse consideration, accepted knowingly.
+.IP \[bu] 2
+.B Kad lag.
+Kad flips from firewalled to ok about a minute after connecting, once an inbound
+UDP probe completes.
+.SH NOTES
+.IP \[bu] 2
+The tunnel auto-builds at boot through
+.IR amule-netns.service ;
+the GUI is launched on demand, so a GUI crash never tears down the tunnel.
+.IP \[bu] 2
+Full teardown: disable the service, run
+.IR amule-netns-down ,
+and remove the scripts, sudoers entry, and desktop overrides on antares; on
+selene run
+.I "wg-quick down wg1"
+and drop the 51822 line from
+.IR /etc/nftables.conf .
+.SH "SEE ALSO"
+.BR amule (1),
+.BR wg-quick (8),
+.BR ip-netns (8),
+.BR nft (8),
+.BR wireguard (8)

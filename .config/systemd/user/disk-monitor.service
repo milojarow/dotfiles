@@ -1,0 +1,6 @@
+[Unit]
+Description=Disk usage monitor with desktop alerts
+
+[Service]
+Type=oneshot
+ExecStart=/home/milo/.scripts/disk-monitor.sh

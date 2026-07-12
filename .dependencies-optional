@@ -60,3 +60,9 @@ papirus-icon-theme
 
 # NVIDIA GPU tools (nvidia-smi used by eww gpu-gauge.sh — NVIDIA hardware only)
 nvidia-utils
+
+# Media & downloads (mal-local-tracking pipeline, torrents, ed2k)
+qbittorrent
+amule
+vlc
+telegram-desktop

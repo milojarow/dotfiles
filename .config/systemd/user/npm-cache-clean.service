@@ -1,0 +1,6 @@
+[Unit]
+Description=Clean npm cache
+
+[Service]
+Type=oneshot
+ExecStart=/home/milo/.npm-global/bin/npm cache clean --force

@@ -1,0 +1,14 @@
+[Unit]
+Description=Claude Watchdog — event-driven fork bomb detection
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.scripts/claude-watchdog.sh
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,184 @@
+.TH PAPER-UPDATE 1 "2026-07-12" "1.0" "User Commands"
+.SH NAME
+paper-update \- background updater for Paper Desktop (paper.design)
+.SH SYNOPSIS
+.B paper-update
+.PP
+No arguments. Every code path prints its outcome (up to date, skip, updated,
+error); nothing is silent.
+.SH DESCRIPTION
+Paper Desktop's built-in electron-updater only downloads updates while the app
+is open and installs them on exit, which forced an open-close-open dance to
+actually run the newest build. paper-update does the same job out-of-band: a
+systemd user timer (06:00 and 18:00, persistent) queries the ToDesktop update
+feed, compares the published sha512 against the installed AppImage, and when
+they differ downloads, verifies, and atomically swaps the file. Paper is
+therefore already current when launched.
+.PP
+The in-app updater is left untouched as a harmless backstop: at worst it sees a
+release published less than ~12 hours ago, downloads it, and installs it on
+exit \[em] exactly the old behavior, but rare.
+.SH USAGE
+Fully automatic. On a successful update a notification appears for 8 seconds
+(\[lq]Paper actualizado\[rq]); real failures raise a persistent notification.
+.TP
+.B paper-update
+Run a check manually.
+.TP
+.B journalctl --user -u paper-update.service
+Run history and outcomes.
+.TP
+.B systemctl --user list-timers 'paper-update*'
+Next scheduled run.
+.TP
+.B PAPER_APPIMAGE=/path/to/copy paper-update
+Test the full download/swap path against a scratch copy instead of the real
+AppImage.
+.SH FILES
+.SS Scripts
+.TP
+.I $HOME/.scripts/paper-update
+The updater. Feed URL is hardcoded from the AppImage's embedded
+.IR resources/app-update.yml .
+.SS Units
+.TP
+.I $HOME/.config/systemd/user/paper-update.service
+Type=oneshot, idle CPU/IO scheduling.
+.TP
+.I $HOME/.config/systemd/user/paper-update.timer
+OnCalendar 06:00 + 18:00, AccuracySec 15min, Persistent=true (missed runs fire
+at next login). Enabled.
+.SS Application files (pre-existing, not owned by this feature)
+.TP
+.I $HOME/.local/share/zap/v2/paper
+The target AppImage. Legacy zap path \[em] zap itself is uninstalled, but the
+path is load-bearing (see GOTCHAS).
+.TP
+.I $HOME/.local/bin/paper
+Symlink to the AppImage; what the .desktop launches.
+.TP
+.I $HOME/.local/share/applications/paper.desktop
+Exec uses the absolute symlink path (the libpaper-conflict fix; see the
+paper-desktop-libpaper-conflict memory note).
+.SS State
+None of its own \[em] the script is stateless by design (see GOTCHAS).
+.I $HOME/.cache/@paperdesktop-updater/
+belongs to the in-app updater, not to this feature.
+.SH FLOW
+.nr step 1 1
+.IP \n[step]. 3
+Guard: if the AppImage is held open (\fBfuser\fR) or Paper processes exist
+(\fBpgrep\fR '[.]mount_paper'), log \[lq]skip: Paper is running\[rq] and exit 0.
+.IP \n+[step].
+Fetch
+.I latest-linux.yml
+from https://download.todesktop.com/2601167vjw8xe (curl, 3 retries). Offline
+(curl rc 6/7/28) logs a skip and exits 0; other failures notify loudly.
+.IP \n+[step].
+Parse top-level
+.IR version ,
+.IR path ,
+.I sha512
+(awk, anchored to column 0).
+.IP \n+[step].
+Compute the local AppImage sha512 in base64 (openssl) and compare; equal means
+up to date, exit 0.
+.IP \n+[step].
+Download the new AppImage to a temp file in the same directory.
+.IP \n+[step].
+Verify the download's sha512 against the feed; mismatch aborts, nothing
+installed.
+.IP \n+[step].
+chmod +x, then atomic
+.B mv
+over the target.
+.IP \n+[step].
+Log and notify success (8 s timeout).
+.SH PROGRAMS
+.BR curl (1),
+.BR openssl (1),
+.BR fuser (1),
+.BR pgrep (1),
+.BR notify-send (1),
+.BR awk (1)
+.SH DEPENDENCIES
+All official-repo, already part of the base install \[em] nothing was added for
+this feature.
+.TP
+.B curl
+Feed fetch and AppImage download.
+.TP
+.B openssl
+sha512 digest in base64 (matches the feed's encoding).
+.TP
+.B psmisc
+Provides fuser, the running-app guard.
+.TP
+.B procps-ng
+Provides pgrep, the fallback guard.
+.TP
+.B libnotify
+notify-send for success/failure notifications (reaches mako from user
+services on this machine).
+.SH GOTCHAS
+.IP \[bu] 2
+The feed's sha512 is the \fBbase64\fR of the digest, not hex \[em]
+compare with \fIopenssl dgst -sha512 -binary | openssl base64 -A\fR;
+.BR sha512sum (1)
+output will never match.
+.IP \[bu] 2
+The yml has per-file sha512 entries (indented) plus top-level ones; the parser
+anchors to \fI^sha512:\fR / \fI^path:\fR. Unanchored grep grabs the wrong
+value.
+.IP \[bu] 2
+Offline is a normal laptop state, not an error: curl rc 6/7/28 exits 0 with a
+log line and no notification. Only real failures (feed format change, sha
+mismatch, broken download) notify.
+.IP \[bu] 2
+Running-app detection: the AppImage's FUSE mount holds the file open, so
+\fBfuser -s\fR on the AppImage is ground truth; \fBpgrep -f '[.]mount_paper'\fR
+catches the electron children. A naive \fIpgrep paper\fR would false-positive
+(/usr/bin/paper from libpaper exists on this system).
+.IP \[bu] 2
+Two updaters writing the same file is safe by construction: both atomically
+rename the same latest artifact, and a running Paper keeps its old inode. The
+skip-while-running guard exists for determinism, not safety.
+.IP \[bu] 2
+.I ~/.local/share/zap/v2/paper
+looks like a stale zap leftover but is \fBload-bearing\fR: the in-app updater
+replaces that exact path, and the symlink + .desktop point there. Do not
+relocate or \[lq]clean up\[rq] the directory.
+.IP \[bu] 2
+The temp download lives in the same directory as the target so the final
+.B mv
+is an atomic rename (cross-filesystem would not be).
+.IP \[bu] 2
+Stateless on purpose: no version stamp files. Ground truth is
+sha512(installed file) vs feed, so the script stays correct even when the
+in-app updater replaces the AppImage behind its back.
+.IP \[bu] 2
+AUR
+.I paper-desktop-bin
+was evaluated and rejected: abandoned at 0.1.10 while upstream ships 0.4.x.
+.SH NOTES
+.IP \[bu] 2
+A no-op check costs ~2.5 s (sha512 over the 144 MB AppImage dominates); an
+update additionally downloads the full AppImage \[em] the feed publishes
+blockmaps, but delta download was not worth reimplementing.
+.IP \[bu] 2
+The feed URL comes from
+.I resources/app-update.yml
+inside the AppImage (\fIpaper --appimage-extract 'resources/app-update.yml'\fR).
+If Paper ever migrates off ToDesktop, re-extract and update the script.
+.IP \[bu] 2
+If the \[lq]update downloaded\[rq] message still appears at launch some day,
+the release is simply newer than the last timer run \[em] ignore it, keep
+working; it installs on exit.
+.IP \[bu] 2
+Script and units are deliberately \fBnot\fR tracked in dotfiles, matching the
+convention for ~/.scripts and maintenance timers on this machine.
+.SH "SEE ALSO"
+.BR systemd.timer (5),
+.BR journalctl (1),
+.BR curl (1),
+.BR fuser (1)

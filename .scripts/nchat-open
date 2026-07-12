@@ -1,0 +1,25 @@
+#!/bin/sh
+# nchat-open — open nchat attachments with the right viewer/player.
+# WhatsApp voice notes arrive as .oga (Opus/Ogg); audio + video go to mpv,
+# everything else falls back to the system handler (xdg-open).
+# Used by nchat via attachment_open_command in ~/.config/nchat/ui.conf.
+
+f="$1"
+[ -z "$f" ] && exit 0
+
+ext=$(printf '%s' "${f##*.}" | tr '[:upper:]' '[:lower:]')
+
+case "$ext" in
+  oga|ogg|opus|mp3|m4a|aac|wav|flac|amr|wma)
+    # audio / voice notes — no window, just play through PipeWire
+    exec mpv --no-video --really-quiet "$f"
+    ;;
+  mp4|mkv|webm|mov|avi|3gp|m4v)
+    # video — mpv opens its own Wayland window
+    exec mpv --really-quiet "$f"
+    ;;
+  *)
+    # images, pdfs, docs, etc. — let the desktop decide
+    exec xdg-open "$f"
+    ;;
+esac

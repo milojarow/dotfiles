@@ -1,0 +1,6 @@
+[Unit]
+Description=One-shot night torrent download (WANDANCE S01) via aria2c, no seeding
+
+[Service]
+Type=oneshot
+ExecStart=%h/.scripts/night-download.sh

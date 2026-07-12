@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+NS=amule; IP=/usr/bin/ip
+"$IP" netns list | awk '{print $1}' | grep -qx "$NS" || { echo "amule netns DOWN -> sudo systemctl start amule-netns.service" >&2; exit 1; }
+sudo "$IP" netns exec "$NS" ip route show default 2>/dev/null | grep -q 'dev wg1' || { echo "wg1 default route ausente en netns -> me niego a lanzar (sin red)" >&2; exit 1; }
+if pgrep -x amule >/dev/null; then echo "matando aMule de root-ns (config compartida)"; pkill -x amule; until ! pgrep -x amule >/dev/null; do sleep 0.3; done; fi
+exec sudo "$IP" netns exec "$NS" \
+  setpriv --reuid 1000 --regid 1000 --init-groups -- \
+  env -i HOME=/home/milo USER=milo LOGNAME=milo \
+    PATH=/usr/local/bin:/usr/bin:/bin \
+    XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 DISPLAY=:0 \
+    DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus \
+    PULSE_SERVER=unix:/run/user/1000/pulse/native \
+    XDG_SESSION_TYPE=wayland GDK_BACKEND=wayland,x11 QT_QPA_PLATFORM=wayland \
+    /usr/sbin/amule "$@"

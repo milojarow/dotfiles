@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=EteSync Web
+Comment=Encrypted PIM Web Client
+Exec=xdg-open http://localhost:3000
+Icon=web-browser
+Type=Application
+Categories=Network;Calendar;ContactManagement;

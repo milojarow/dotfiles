@@ -1,0 +1,19 @@
+[Unit]
+Description = Notify user if NVIDIA driver was updated and reboot is required
+After = graphical-session.target
+
+[Service]
+Type = oneshot
+ExecStart = /bin/bash -c '\
+  if [ ! -f /tmp/nvidia-module-update-pending ]; then exit 0; fi; \
+  RUNNING=$(cat /proc/driver/nvidia/version 2>/dev/null | grep -oP "(?<=Module  )[0-9.]+"); \
+  INSTALLED=$(pacman -Q nvidia-580xx-utils 2>/dev/null | grep -oP "[0-9]+\.[0-9]+" | head -1); \
+  rm -f /tmp/nvidia-module-update-pending; \
+  if [ -n "$RUNNING" ] && [ -n "$INSTALLED" ] && [ "$RUNNING" != "$INSTALLED" ]; then \
+    notify-send "NVIDIA Driver Updated — Reboot Required" \
+      "Kernel module: $RUNNING\nUserspace: $INSTALLED\n\nLos drivers estan desincronizados. Reinicia antes de usar apps GPU-intensivas." \
+      --urgency=critical --icon=dialog-warning; \
+  fi'
+
+[Install]
+WantedBy = graphical-session.target

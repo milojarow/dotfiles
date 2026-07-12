@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Mosh wrapper that automatically uses tmux for persistent sessions
+
+set -euo pipefail
+
+if [[ "${1:-}" =~ ^(-h|--help)$ ]]; then
+    cat <<'EOF'
+mosh-tmux - Mosh wrapper with persistent tmux sessions
+
+USAGE:
+    mosh-tmux <host> [session_name]
+    mosht <host> [session_name]      (fish alias)
+
+DESCRIPTION:
+    Connects to remote host via mosh and automatically creates or attaches
+    to a tmux session. Mosh uses UDP and tolerates packet loss, roaming,
+    and disconnects — your session survives flaky links and IP changes.
+
+ARGUMENTS:
+    host            SSH host (resolved via ~/.ssh/config)
+    session_name    tmux session name (default: "default")
+
+EXAMPLES:
+    mosht selene work
+    mosht selene
+EOF
+    exit 0
+fi
+
+if [ -z "${1:-}" ]; then
+    echo "Error: HOST argument is required" >&2
+    echo "Usage: mosh-tmux <host> [session_name]" >&2
+    exit 1
+fi
+
+HOST="$1"
+SESSION_NAME="${2:-default}"
+
+# Replicate ~/.ssh/config "SetEnv TERM=xterm-256color" + "SendEnv COLORTERM LANG"
+# (mosh starts the remote shell directly and doesn't honor those SSH directives)
+mosh "$HOST" -- env \
+    TERM=xterm-256color \
+    COLORTERM="${COLORTERM:-}" \
+    LANG="${LANG:-en_US.UTF-8}" \
+    tmux new -A -s "$SESSION_NAME"

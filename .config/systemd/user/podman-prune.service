@@ -1,0 +1,6 @@
+[Unit]
+Description=Podman system prune (images, containers older than 7 days)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/podman system prune -f --filter "until=168h"

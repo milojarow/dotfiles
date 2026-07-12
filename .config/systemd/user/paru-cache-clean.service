@@ -1,0 +1,10 @@
+[Unit]
+Description=Remove unused AUR build cache from paru
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'find %h/.cache/paru/clone -mindepth 1 -maxdepth 1 -type d -mtime +30 -exec rm -rf {} +'
+Nice=19
+CPUSchedulingPolicy=idle
+IOSchedulingClass=idle
+IOSchedulingPriority=7

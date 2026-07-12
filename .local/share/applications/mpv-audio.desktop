@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=mpv (audio only)
+Comment=Play audio files with mpv, no window — used for WhatsApp/nchat voice notes
+Exec=mpv --no-video --really-quiet %U
+Terminal=false
+NoDisplay=true
+MimeType=audio/ogg;audio/opus;audio/x-opus+ogg;audio/mpeg;audio/mp4;audio/aac;audio/x-m4a;audio/flac;audio/x-wav;audio/wav;

@@ -1,0 +1,10 @@
+[Unit]
+Description=Clean old browser and user caches
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash -c '\
+  find ~/.cache/thumbnails/ -type f -mtime +30 -delete 2>/dev/null; \
+  find ~/.cache/BraveSoftware/ -type f -mtime +30 -delete 2>/dev/null; \
+  find ~/.cache/mozilla/firefox/*/cache2/ -type f -mtime +30 -delete 2>/dev/null; \
+  logger -t user-cache-clean "Cache cleanup complete"'

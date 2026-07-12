@@ -1,0 +1,13 @@
+# External repos the ark references — clone/install on a fresh machine.
+# The ark (this bare repo) carries configs, scripts, and manuals; these repos
+# carry the systems that are too big or too private to live inside it.
+# Bootstrap order matters: gh/SSH auth -> secrets -> claude-home -> the rest.
+#
+# name | url | destination | notes
+secrets         | git@github.com:milojarow/secrets         | ~/.secrets             | PRIVATE. SSH keys, server creds, ambient env secrets. Clone FIRST (after auth); follow its README for environment.d symlinks.
+claude-home     | git@github.com:milojarow/claude-home     | ~/.claude              | PRIVATE. Claude Code side chamber: persona, memory base, agents, settings.
+antares-memory  | https://github.com/milojarow/antares-memory | anywhere            | Memory system (daemon + hooks + lobos). Run ./install.sh on a fresh machine.
+fm              | https://github.com/milojarow/fm          | ~/.local/src/fm        | Custom file manager fork. Install: cargo install --git https://github.com/milojarow/fm fm
+pessoa          | https://github.com/milojarow/pessoa      | ~/projects/pessoa      | Client-isolated VPN browser sessions (netns + WireGuard). See repo README.
+persona         | git@github.com:milojarow/persona         | ~/projects/persona     | PRIVATE. Identity-isolated browsers (firejail vaults). Symlink ~/.local/bin/persona to the repo binary.
+local-pkgbuilds | git@github.com:milojarow/local-pkgbuilds | ~/.local/src/pkgbuilds | PRIVATE. Recipes for local packages: mosh-osc52 (OSC52 clipboard patch), nchat-typing-log. makepkg -si inside each dir.

@@ -1,0 +1,14 @@
+[Unit]
+Description=Seafile Daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/seaf-cli start
+ExecStop=/usr/bin/seaf-cli stop
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

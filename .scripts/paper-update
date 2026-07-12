@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# paper-update — out-of-band updater for Paper Desktop (paper.design)
+#
+# Paper's built-in electron-updater only downloads updates while the app is
+# open and installs them on exit, forcing an open-close-open dance to run the
+# newest build. This script does the same job in the background: it queries
+# the ToDesktop feed and atomically swaps the AppImage, so Paper is already
+# current at first launch. The in-app updater stays as a harmless backstop.
+# Driven by paper-update.timer (06:00 + 18:00, persistent).
+#
+# Feed URL comes from resources/app-update.yml inside the AppImage.
+# PAPER_APPIMAGE env var overrides the target path (used for testing).
+
+set -euo pipefail
+
+FEED_URL="https://download.todesktop.com/2601167vjw8xe"
+APPIMAGE="${PAPER_APPIMAGE:-$HOME/.local/share/zap/v2/paper}"
+
+log() { printf '%s\n' "$*"; }
+notify() { notify-send "$@" 2>/dev/null || true; }
+
+[[ -f "$APPIMAGE" ]] || { log "ERROR: AppImage not found: $APPIMAGE"; exit 1; }
+
+# Skip while Paper is open — its FUSE mount holds the AppImage file open,
+# and the running app may install its own pending update on exit.
+if fuser -s "$APPIMAGE" 2>/dev/null || pgrep -f '[.]mount_paper' >/dev/null; then
+    log "skip: Paper is running"
+    exit 0
+fi
+
+rc=0
+feed=$(curl -fsS --max-time 30 --retry 3 --retry-delay 20 "$FEED_URL/latest-linux.yml") || rc=$?
+if (( rc != 0 )); then
+    # 6=resolve 7=connect 28=timeout: offline is a normal state, not an error
+    case $rc in
+        6|7|28) log "skip: no network (curl $rc)"; exit 0 ;;
+    esac
+    log "ERROR: feed fetch failed (curl $rc)"
+    notify -u critical "Paper update falló" "No pude leer el feed de updates (curl $rc)."
+    exit 1
+fi
+
+# Top-level keys only (file entries are indented)
+remote_version=$(awk '/^version:/{print $2; exit}' <<<"$feed")
+remote_path=$(awk '/^path:/{print $2; exit}' <<<"$feed")
+remote_sha=$(awk '/^sha512:/{print $2; exit}' <<<"$feed")
+if [[ -z "$remote_version" || -z "$remote_path" || -z "$remote_sha" ]]; then
+    log "ERROR: unexpected feed format:"
+    log "$feed"
+    notify -u critical "Paper update falló" "El feed de ToDesktop cambió de formato — revisa ~/.scripts/paper-update."
+    exit 1
+fi
+
+local_sha=$(openssl dgst -sha512 -binary "$APPIMAGE" | openssl base64 -A)
+if [[ "$local_sha" == "$remote_sha" ]]; then
+    log "up to date: $remote_version ($remote_path)"
+    exit 0
+fi
+
+tmp="$APPIMAGE.new.$$"
+trap 'rm -f "$tmp"' EXIT
+log "downloading $remote_path ..."
+if ! curl -fsS --max-time 900 -o "$tmp" "$FEED_URL/$remote_path"; then
+    log "ERROR: download failed"
+    notify "Paper update falló" "Descarga interrumpida; reintento en la próxima corrida."
+    exit 1
+fi
+
+got_sha=$(openssl dgst -sha512 -binary "$tmp" | openssl base64 -A)
+if [[ "$got_sha" != "$remote_sha" ]]; then
+    log "ERROR: sha512 mismatch on downloaded file"
+    notify -u critical "Paper update falló" "sha512 no coincide en la descarga — no instalé nada."
+    exit 1
+fi
+
+chmod +x "$tmp"
+mv -f "$tmp" "$APPIMAGE"
+trap - EXIT
+log "updated to $remote_version ($remote_path)"
+notify -t 8000 "Paper actualizado" "Versión $remote_version lista — la próxima apertura ya la usa."

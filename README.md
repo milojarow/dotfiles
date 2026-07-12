@@ -292,6 +292,22 @@ the text/code MIME defaults that open files in Helix inside foot
 (`term-editor.desktop`). Development clone lives in `~/.local/src/fm`
 (remotes: `origin` = fork, `upstream` = euclio).
 
+## External Repos (Ark References)
+
+The ark carries configs, scripts, and manuals. Systems too big or too private
+to live inside it have their own repos, indexed in [`.repos`](.repos) with
+destination and install notes per line. Bootstrap order on a fresh machine:
+
+1. `gh auth login` (or restore SSH keys by hand)
+2. **secrets** (private) → `~/.secrets` — ambient env vars, server creds
+3. **claude-home** (private) → `~/.claude` — Claude Code persona, memory, settings
+4. **antares-memory** → memory system daemon + hooks (`./install.sh`)
+5. **fm**, **pessoa**, **persona**, **local-pkgbuilds** — as needed, per `.repos`
+
+Local packages (mosh-osc52 with the OSC 52 clipboard patch, nchat-typing-log
+with the WhatsApp patches) rebuild from **local-pkgbuilds** with `makepkg -si`
+inside each recipe directory.
+
 ## System Services
 
 After installation, enable services required for full functionality:

@@ -110,5 +110,10 @@ poppler-glib
 # Text editor (MIME default for text/code via term-editor.desktop, opens in foot)
 helix
 
+# MIME default handlers (mimeapps.list points at these)
+mpv
+mupdf
+brave-bin
+
 # For gsettings (GTK theme switching)
 glib2

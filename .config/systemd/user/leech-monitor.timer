@@ -1,0 +1,13 @@
+[Unit]
+Description=Leech Monitor timer — runs every 10 minutes after login
+
+[Timer]
+# First run 5 minutes after boot (let processes settle)
+OnBootSec=5min
+# Then every 10 minutes
+OnUnitActiveSec=10min
+# Persist missed runs across suspend/resume
+Persistent=true
+
+[Install]
+WantedBy=timers.target
