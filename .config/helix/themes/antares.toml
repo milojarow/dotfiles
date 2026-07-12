@@ -5,3 +5,8 @@ inherits = "base16_transparent"
 
 "ui.statusline" = { fg = "light-gray", bg = "gray" }
 "ui.statusline.inactive" = { fg = "light-gray", bg = "gray" }
+
+# Line numbers: the base theme only dims them (near-invisible). Mirror vim:
+# LineNr ctermfg=8, CursorLineNr ctermfg=7 ctermbg=8.
+"ui.linenr" = { fg = "gray" }
+"ui.linenr.selected" = { fg = "light-gray", bg = "gray", modifiers = ["bold"] }
