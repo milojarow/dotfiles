@@ -220,9 +220,23 @@ highlight PreProc       ctermfg=5   ctermbg=none    " Preprocessor text
 highlight String        ctermfg=12  ctermbg=none    " String literals
 highlight Number        ctermfg=1   ctermbg=none    " Number literals
 highlight Function      ctermfg=1   ctermbg=none    " Function names
-highlight CursorColumn  ctermbg=236                      " Current column bg
-highlight CursorLine    ctermbg=236                      " Current line bg (if enabled)
-highlight ColorColumn   ctermbg=236                      " Colorcolumn bg
+" Cursor column/line: subtle near-background gray per background mode.
+" 256-cube on purpose — the 16 ANSI slots carry no near-background gray
+" (slot 8 is a dark gray even in the light themes). vim 9 auto-detects
+" light/dark from the terminal, and OptionSet re-applies on the flip.
+function! s:SubtleCursorHighlights() abort
+    if &background ==# 'light'
+        highlight CursorColumn ctermbg=253
+        highlight CursorLine   ctermbg=253
+        highlight ColorColumn  ctermbg=253
+    else
+        highlight CursorColumn ctermbg=236
+        highlight CursorLine   ctermbg=236
+        highlight ColorColumn  ctermbg=236
+    endif
+endfunction
+autocmd OptionSet background call s:SubtleCursorHighlights()
+call s:SubtleCursorHighlights()
 
 " Desactivar completamente la funcionalidad conceal
 set conceallevel=0
