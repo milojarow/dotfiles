@@ -1,0 +1,28 @@
+# Helix — mirrors the vim lightline setup (colorscheme darcula,
+# left: mode | readonly modified absolute-path,
+# right: line:total | percent | line-ending encoding filetype).
+# vim's "paste" indicator has no helix equivalent (bracketed paste, no paste mode).
+
+theme = "darcula"
+
+[editor.statusline]
+left = [
+  "mode",
+  "read-only-indicator",
+  "file-modification-indicator",
+  "file-absolute-path",
+]
+center = []
+right = [
+  "position",
+  "total-line-numbers",
+  "position-percentage",
+  "file-line-ending",
+  "file-encoding",
+  "file-type",
+]
+
+# Match lightline's mode wording (helix defaults are NOR/INS/SEL).
+mode.normal = "NORMAL"
+mode.insert = "INSERT"
+mode.select = "SELECT"
