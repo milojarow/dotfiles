@@ -269,6 +269,29 @@ paru -S wluma
 paru -S --needed $(grep -v '^#' ~/.dependencies-optional | grep -v '^\s*$' | tr '\n' ' ')
 ```
 
+### fm file manager (custom fork)
+
+Miller-columns file browser — [milojarow/fm](https://github.com/milojarow/fm), a fork
+of [euclio/fm](https://github.com/euclio/fm) with ranger-style keys: `h/j/k/l`
+navigation, `om`/`on` sort (repeat to invert), `/` + `n`/`N` search with match
+highlighting, `F2` rename, `Backspace`/`Ctrl+H` hidden files, `Enter` to open.
+Sort and hidden-files preferences persist across runs.
+
+Build deps are in `.dependencies` (gtk4, libadwaita, libpanel, gtksourceview5,
+poppler-glib). Install the binary:
+
+```bash
+rustup default stable   # first time only
+cargo install --git https://github.com/milojarow/fm fm
+```
+
+Everything else deploys with the dotfiles: launcher entry
+(`fm-file-manager.desktop`), app icon (`io.github.fm.svg`), the `fm` wrapper
+script (surfaces a scratchpad-hidden window instead of failing silently), and
+the text/code MIME defaults that open files in Helix inside foot
+(`term-editor.desktop`). Development clone lives in `~/.local/src/fm`
+(remotes: `origin` = fork, `upstream` = euclio).
+
 ## System Services
 
 After installation, enable services required for full functionality:

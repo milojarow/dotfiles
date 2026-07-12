@@ -1,0 +1,17 @@
+#!/bin/sh
+# fm launcher wrapper — fm is single-instance (GTK application id): a second
+# launch delegates to the live instance and exits, which shows nothing when
+# its window sits in the scratchpad. Surface it after launching — same remedy
+# as the FileManager1 pcmanfm shim.
+/home/milo/.cargo/bin/fm "$@" >/dev/null 2>&1 &
+
+for _ in $(seq 1 20); do
+    if swaymsg -q '[app_id="io.github.fm"] focus' 2>/dev/null; then
+        pkill -RTMIN+7 waybar  # refresh scratchpad indicator
+        exit 0
+    fi
+    sleep 0.25
+done
+
+echo "fm: window did not appear within 5s" >&2
+exit 1

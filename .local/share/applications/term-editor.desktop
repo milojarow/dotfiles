@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Helix (foot)
+GenericName=Text Editor
+Comment=Edit text files in Helix inside a foot terminal
+Exec=foot -e helix %F
+Icon=helix
+Terminal=false
+NoDisplay=true
+Categories=Utility;TextEditor;
+MimeType=text/plain;text/markdown;application/json;application/toml;text/x-python;text/x-rust;application/x-shellscript;text/x-shellscript;application/x-yaml;text/csv;

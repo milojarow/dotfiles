@@ -98,5 +98,17 @@ bluez-utils
 # File manager
 pcmanfm-gtk3
 
+# fm file manager — build deps for the custom fork (binary installed via
+# `cargo install --git https://github.com/milojarow/fm fm`, see README)
+rustup
+gtk4
+libadwaita
+libpanel
+gtksourceview5
+poppler-glib
+
+# Text editor (MIME default for text/code via term-editor.desktop, opens in foot)
+helix
+
 # For gsettings (GTK theme switching)
 glib2
