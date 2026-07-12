@@ -23,6 +23,13 @@ border-radius=15
 [mode=do-not-disturb]
 invisible=1
 
+# Click/tap an Altus notification -> bring Altus to the current workspace
+# (mirrors Telegram). Runs the helper instead of Altus' native "View" action,
+# which does not move it to the focused workspace.
+[app-name="Altus"]
+on-button-left=exec /home/milo/.config/sway/scripts/altus-to-current-ws.sh "$id"
+on-touch=exec /home/milo/.config/sway/scripts/altus-to-current-ws.sh "$id"
+
 # Click/tap an nchat (WhatsApp) notification -> bring nchat to the current
 # workspace + jump to the unread chat. nchat tags its notifications app-name
 # "nchat" via desktop_notify_command in ~/.config/nchat/ui.conf.

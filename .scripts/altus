@@ -1,0 +1,27 @@
+#!/bin/sh
+# altus launcher wrapper — reconstructed 2026-07-12 (the original was deleted
+# during the Altus purge; spec from memory reference_altus_tab_theme_dark_split_on_light).
+#
+# WhatsApp-Web colors TEXT from Altus' per-tab theme but BACKGROUNDS from
+# prefers-color-scheme, so a tab theme that disagrees with the desktop gives
+# white-on-light (or dark-on-dark) splits. On every launch, force every tab's
+# config.theme to match the sway palette, then exec the real binary.
+# Lives in ~/.scripts (pacman never touches it); .desktop resolves it via PATH.
+
+TABS="$HOME/.config/Altus/tabs.json"
+THEME_CONF="$HOME/.config/sway/definitions.d/theme.conf"
+
+# Only rewrite when Altus is not already running (bracket trick avoids self-match).
+if ! pgrep -f '/usr/lib/altus/[a]pp' >/dev/null 2>&1 && [ -f "$TABS" ] && [ -f "$THEME_CONF" ]; then
+    scheme=$(grep -oP '^set \$gtk-color-scheme\s+\K\S+' "$THEME_CONF" 2>/dev/null)
+    case "$scheme" in
+        *dark*) tab_theme="dark" ;;
+        *)      tab_theme="default" ;;
+    esac
+
+    tmp=$(mktemp) && \
+        jq --arg t "$tab_theme" '(.tabs // []) |= map(.config.theme = $t)' "$TABS" > "$tmp" && \
+        mv "$tmp" "$TABS"
+fi
+
+exec /usr/bin/altus "$@"
