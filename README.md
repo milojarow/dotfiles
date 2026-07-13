@@ -136,6 +136,15 @@ mandb --user-db
 └── .local/bin/                 # User binaries
 ```
 
+### Home directory naming convention
+
+Every directory under `$HOME` is **lowercase** — `~/backups`, `~/downloads`,
+`~/pictures`, `~/projects` — including the XDG user dirs, which are pinned to
+their lowercase paths by the tracked `.config/user-dirs.dirs`. Scripts should
+resolve standard locations with `xdg-user-dir KEY` instead of hardcoding, and
+nothing should create capitalized directories (`~/Backups`, `~/Downloads`) —
+when an app does, merge it into the lowercase twin.
+
 ## Cheatsheet
 
 Press **`Mod + /`** to toggle the on-screen cheatsheet (fullscreen overlay powered by eww).
