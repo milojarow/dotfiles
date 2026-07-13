@@ -104,20 +104,6 @@ bind $'set vi-cmd-mode-string \1\e[2 q\2'  # steady block for command mode
 # Environment variables (EDITOR, PAGER, PATH, etc.) are set in
 # ~/.config/environment.d/10-defaults.conf — inherited by all processes
 
-# NVM (Node Version Manager)
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
-# Wrapper for nvm use to automatically handle prefix conflict
-nvm() {
-  if [ "$1" = "use" ]; then
-    command nvm use --delete-prefix "$@"
-  else
-    command nvm "$@"
-  fi
-}
-
 # Disable focus reporting mode (prevents [O[I characters when switching windows)
 printf "\e[?1004l"
 
