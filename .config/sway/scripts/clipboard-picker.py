@@ -247,13 +247,14 @@ class Picker(Gtk.Application):
             # a leftover selection would silently join the next Enter.
             rows[min(focus_index, len(rows) - 1)].grab_focus()
         elif initial:
-            # Land the cursor on the latest non-pinned row but do NOT add it to
-            # the selection set. Gtk.ListBox in MULTIPLE mode accumulates
-            # selections, so a row left "selected" here leaks into the batch
-            # whenever the user filters, hits Down, and Enters a different
-            # row — Enter then concatenates the latest copy onto whatever they
-            # actually wanted. grab_focus is enough to show the cursor.
+            # Land on the latest non-pinned row, SELECTED, so Enter right after
+            # opening copies the freshest item with zero keystrokes in between.
+            # Selecting here used to leak into filtered Enters (the old
+            # invisible-selection bug), but the search paths now unselect_all
+            # before re-selecting (_on_search_changed / _search_key), so the
+            # initial selection can no longer join a later batch unseen.
             target = next((r for r in rows if r.section == "history"), rows[0])
+            self.listbox.select_row(target)
             target.grab_focus()
         else:
             self.listbox.select_row(rows[0])
