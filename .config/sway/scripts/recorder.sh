@@ -31,6 +31,12 @@ if [ $status != 0 ]; then
 
     notify "Select a region to record" -t 1000
     area=$(swaymsg -t get_tree | jq -r '.. | select(.pid? and .visible?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"' | slurp)
+    # slurp exits non-zero with empty output on Esc/cancel; without this guard
+    # wf-recorder treats -g "" as "capture whole output" and records anyway.
+    if [ $? -ne 0 ] || [ -z "$area" ]; then
+        notify "Recording cancelled" -t 1500
+        exit 0
+    fi
 
     countdown
     (sleep 0.5 && signal_bars) &

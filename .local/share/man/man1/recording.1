@@ -103,6 +103,14 @@ swaymsg -t get_tree | jq -r '.. | select(.pid? and .visible?) |
 .PP
 This offers visible windows as snap targets rather than a free-pixel selection.
 .IP \n+[step].
+Pressing
+.B Escape
+inside the
+.BR slurp (1)
+overlay \(em at any point, including mid-drag \(em cancels the whole intent:
+slurp exits non-zero with empty output, the script notifies
+"Recording cancelled" and exits before the countdown. Nothing is recorded.
+.IP \n+[step].
 A 3-second countdown fires three
 .BR notify-send (1)
 notifications ("Recording in 3 seconds", "Recording in 2 seconds",
