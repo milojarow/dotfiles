@@ -159,8 +159,15 @@ for job in "${JOBS[@]}"; do
   if ((${#NEED[@]})); then
     digest=""
     for k in "${!NEED[@]}"; do
-      b=$(basename "${NEED[$k]}"); ext="${b##*.}"; hint=""
-      [[ "$b" =~ $RE_VIDEO ]] && hint=$(mal_candidates "$b")
+      f="${NEED[$k]}"; b=$(basename "$f"); ext="${b##*.}"; hint=""
+      if [[ "${ext,,}" == "epub" ]]; then
+        # image-based manga-epub vs text novel-epub (same hint as the aMule organizer)
+        et=$(unzip -p "$f" 2>/dev/null | grep -aioE '<dc:title[^>]*>[^<]+' | head -1 | sed -E 's/<[^>]+>//')
+        eimg=$(unzip -l "$f" 2>/dev/null | grep -ciE '\.(jpe?g|png|webp|gif)[[:space:]]*$')
+        etxt=$(unzip -l "$f" 2>/dev/null | grep -ciE '\.x?html?[[:space:]]*$')
+        hint="title=${et}; images=${eimg} textpages=${etxt}"
+      elif [[ "$b" =~ $RE_VIDEO ]]; then hint=$(mal_candidates "$b")
+      fi
       printf -v line '%s\t%s\t%s\t%s' "$k" "$ext" "$b" "$hint"
       digest+="$line"$'\n'
     done
