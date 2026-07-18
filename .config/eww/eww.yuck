@@ -19,3 +19,4 @@
 (include "./widgets/tmux-sessions.yuck")
 (include "./widgets/wallpaper-cycle.yuck")
 (include "./widgets/notes.yuck")
+(include "./widgets/screenshot-mode.yuck")

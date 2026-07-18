@@ -1,4 +1,4 @@
-.TH SCREENSHOTS 1 "2026-06-20" "sway dotfiles" "User Commands"
+.TH SCREENSHOTS 1 "2026-07-18" "sway dotfiles" "User Commands"
 .SH NAME
 screenshots \- screenshot capture, editing, and notification system for sway
 .SH DESCRIPTION
@@ -8,7 +8,41 @@ interactive region or output capture, annotation via
 and two background daemons that fire desktop notifications when a screenshot is
 saved to disk or copied to the clipboard.
 .PP
-Three scripts handle the distinct roles:
+The
+.B Print
+key is served by a dispatcher with two capture modes, toggled from an eww
+desktop widget (circle button, camera icon, left of the bluetooth widget):
+.TP
+.B traditional
+.B Print
+enters the sway screenshot binding mode (menu: p / o / Shift+p / Shift+o) and
+captures flow into
+.BR swappy (1)
+for annotation. The original behavior.
+.TP
+.B aggressive
+.B Print
+launches frozen region selection immediately and the selected area lands
+straight in the Wayland clipboard. No menu, no editor, nothing written to
+disk. Built for capture-heavy work sessions. The widget turns yellow
+(border, icon, glow) while this mode is active.
+.PP
+The active mode lives in
+.IR ~/.local/state/screenshot-mode/mode ;
+clicking the widget flips it and a notification confirms the new mode.
+.PP
+Four scripts handle the distinct roles:
+.TP
+.B screenshot-dispatch.sh
+Bound to
+.BR Print .
+Reads the state file and routes: traditional \[->] enters the screenshot
+binding mode (its pango name is resolved live from
+.BR "swaymsg \-t get_binding_modes" ,
+the only mode containing \(lqPick\(rq); aggressive \[->] runs
+.I screenshot-frozen.sh
+and pipes the cropped PNG to
+.BR wl-copy (1).
 .TP
 .B screenshot-frozen.sh
 Used for region capture. Captures a full-screen PNG with
@@ -49,9 +83,13 @@ notification. Uses a lockfile and debounce (500 ms) to prevent duplicates
 when multiple clipboard events fire in quick succession. Managed by
 .IR screenshot-clipboard-notify.service .
 .SH KEYBINDINGS
-Enter screenshot mode by pressing
-.BR Print .
-Inside the mode:
+.B Print
+dispatches according to the capture mode. In
+.B aggressive
+mode it goes straight to frozen region selection and copies the area to the
+clipboard. In
+.B traditional
+mode it enters the screenshot binding mode:
 .TP
 .B p
 Pick region \(em launches
@@ -74,6 +112,36 @@ Output capture and upload to x0.at; URL copied to clipboard and shown in a notif
 .B Escape
 Return to default mode without capturing.
 .SH FILES
+.TP
+.I ~/.config/sway/scripts/screenshot-dispatch.sh
+Print-key dispatcher; routes to the binding mode (traditional) or frozen
+region \[->] clipboard (aggressive) based on the state file.
+.TP
+.I ~/.local/state/screenshot-mode/mode
+Capture-mode state file, contents
+.B traditional
+or
+.BR aggressive .
+Shared source of truth between the dispatcher and the eww widget. Created on
+demand; missing file means traditional.
+.TP
+.I ~/.config/eww/widgets/screenshot-mode.yuck
+Desktop toggle widget (window
+.BR screenshot-mode-widget ,
+BT-circle style, geometry x 1320 y 910 anchor bottom-left, left of
+.BR bt-widget ).
+Pure ASCII \(em the nerd-font camera icon travels inside the subscribe
+script's JSON, dnd-style.
+.TP
+.I ~/.config/eww/scripts/screenshot-mode-subscribe.sh
+eww deflisten feed; emits mode+icon JSON at start and on every state-file
+change via
+.BR inotifywait (1)
+on the dedicated state directory (no polling).
+.TP
+.I ~/.config/eww/scripts/screenshot-mode-toggle.sh
+Widget click action: flips the state file atomically (tmp + rename) and
+fires a confirmation notification.
 .TP
 .I ~/.config/sway/scripts/screenshot-frozen.sh
 Frozen-screen region capture; outputs cropped PNG to stdout.
@@ -112,11 +180,13 @@ Defines
 .IR $pipe_selection ,
 .IR $swappy ,
 .IR $upload_pipe ,
-and the composite
+the composite
 .I $screenshot_screen
 /
 .I $screenshot_selection
-(with optional upload variants).
+(with optional upload variants), and
+.I $screenshot_dispatch
+(the Print-key entry point).
 .TP
 .I ~/.config/sway/autostart
 Defines
@@ -160,6 +230,8 @@ for the full theming system.
 .BR notify-send (1),
 .BR wl-paste (1),
 .BR wl-copy (1),
+.BR jq (1)
+(dispatcher mode-name lookup),
 .BR curl (1)
 (upload to x0.at)
 .SH DAEMONS
@@ -183,12 +255,14 @@ before each start to prevent stale lockfile issues.
 Wraps
 .IR screenshot-clipboard-notify.sh .
 .SH FLOW
-.SS Capture flow (region example)
+.SS Capture flow (traditional, region example)
 .nr step 1 1
 .IP \n[step]. 3
 User presses
 .B Print
-\[->] sway enters
+\[->]
+.I screenshot-dispatch.sh
+reads the state file (traditional) \[->] sway enters
 .I $mode_screenshot
 .IP \n+[step].
 User presses
@@ -219,6 +293,27 @@ Crops region from frozen PNG using ImageMagick \[->] writes PNG bytes to stdout
 receives PNG on stdin, opens editor with annotation tools
 .IP \n+[step].
 User saves or copies; swappy exits
+.SS Capture flow (aggressive)
+.nr step 1 1
+.IP \n[step]. 3
+User presses
+.B Print
+\[->] dispatcher sees
+.B aggressive
+\[->] runs
+.I screenshot-frozen.sh
+directly (frozen screen + slurp selection, same freeze mechanics as
+traditional)
+.IP \n+[step].
+Cropped PNG lands in a private temp file; on a cancelled selection (Escape)
+nothing is copied \(em the clipboard is never clobbered with an empty PNG
+.IP \n+[step].
+.BR wl-copy (1)
+places the PNG in the Wayland clipboard; the temp file is removed
+.IP \n+[step].
+.I screenshot-clipboard-notify.sh
+fires the \(lqScreenshot copied to clipboard\(rq toast \(em the aggressive
+path has no notification of its own
 .SS Notification flow (save)
 .nr step 1 1
 .IP \n[step]. 3
@@ -358,6 +453,30 @@ only while
 (its default); flipping that to 1 would make mako ignore the
 .B "\-t"
 and the confirmations would linger again.
+.TP
+.B The screenshot binding mode's name is a ~300-char pango string
+Theme colors are expanded into the mode name when sway parses the config, so
+the name changes with the active palette. Never hardcode it.
+.I screenshot-dispatch.sh
+resolves it live: the only entry of
+.B swaymsg \-t get_binding_modes
+containing \(lqPick\(rq, passed back wrapped in double quotes inside the
+command string (the name contains spaces and single quotes; double quotes
+inside survive because pango markup only uses single quotes).
+.TP
+.B Aggressive mode's toast comes from the clipboard daemon
+The dispatcher never calls
+.BR notify-send (1)
+on success; if
+.B screenshot-clipboard-notify.service
+is down, aggressive captures still work but confirm silently.
+.TP
+.B The eww toggle widget stays ASCII on purpose
+The camera glyph (U+F0104, PUA) is emitted by
+.I screenshot-mode-subscribe.sh
+as escaped bytes inside the JSON payload \(em same pattern as the dnd
+subscribe script \(em so no PUA character ever lives in a yuck file where a
+Write-style rewrite could silently destroy it.
 .SH SEE ALSO
 .BR grim (1),
 .BR slurp (1),

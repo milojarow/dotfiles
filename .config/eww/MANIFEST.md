@@ -121,6 +121,13 @@ their inline modules to the corresponding feature.
 - `styles/recorder.scss`  *(style)*
 - `scripts/recorder-subscribe.sh`  *(subscribe)*
 
+## screenshot-mode
+
+- `scripts/screenshot-mode-toggle.sh`  *(action)*
+- `styles/screenshot-mode.scss`  *(style)*
+- `scripts/screenshot-mode-subscribe.sh`  *(subscribe)*
+- `widgets/screenshot-mode.yuck`  *(window)*
+
 ## selene-storage
 
 - `styles/selene-storage.scss`  *(style)*
@@ -222,4 +229,4 @@ their inline modules to the corresponding feature.
 
 ---
 
-**Summary:** 108 tagged files across 34 features. 0 orphans.
+**Summary:** 112 tagged files across 35 features. 0 orphans.

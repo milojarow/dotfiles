@@ -1,7 +1,7 @@
 #!/bin/bash
 # ── Screenshots ───────────────────────────────────────────────────────────────
 # Role:     Freezes screen with swayimg + slurp region select + ImageMagick crop; outputs PNG to stdout
-# Files:    screenshot-frozen.sh · screenshot-notify.sh · screenshot-clipboard-notify.sh
+# Files:    screenshot-dispatch.sh · screenshot-frozen.sh · screenshot-notify.sh · screenshot-clipboard-notify.sh
 #           ~/.config/swappy/config                                    (editor settings)
 #           ~/.config/systemd/user/screenshot-notify.service          (save daemon unit)
 #           ~/.config/systemd/user/screenshot-clipboard-notify.service (clipboard daemon unit)
@@ -11,7 +11,7 @@
 #           ~/.config/sway/config.d/99-autostart-applications.conf    (exec_always daemon start)
 # Programs: grim  slurp  swayimg  imagemagick  swappy  inotifywait  notify-send  wl-paste  wl-copy  curl
 # Daemons:  screenshot-notify.service · screenshot-clipboard-notify.service  (sway-session.target)
-# Triggers: Print keybind → screenshot mode → p / o / Shift+p / Shift+o
+# Triggers: Print keybind → screenshot-dispatch.sh → mode p / Shift+p (traditional) · direct (aggressive)
 # Storage:  ~/Screenshots/  (or $XDG_SCREENSHOTS_DIR)
 # ─────────────────────────────────────────────────────────────────────────────
 

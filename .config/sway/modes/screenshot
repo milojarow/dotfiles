@@ -1,6 +1,6 @@
 # ── Screenshots ───────────────────────────────────────────────────────────────
 # Role:     Screenshot mode — keybindings for capture (output/region) and optional upload
-# Files:    screenshot-frozen.sh · screenshot-notify.sh · screenshot-clipboard-notify.sh
+# Files:    screenshot-dispatch.sh · screenshot-frozen.sh · screenshot-notify.sh · screenshot-clipboard-notify.sh
 #           ~/.config/swappy/config
 #           ~/.config/systemd/user/screenshot-notify.service
 #           ~/.config/systemd/user/screenshot-clipboard-notify.service
@@ -28,5 +28,5 @@ mode --pango_markup $mode_screenshot {
     $bindsym Escape mode "default"
 }
 
-## Launch // Screenshot Mode ##
-$bindsym Print mode $mode_screenshot
+## Launch // Screenshots (traditional: mode menu / aggressive: area to clipboard) ##
+$bindsym Print exec $screenshot_dispatch

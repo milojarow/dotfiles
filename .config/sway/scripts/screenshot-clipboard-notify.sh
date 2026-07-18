@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ── Screenshots ───────────────────────────────────────────────────────────────
 # Role:     Daemon: monitors clipboard via wl-paste --watch; sends notify-send on PNG copy
-# Files:    screenshot-frozen.sh · screenshot-notify.sh · screenshot-clipboard-notify.sh
+# Files:    screenshot-dispatch.sh · screenshot-frozen.sh · screenshot-notify.sh · screenshot-clipboard-notify.sh
 #           ~/.config/swappy/config                                    (editor settings)
 #           ~/.config/systemd/user/screenshot-notify.service          (save daemon unit)
 #           ~/.config/systemd/user/screenshot-clipboard-notify.service (clipboard daemon unit)
