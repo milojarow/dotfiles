@@ -477,6 +477,20 @@ The camera glyph (U+F0104, PUA) is emitted by
 as escaped bytes inside the JSON payload \(em same pattern as the dnd
 subscribe script \(em so no PUA character ever lives in a yuck file where a
 Write-style rewrite could silently destroy it.
+.TP
+.B Nerd-font icons render right-shifted in GTK labels
+In \(lqJetBrainsMono Nerd Font\(rq (non-Mono) the U+F0104 glyph's ink at
+30px is 25px wide inside an 18px pango advance box \(em 7px of right
+overflow. GTK centers the advance box, not the ink, so the icon sat
++3.5px right of the circle's center. Fix in
+.IR screenshot-mode.scss :
+.B "padding-right: 7px"
+on the icon label \(em exactly the overflow \(em makes the ink span
+symmetric (correct in both the fill and centered label layout models).
+Measure the overflow with pango directly,
+.B layout.get_pixel_extents()
+via python3-gi (ink vs logical extents); do not eyeball the padding. This
+applies to any eww widget using nf-md glyphs.
 .SH SEE ALSO
 .BR grim (1),
 .BR slurp (1),
