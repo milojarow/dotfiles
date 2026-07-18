@@ -17,6 +17,10 @@
     font-family: "JetBrainsMono Nerd Font";
     font-size: 30px;
     color: #D8DEE9;
+    // Optical centering: at 30px the U+F0104 ink is 25px wide inside an 18px
+    // pango advance box (7px right overflow; GTK centers the advance, not the
+    // ink). padding-right == overflow makes the ink span symmetric -> exact.
+    padding-right: 7px;
 
     &.aggressive {
       color: #EBCB8B;
