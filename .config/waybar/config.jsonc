@@ -178,6 +178,8 @@
             "class<code|vscodium|vscodium-url-handler|gedit|kate>": "\uDB86\uDE7C",
             // PDF viewers  (U+F0226 — surrogate pair)
             "class<org\\.pwmt\\.zathura|evince|okular>":           "\uDB80\uDE26",
+            // Ebook reader  (U+F05DA — surrogate pair)
+            "class<(com\\.github\\.johnfactotum\\.Foliate|foliate)>": "\uDB81\uDDDA",
             // Obsidian
             "class<obsidian>":                                     "\ue2a6",
             // Claude desktop  (U+F09D1 — surrogate pair)
