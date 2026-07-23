@@ -8,6 +8,14 @@ set -U __done_notification_urgency_level normal
 # activar modo vi en línea de comandos
 fish_vi_key_bindings
 
+# fish 4.8.1 (#12122) rebound ctrl-right/left to forward/backward-token on every
+# platform — one press swallows a whole argument, i.e. an entire autosuggested path.
+# Restore the pre-4.8.1 Linux behavior: word-wise movement / partial accept.
+bind -M insert ctrl-right forward-word
+bind -M insert ctrl-left backward-word
+bind ctrl-right forward-word
+bind ctrl-left backward-word
+
 # overwrite greeting
 # potentially disabling fastfetch
 #function fish_greeting
